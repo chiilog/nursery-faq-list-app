@@ -19,37 +19,44 @@
            │                 │
            ▼                 ▼
 ┌─────────────────┐ ┌─────────────────┐
-│   IndexedDB     │ │   Firebase/     │
-│ (Offline Cache) │ │   Supabase      │
+│   IndexedDB     │ │  Supabase Auth  │
+│ (Offline Cache) │ │   & Realtime    │
 └─────────────────┘ └─────────────────┘
-                            │
-                            ▼
-                   ┌─────────────────┐
-                   │   PostgreSQL    │
-                   │   (Supabase)    │
-                   └─────────────────┘
+           │                 │
+           ▼                 ▼
+┌─────────────────┐ ┌─────────────────┐
+│ Cloudflare      │ │   Cloudflare    │
+│ Workers (API)   │ │   D1 (SQLite)   │
+└─────────────────┘ └─────────────────┘
 ```
 
 ### 技術スタック
 
-- **フロントエンド**: React 18 + TypeScript + Vite
-- **UI フレームワーク**: Chakra UI + Emotion
+- **フロントエンド**: React 19 + TypeScript + Vite
+- **UI フレームワーク**: Chakra UI v3 + Emotion
 - **状態管理**: Zustand（軽量でシンプル）
-- **バックエンド**: Supabase（PostgreSQL + リアルタイム機能）
+- **バックエンド API**: Cloudflare Workers（エッジ実行）
+- **データベース**: Cloudflare D1（SQLite、分散型）
+- **認証**: Supabase Auth（OAuth対応）
+- **リアルタイム通信**: Supabase Realtime（WebSocket）
 - **オフラインキャッシュ**: IndexedDB（Dexie.js ラッパー使用）
 - **PWA**: Workbox（Service Worker 管理）
-- **認証**: Supabase Auth
-- **リアルタイム通信**: Supabase Realtime
 - **テスト**: Vitest + React Testing Library
-- **ホスティング**: Vercel（PWA最適化、自動デプロイ）
+- **ホスティング**: Cloudflare Workers Static Assets
 
-#### Supabase 選択理由
+#### ハイブリッド構成の選択理由
 
-- **PostgreSQL**: 構造化データに最適
+**Supabase（認証・リアルタイム）**:
+- **OAuth認証**: Google/LINE簡単設定
 - **リアルタイム機能**: WebSocket ベースの自動同期
-- **認証機能**: 簡単なユーザー管理
-- **Row Level Security**: データベースレベルでのセキュリティ
-- **オープンソース**: ベンダーロックイン回避
+- **実績**: 安定した認証・リアルタイム機能
+
+**Cloudflare（API・データベース・ホスティング）**:
+- **エッジ実行**: 世界中で低レイテンシ
+- **D1データベース**: SQLiteベース、高速クエリ
+- **統合プラットフォーム**: Workers + D1 + Static Assets
+- **コスト効率**: 使用量ベース課金
+- **最新技術**: 将来性の高いプラットフォーム
 
 ## コンポーネント設計
 
@@ -161,100 +168,156 @@ class DataStore {
 }
 ```
 
-#### Supabase サービス
+#### Supabase サービス（認証・リアルタイム）
 
 ```typescript
-class SupabaseService {
+class SupabaseAuthService {
   // OAuth認証管理
   async signInWithGoogle(): Promise<User>;
   async signInWithLine(): Promise<User>;
   async signOut(): Promise<void>;
   async getCurrentUser(): Promise<User | null>;
+  async getSession(): Promise<Session | null>;
+}
 
-  // 質問リスト管理
-  async createQuestionList(
-    list: Omit<QuestionList, "id" | "createdAt" | "updatedAt">
-  ): Promise<QuestionList>;
-  async getQuestionLists(): Promise<QuestionList[]>;
-  async updateQuestionList(
-    id: string,
-    updates: Partial<QuestionList>
-  ): Promise<QuestionList>;
-  async deleteQuestionList(id: string): Promise<void>;
-
-  // 共有機能
-  async shareQuestionList(listId: string, email: string): Promise<void>;
-  async getSharedLists(): Promise<QuestionList[]>;
-  async removeShare(listId: string, userId: string): Promise<void>;
-
+class SupabaseRealtimeService {
   // リアルタイム同期
   subscribeToQuestionList(
     listId: string,
     callback: (payload: any) => void
   ): RealtimeSubscription;
-  subscribeToSharedLists(
-    callback: (payload: any) => void
+  
+  broadcastQuestionUpdate(
+    listId: string,
+    questionData: any
+  ): Promise<void>;
+  
+  subscribeToUserPresence(
+    listId: string,
+    callback: (users: any[]) => void
   ): RealtimeSubscription;
+}
+```
 
-  // 状態管理
+#### Cloudflare Workers API
+
+```typescript
+class CloudflareAPIService {
+  // 質問リスト管理（D1データベース）
+  async createQuestionList(
+    list: Omit<QuestionList, "id" | "createdAt" | "updatedAt">,
+    authToken: string
+  ): Promise<QuestionList>;
+  
+  async getQuestionLists(authToken: string): Promise<QuestionList[]>;
+  
+  async updateQuestionList(
+    id: string,
+    updates: Partial<QuestionList>,
+    authToken: string
+  ): Promise<QuestionList>;
+  
+  async deleteQuestionList(id: string, authToken: string): Promise<void>;
+
+  // 共有機能
+  async shareQuestionList(
+    listId: string, 
+    email: string,
+    authToken: string
+  ): Promise<void>;
+  
+  async getSharedLists(authToken: string): Promise<QuestionList[]>;
+  
+  async removeShare(
+    listId: string, 
+    userId: string,
+    authToken: string
+  ): Promise<void>;
+
+  // 同期状態管理
   getSyncState(): SyncState;
   onSyncStateChange(callback: (state: SyncState) => void): void;
 }
 ```
 
-#### データベーススキーマ（Supabase）
+#### データベーススキーマ（Cloudflare D1 - SQLite）
 
 ```sql
 -- ユーザープロファイル
 CREATE TABLE profiles (
-  id UUID REFERENCES auth.users PRIMARY KEY,
-  email TEXT UNIQUE, -- 任意（プロバイダーによっては取得できない場合がある）
+  id TEXT PRIMARY KEY, -- Supabase User ID
+  email TEXT UNIQUE,
   display_name TEXT,
   provider TEXT NOT NULL, -- 'google', 'line' など
   provider_id TEXT NOT NULL, -- プロバイダー固有のユーザーID
   avatar_url TEXT, -- プロフィール画像URL
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(provider, provider_id)
 );
 
 -- 質問リスト
 CREATE TABLE question_lists (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id TEXT PRIMARY KEY, -- UUID v4
   title TEXT NOT NULL,
   nursery_name TEXT,
   visit_date DATE,
-  owner_id UUID REFERENCES profiles(id) NOT NULL,
-  is_template BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  owner_id TEXT REFERENCES profiles(id) NOT NULL,
+  is_template INTEGER DEFAULT 0, -- SQLite boolean
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 質問
 CREATE TABLE questions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  list_id UUID REFERENCES question_lists(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY, -- UUID v4
+  list_id TEXT REFERENCES question_lists(id) ON DELETE CASCADE,
   text TEXT NOT NULL,
   answer TEXT,
-  is_answered BOOLEAN DEFAULT FALSE,
+  is_answered INTEGER DEFAULT 0, -- SQLite boolean
   priority TEXT CHECK (priority IN ('high', 'medium', 'low')) DEFAULT 'medium',
   category TEXT,
   order_index INTEGER NOT NULL,
-  answered_by UUID REFERENCES profiles(id),
-  answered_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  answered_by TEXT REFERENCES profiles(id),
+  answered_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 共有設定
 CREATE TABLE question_list_shares (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  list_id UUID REFERENCES question_lists(id) ON DELETE CASCADE,
-  shared_with UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY, -- UUID v4
+  list_id TEXT REFERENCES question_lists(id) ON DELETE CASCADE,
+  shared_with TEXT REFERENCES profiles(id) ON DELETE CASCADE,
   permission TEXT CHECK (permission IN ('read', 'write')) DEFAULT 'write',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(list_id, shared_with)
 );
+
+-- インデックス（パフォーマンス最適化）
+CREATE INDEX idx_question_lists_owner ON question_lists(owner_id);
+CREATE INDEX idx_questions_list ON questions(list_id);
+CREATE INDEX idx_questions_order ON questions(list_id, order_index);
+CREATE INDEX idx_shares_list ON question_list_shares(list_id);
+CREATE INDEX idx_shares_user ON question_list_shares(shared_with);
+```
+
+#### データ同期フロー
+
+```mermaid
+sequenceDiagram
+    participant F as Frontend
+    participant S as Supabase Realtime
+    participant W as Cloudflare Workers
+    participant D as D1 Database
+    
+    F->>W: 質問リスト作成 (JWT付き)
+    W->>W: JWT検証 (Supabase Auth)
+    W->>D: データ保存
+    W->>F: 作成完了レスポンス
+    F->>S: リアルタイム通知送信
+    S->>F: 他のクライアントに配信
+    F->>F: UI更新
 ```
 
 ### UI/UX 設計原則
