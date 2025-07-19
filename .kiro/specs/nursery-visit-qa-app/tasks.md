@@ -27,8 +27,7 @@
 
 ### Phase 1: MVP 実装
 
-- [ ] 1. プロジェクト基盤構築とツール設定
-
+- [x] 1. プロジェクト基盤構築とツール設定
   - 最新の Vite + React + TypeScript プロジェクト作成（`npm create vite@latest nursery-qa-app -- --template react-ts`）
   - TypeScript 設定の最適化（`isolatedModules: true`, `skipLibCheck: true`）
   - ESLint 設定（`@typescript-eslint/recommended-type-checked`, React 専用ルール）
@@ -37,8 +36,7 @@
   - Vitest + React Testing Library + @testing-library/jest-dom の設定
   - _要件: 全体的な開発環境_
 
-- [ ] 1.1 Chakra UI とテーマ設定
-
+- [x] 1.1 Chakra UI とテーマ設定
   - 最新の Chakra UI v3 のインストールと基本設定
   - React 19 対応の TypeScript 型定義（`@types/react@^19.0.0 @types/react-dom@^19.0.0`）
   - カスタムテーマの作成（保育園アプリに適した色合い）
@@ -49,13 +47,11 @@
 ### 2. データ層の実装（ローカルストレージ）
 
 - [ ] 2.1 データモデルと TypeScript 型定義
-
   - QuestionList, Question インターフェースの実装
   - バリデーション関数の作成とテスト
   - _要件: 7.1, 7.2_
 
 - [ ] 2.2 ローカルストレージ実装
-
   - localStorage API を使用したデータ保存
   - CRUD 操作の実装とテスト
   - 基本的なデータ保護
@@ -70,14 +66,12 @@
 ### 3. 基本 UI コンポーネントの実装（TDD）
 
 - [ ] 3.1 レイアウトコンポーネント（TDD）
-
   - **Red**: レイアウトコンポーネントのテストを先に作成
   - **Green**: App, Layout, Router コンポーネントの最小実装
   - **Refactor**: ナビゲーション UI の改善、レスポンシブ対応
   - _要件: 1.1, 1.4_
 
 - [ ] 3.2 質問リスト表示コンポーネント（TDD）
-
   - **Red**: 質問表示・並び替えのテストを先に作成
   - **Green**: QuestionList コンポーネントの最小実装
   - **Refactor**: 回答済み質問の下部移動機能の改善
@@ -92,14 +86,12 @@
 ### 4. 質問リスト管理機能（TDD）
 
 - [ ] 4.1 質問リスト作成機能（TDD）
-
   - **Red**: 質問リスト作成のテストを先に作成
   - **Green**: 新規質問リスト作成フォームの最小実装
   - **Refactor**: 基本情報入力、バリデーション、エラーハンドリングの改善
   - _要件: 7.1, 7.4_
 
 - [ ] 4.2 質問の追加・編集・削除機能（TDD）
-
   - **Red**: CRUD 操作のテストを先に作成
   - **Green**: 質問の動的追加・編集・削除の最小実装
   - **Refactor**: インライン編集、削除確認ダイアログの改善
@@ -114,7 +106,6 @@
 ### 5. データセキュリティ機能
 
 - [ ] 5.1 データ暗号化の実装
-
   - Web Crypto API を使用した暗号化
   - 暗号化キーの管理
   - データの暗号化・復号化処理
@@ -128,14 +119,12 @@
 ### 6. テスト実装
 
 - [ ] 6.1 単体テストの実装
-
   - データモデルのテスト
   - ユーティリティ関数のテスト
   - コンポーネントのテスト（React Testing Library 使用）
   - _TDD: Red-Green-Refactor サイクル_
 
 - [ ] 6.2 統合テストの実装
-
   - ページ間遷移のテスト
   - データフローのテスト
   - オフライン機能のテスト
@@ -150,7 +139,6 @@
 ### 7. パフォーマンス最適化
 
 - [ ] 7.1 読み込み最適化
-
   - コード分割の実装
   - 画像・フォント最適化
   - Service Worker キャッシュ戦略
@@ -165,7 +153,6 @@
 ### 8. デプロイメント準備
 
 - [ ] 8.1 ビルド設定の最適化
-
   - Vite ビルド設定の調整
   - PWA アセットの生成
   - 環境変数の設定
@@ -182,7 +169,6 @@
 ### Phase 2: 認証・共有・オフライン機能
 
 - [ ] 9. Supabase + Cloudflare 統合設定
-
   - Supabase プロジェクト作成（認証・リアルタイム用）
   - D1 データベース作成（`wrangler d1 create nursery-qa-db`）
   - データベーススキーマの実装（SQLite）
@@ -190,7 +176,6 @@
   - _要件: 2.1, 2.2, 2.3, 6.1, 6.2, 6.3, 6.4, 6.5_
 
 - [ ] 9.1 Supabase Auth 認証実装
-
   - Google OAuth 設定（Supabase Dashboard）
   - LINE Login 設定（Supabase Dashboard）
   - フロントエンドでの認証実装（supabase-js）
@@ -199,7 +184,6 @@
   - _要件: 2.1, 2.2, 2.3_
 
 - [ ] 9.2 Supabase Realtime 同期機能
-
   - Supabase Realtime 設定（Broadcast 機能）
   - フロントエンドでのリアルタイム送受信実装
   - 質問リストのリアルタイム同期
@@ -217,14 +201,12 @@
 ### Phase 3: 高度な機能・Nice to Have
 
 - [ ] 10. 質問テンプレート機能
-
   - 年齢別テンプレートの作成
   - テンプレート選択 UI
   - カスタマイズ機能
   - _要件: 3.1, 3.2, 3.3, 3.4_
 
 - [ ] 10.1 印刷機能の実装
-
   - 印刷用レイアウトコンポーネントの作成
   - A4 用紙 4 分割レイアウトの実装
   - 印刷ボタンと CSS print media query の設定
