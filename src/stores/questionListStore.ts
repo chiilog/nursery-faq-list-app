@@ -380,7 +380,6 @@ export const useQuestionListStore = create<QuestionListState>()(
 
         await updateQuestion(listId, questionId, {
           answer,
-          isAnswered: answer.trim().length > 0,
         });
       },
 
@@ -610,10 +609,7 @@ export const useQuestionListStore = create<QuestionListState>()(
     {
       name: 'question-list-store',
       // デバッグモードでのみdevtoolsを有効化
-      enabled:
-        typeof process !== 'undefined' &&
-        (process as { env: Record<string, string | undefined> }).env
-          .NODE_ENV === 'development',
+      enabled: import.meta.env?.DEV ?? false,
     }
   )
 );
