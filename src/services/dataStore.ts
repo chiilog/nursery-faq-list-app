@@ -9,7 +9,7 @@ import type {
   UpdateQuestionListInput,
   CreateQuestionInput,
   UpdateQuestionInput,
-} from "../types/data";
+} from '../types/data';
 import {
   createQuestionList,
   createQuestion,
@@ -17,25 +17,28 @@ import {
   addQuestionToList,
   removeQuestionFromList,
   updateQuestionInList,
-} from "../utils/data";
+} from '../utils/data';
 import {
   validateCreateQuestionListInput,
   validateUpdateQuestionListInput,
   validateCreateQuestionInput,
   validateUpdateQuestionInput,
-} from "../utils/validation";
+} from '../utils/validation';
 
 // ストレージキー定数
 const STORAGE_KEYS = {
-  QUESTION_LISTS: "nursery-qa-question-lists",
-  ENCRYPTION_KEY: "nursery-qa-encryption-key",
+  QUESTION_LISTS: 'nursery-qa-question-lists',
+  ENCRYPTION_KEY: 'nursery-qa-encryption-key',
 } as const;
 
 // データストアエラークラス
 export class DataStoreError extends Error {
-  constructor(message: string, public code?: string) {
+  constructor(
+    message: string,
+    public code?: string
+  ) {
     super(message);
-    this.name = "DataStoreError";
+    this.name = 'DataStoreError';
   }
 }
 
@@ -45,13 +48,13 @@ export class DataStoreError extends Error {
  */
 async function getCryptoKey(): Promise<CryptoKey> {
   // 開発段階では固定キーを使用（本格運用時はより安全な方法を実装）
-  const keyData = new TextEncoder().encode("nursery-qa-app-key-32-chars!");
+  const keyData = new TextEncoder().encode('nursery-qa-app-key-32-chars!');
   return await crypto.subtle.importKey(
-    "raw",
+    'raw',
     keyData,
-    { name: "AES-GCM" },
+    { name: 'AES-GCM' },
     false,
-    ["encrypt", "decrypt"]
+    ['encrypt', 'decrypt']
   );
 }
 
@@ -60,21 +63,24 @@ async function encryptData(data: string): Promise<string> {
     const key = await getCryptoKey();
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const encodedData = new TextEncoder().encode(data);
-    
+
     const encrypted = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
+      { name: 'AES-GCM', iv },
       key,
       encodedData
     );
-    
+
     // IVと暗号化データを結合してBase64エンコード
     const combined = new Uint8Array(iv.length + encrypted.byteLength);
     combined.set(iv);
     combined.set(new Uint8Array(encrypted), iv.length);
-    
+
     return btoa(String.fromCharCode(...combined));
   } catch {
-    throw new DataStoreError("データの暗号化に失敗しました", "ENCRYPTION_FAILED");
+    throw new DataStoreError(
+      'データの暗号化に失敗しました',
+      'ENCRYPTION_FAILED'
+    );
   }
 }
 
@@ -82,21 +88,26 @@ async function decryptData(encryptedData: string): Promise<string> {
   try {
     const key = await getCryptoKey();
     const combined = new Uint8Array(
-      atob(encryptedData).split("").map(char => char.charCodeAt(0))
+      atob(encryptedData)
+        .split('')
+        .map((char) => char.charCodeAt(0))
     );
-    
+
     const iv = combined.slice(0, 12);
     const encrypted = combined.slice(12);
-    
+
     const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv },
+      { name: 'AES-GCM', iv },
       key,
       encrypted
     );
-    
+
     return new TextDecoder().decode(decrypted);
   } catch {
-    throw new DataStoreError("データの復号化に失敗しました", "DECRYPTION_FAILED");
+    throw new DataStoreError(
+      'データの復号化に失敗しました',
+      'DECRYPTION_FAILED'
+    );
   }
 }
 
@@ -109,20 +120,20 @@ export class DataStore {
    */
   private async saveToStorage(key: string, data: unknown): Promise<void> {
     try {
-      const jsonData = JSON.stringify(data, (key, value) => {
+      const jsonData = JSON.stringify(data, (key, value: unknown) => {
         // Dateオブジェクトを文字列に変換
         if (value instanceof Date) {
-          return { __dateType: "Date", value: value.toISOString() };
+          return { __dateType: 'Date', value: value.toISOString() } as const;
         }
         return value;
       });
-      
+
       const encryptedData = await encryptData(jsonData);
       localStorage.setItem(key, encryptedData);
     } catch {
       throw new DataStoreError(
-        "データの保存に失敗しました",
-        "STORAGE_SAVE_FAILED"
+        'データの保存に失敗しました',
+        'STORAGE_SAVE_FAILED'
       );
     }
   }
@@ -136,19 +147,30 @@ export class DataStore {
       if (!encryptedData) {
         return null;
       }
-      
+
       const decryptedData = await decryptData(encryptedData);
-      return JSON.parse(decryptedData, (key, value) => {
+      return JSON.parse(decryptedData, (key, value: unknown) => {
         // 文字列をDateオブジェクトに復元
-        if (value && typeof value === "object" && value && "__dateType" in value && value.__dateType === "Date" && "value" in value) {
-          return new Date(value.value as string);
+        if (
+          value &&
+          typeof value === 'object' &&
+          '__dateType' in value &&
+          'value' in value &&
+          (value as { __dateType: unknown; value: unknown }).__dateType ===
+            'Date' &&
+          typeof (value as { __dateType: unknown; value: unknown }).value ===
+            'string'
+        ) {
+          return new Date(
+            (value as { __dateType: string; value: string }).value
+          );
         }
         return value;
       }) as T;
     } catch {
       throw new DataStoreError(
-        "データの読み込みに失敗しました",
-        "STORAGE_LOAD_FAILED"
+        'データの読み込みに失敗しました',
+        'STORAGE_LOAD_FAILED'
       );
     }
   }
@@ -178,37 +200,37 @@ export class DataStore {
     const validation = validateCreateQuestionListInput(input);
     if (!validation.isValid) {
       throw new DataStoreError(
-        `入力データが無効です: ${validation.errors.join(", ")}`,
-        "VALIDATION_FAILED"
+        `入力データが無効です: ${validation.errors.join(', ')}`,
+        'VALIDATION_FAILED'
       );
     }
 
     try {
       const newList = createQuestionList(input);
       const existingLists = await this.getAllQuestionLists();
-      
+
       // 同名チェック
       const duplicateName = existingLists.some(
-        list => list.title.toLowerCase() === newList.title.toLowerCase()
+        (list) => list.title.toLowerCase() === newList.title.toLowerCase()
       );
       if (duplicateName) {
         throw new DataStoreError(
-          "同名の質問リストが既に存在します",
-          "DUPLICATE_TITLE"
+          '同名の質問リストが既に存在します',
+          'DUPLICATE_TITLE'
         );
       }
-      
+
       const updatedLists = [...existingLists, newList];
       await this.saveQuestionLists(updatedLists);
-      
+
       return newList.id;
     } catch (error) {
       if (error instanceof DataStoreError) {
         throw error;
       }
       throw new DataStoreError(
-        "質問リストの作成に失敗しました",
-        "CREATE_FAILED"
+        '質問リストの作成に失敗しました',
+        'CREATE_FAILED'
       );
     }
   }
@@ -218,17 +240,14 @@ export class DataStore {
    */
   async getQuestionList(id: string): Promise<QuestionList | null> {
     if (!id) {
-      throw new DataStoreError("IDが指定されていません", "INVALID_ID");
+      throw new DataStoreError('IDが指定されていません', 'INVALID_ID');
     }
 
     try {
       const lists = await this.getAllQuestionLists();
-      return lists.find(list => list.id === id) || null;
+      return lists.find((list) => list.id === id) || null;
     } catch {
-      throw new DataStoreError(
-        "質問リストの取得に失敗しました",
-        "GET_FAILED"
-      );
+      throw new DataStoreError('質問リストの取得に失敗しました', 'GET_FAILED');
     }
   }
 
@@ -240,26 +259,26 @@ export class DataStore {
     updates: UpdateQuestionListInput
   ): Promise<void> {
     if (!id) {
-      throw new DataStoreError("IDが指定されていません", "INVALID_ID");
+      throw new DataStoreError('IDが指定されていません', 'INVALID_ID');
     }
 
     // バリデーション
     const validation = validateUpdateQuestionListInput(updates);
     if (!validation.isValid) {
       throw new DataStoreError(
-        `更新データが無効です: ${validation.errors.join(", ")}`,
-        "VALIDATION_FAILED"
+        `更新データが無効です: ${validation.errors.join(', ')}`,
+        'VALIDATION_FAILED'
       );
     }
 
     try {
       const lists = await this.getAllQuestionLists();
-      const listIndex = lists.findIndex(list => list.id === id);
-      
+      const listIndex = lists.findIndex((list) => list.id === id);
+
       if (listIndex === -1) {
         throw new DataStoreError(
-          "指定された質問リストが見つかりません",
-          "NOT_FOUND"
+          '指定された質問リストが見つかりません',
+          'NOT_FOUND'
         );
       }
 
@@ -272,8 +291,8 @@ export class DataStore {
         );
         if (duplicateName) {
           throw new DataStoreError(
-            "同名の質問リストが既に存在します",
-            "DUPLICATE_TITLE"
+            '同名の質問リストが既に存在します',
+            'DUPLICATE_TITLE'
           );
         }
       }
@@ -290,8 +309,8 @@ export class DataStore {
         throw error;
       }
       throw new DataStoreError(
-        "質問リストの更新に失敗しました",
-        "UPDATE_FAILED"
+        '質問リストの更新に失敗しました',
+        'UPDATE_FAILED'
       );
     }
   }
@@ -301,17 +320,17 @@ export class DataStore {
    */
   async deleteQuestionList(id: string): Promise<void> {
     if (!id) {
-      throw new DataStoreError("IDが指定されていません", "INVALID_ID");
+      throw new DataStoreError('IDが指定されていません', 'INVALID_ID');
     }
 
     try {
       const lists = await this.getAllQuestionLists();
-      const filteredLists = lists.filter(list => list.id !== id);
-      
+      const filteredLists = lists.filter((list) => list.id !== id);
+
       if (filteredLists.length === lists.length) {
         throw new DataStoreError(
-          "指定された質問リストが見つかりません",
-          "NOT_FOUND"
+          '指定された質問リストが見つかりません',
+          'NOT_FOUND'
         );
       }
 
@@ -321,8 +340,8 @@ export class DataStore {
         throw error;
       }
       throw new DataStoreError(
-        "質問リストの削除に失敗しました",
-        "DELETE_FAILED"
+        '質問リストの削除に失敗しました',
+        'DELETE_FAILED'
       );
     }
   }
@@ -335,44 +354,48 @@ export class DataStore {
     questionInput: CreateQuestionInput
   ): Promise<string> {
     if (!listId) {
-      throw new DataStoreError("リストIDが指定されていません", "INVALID_LIST_ID");
+      throw new DataStoreError(
+        'リストIDが指定されていません',
+        'INVALID_LIST_ID'
+      );
     }
 
     // バリデーション
     const validation = validateCreateQuestionInput(questionInput);
     if (!validation.isValid) {
       throw new DataStoreError(
-        `質問データが無効です: ${validation.errors.join(", ")}`,
-        "VALIDATION_FAILED"
+        `質問データが無効です: ${validation.errors.join(', ')}`,
+        'VALIDATION_FAILED'
       );
     }
 
     try {
       const lists = await this.getAllQuestionLists();
-      const listIndex = lists.findIndex(list => list.id === listId);
-      
+      const listIndex = lists.findIndex((list) => list.id === listId);
+
       if (listIndex === -1) {
         throw new DataStoreError(
-          "指定された質問リストが見つかりません",
-          "LIST_NOT_FOUND"
+          '指定された質問リストが見つかりません',
+          'LIST_NOT_FOUND'
         );
       }
 
       const updatedList = addQuestionToList(lists[listIndex], questionInput);
       lists[listIndex] = updatedList;
-      
+
       await this.saveQuestionLists(lists);
-      
+
       // 追加された質問のIDを返す
-      const addedQuestion = updatedList.questions[updatedList.questions.length - 1];
+      const addedQuestion =
+        updatedList.questions[updatedList.questions.length - 1];
       return addedQuestion.id;
     } catch (error) {
       if (error instanceof DataStoreError) {
         throw error;
       }
       throw new DataStoreError(
-        "質問の追加に失敗しました",
-        "ADD_QUESTION_FAILED"
+        '質問の追加に失敗しました',
+        'ADD_QUESTION_FAILED'
       );
     }
   }
@@ -386,45 +409,55 @@ export class DataStore {
     updates: UpdateQuestionInput
   ): Promise<void> {
     if (!listId) {
-      throw new DataStoreError("リストIDが指定されていません", "INVALID_LIST_ID");
+      throw new DataStoreError(
+        'リストIDが指定されていません',
+        'INVALID_LIST_ID'
+      );
     }
     if (!questionId) {
-      throw new DataStoreError("質問IDが指定されていません", "INVALID_QUESTION_ID");
+      throw new DataStoreError(
+        '質問IDが指定されていません',
+        'INVALID_QUESTION_ID'
+      );
     }
 
     // バリデーション
     const validation = validateUpdateQuestionInput(updates);
     if (!validation.isValid) {
       throw new DataStoreError(
-        `更新データが無効です: ${validation.errors.join(", ")}`,
-        "VALIDATION_FAILED"
+        `更新データが無効です: ${validation.errors.join(', ')}`,
+        'VALIDATION_FAILED'
       );
     }
 
     try {
       const lists = await this.getAllQuestionLists();
-      const listIndex = lists.findIndex(list => list.id === listId);
-      
+      const listIndex = lists.findIndex((list) => list.id === listId);
+
       if (listIndex === -1) {
         throw new DataStoreError(
-          "指定された質問リストが見つかりません",
-          "LIST_NOT_FOUND"
+          '指定された質問リストが見つかりません',
+          'LIST_NOT_FOUND'
         );
       }
 
       const questionList = lists[listIndex];
-      const question = questionList.questions.find(q => q.id === questionId);
-      
+      const question = questionList.questions.find((q) => q.id === questionId);
+
       if (!question) {
         throw new DataStoreError(
-          "指定された質問が見つかりません",
-          "QUESTION_NOT_FOUND"
+          '指定された質問が見つかりません',
+          'QUESTION_NOT_FOUND'
         );
       }
 
       const updatedQuestion = { ...question, ...updates };
-      const updatedList = updateQuestionInList(questionList, questionId, updatedQuestion);
-      
+      const updatedList = updateQuestionInList(
+        questionList,
+        questionId,
+        updatedQuestion
+      );
+
       lists[listIndex] = updatedList;
       await this.saveQuestionLists(lists);
     } catch (error) {
@@ -432,8 +465,8 @@ export class DataStore {
         throw error;
       }
       throw new DataStoreError(
-        "質問の更新に失敗しました",
-        "UPDATE_QUESTION_FAILED"
+        '質問の更新に失敗しました',
+        'UPDATE_QUESTION_FAILED'
       );
     }
   }
@@ -443,44 +476,52 @@ export class DataStore {
    */
   async deleteQuestion(listId: string, questionId: string): Promise<void> {
     if (!listId) {
-      throw new DataStoreError("リストIDが指定されていません", "INVALID_LIST_ID");
+      throw new DataStoreError(
+        'リストIDが指定されていません',
+        'INVALID_LIST_ID'
+      );
     }
     if (!questionId) {
-      throw new DataStoreError("質問IDが指定されていません", "INVALID_QUESTION_ID");
+      throw new DataStoreError(
+        '質問IDが指定されていません',
+        'INVALID_QUESTION_ID'
+      );
     }
 
     try {
       const lists = await this.getAllQuestionLists();
-      const listIndex = lists.findIndex(list => list.id === listId);
-      
+      const listIndex = lists.findIndex((list) => list.id === listId);
+
       if (listIndex === -1) {
         throw new DataStoreError(
-          "指定された質問リストが見つかりません",
-          "LIST_NOT_FOUND"
+          '指定された質問リストが見つかりません',
+          'LIST_NOT_FOUND'
         );
       }
 
       const questionList = lists[listIndex];
-      const questionExists = questionList.questions.some(q => q.id === questionId);
-      
+      const questionExists = questionList.questions.some(
+        (q) => q.id === questionId
+      );
+
       if (!questionExists) {
         throw new DataStoreError(
-          "指定された質問が見つかりません",
-          "QUESTION_NOT_FOUND"
+          '指定された質問が見つかりません',
+          'QUESTION_NOT_FOUND'
         );
       }
 
       const updatedList = removeQuestionFromList(questionList, questionId);
       lists[listIndex] = updatedList;
-      
+
       await this.saveQuestionLists(lists);
     } catch (error) {
       if (error instanceof DataStoreError) {
         throw error;
       }
       throw new DataStoreError(
-        "質問の削除に失敗しました",
-        "DELETE_QUESTION_FAILED"
+        '質問の削除に失敗しました',
+        'DELETE_QUESTION_FAILED'
       );
     }
   }
@@ -491,11 +532,11 @@ export class DataStore {
   async getTemplates(): Promise<QuestionList[]> {
     try {
       const lists = await this.getAllQuestionLists();
-      return lists.filter(list => list.isTemplate);
+      return lists.filter((list) => list.isTemplate);
     } catch {
       throw new DataStoreError(
-        "テンプレートの取得に失敗しました",
-        "GET_TEMPLATES_FAILED"
+        'テンプレートの取得に失敗しました',
+        'GET_TEMPLATES_FAILED'
       );
     }
   }
@@ -508,15 +549,18 @@ export class DataStore {
     customizations: CreateQuestionListInput
   ): Promise<string> {
     if (!templateId) {
-      throw new DataStoreError("テンプレートIDが指定されていません", "INVALID_TEMPLATE_ID");
+      throw new DataStoreError(
+        'テンプレートIDが指定されていません',
+        'INVALID_TEMPLATE_ID'
+      );
     }
 
     // バリデーション
     const validation = validateCreateQuestionListInput(customizations);
     if (!validation.isValid) {
       throw new DataStoreError(
-        `カスタマイズデータが無効です: ${validation.errors.join(", ")}`,
-        "VALIDATION_FAILED"
+        `カスタマイズデータが無効です: ${validation.errors.join(', ')}`,
+        'VALIDATION_FAILED'
       );
     }
 
@@ -524,21 +568,21 @@ export class DataStore {
       const template = await this.getQuestionList(templateId);
       if (!template) {
         throw new DataStoreError(
-          "指定されたテンプレートが見つかりません",
-          "TEMPLATE_NOT_FOUND"
+          '指定されたテンプレートが見つかりません',
+          'TEMPLATE_NOT_FOUND'
         );
       }
 
       if (!template.isTemplate) {
         throw new DataStoreError(
-          "指定されたリストはテンプレートではありません",
-          "NOT_TEMPLATE"
+          '指定されたリストはテンプレートではありません',
+          'NOT_TEMPLATE'
         );
       }
 
       // 新しい質問リストを作成
       const newList = createQuestionList(customizations);
-      
+
       // テンプレートの質問をコピー
       const templateQuestions = template.questions.map((question, index) =>
         createQuestion(
@@ -557,29 +601,29 @@ export class DataStore {
       };
 
       const existingLists = await this.getAllQuestionLists();
-      
+
       // 同名チェック
       const duplicateName = existingLists.some(
-        list => list.title.toLowerCase() === finalList.title.toLowerCase()
+        (list) => list.title.toLowerCase() === finalList.title.toLowerCase()
       );
       if (duplicateName) {
         throw new DataStoreError(
-          "同名の質問リストが既に存在します",
-          "DUPLICATE_TITLE"
+          '同名の質問リストが既に存在します',
+          'DUPLICATE_TITLE'
         );
       }
 
       const updatedLists = [...existingLists, finalList];
       await this.saveQuestionLists(updatedLists);
-      
+
       return finalList.id;
     } catch (error) {
       if (error instanceof DataStoreError) {
         throw error;
       }
       throw new DataStoreError(
-        "テンプレートからの作成に失敗しました",
-        "CREATE_FROM_TEMPLATE_FAILED"
+        'テンプレートからの作成に失敗しました',
+        'CREATE_FROM_TEMPLATE_FAILED'
       );
     }
   }
@@ -593,8 +637,8 @@ export class DataStore {
       localStorage.removeItem(STORAGE_KEYS.ENCRYPTION_KEY);
     } catch {
       throw new DataStoreError(
-        "データの削除に失敗しました",
-        "CLEAR_DATA_FAILED"
+        'データの削除に失敗しました',
+        'CLEAR_DATA_FAILED'
       );
     }
   }
@@ -608,8 +652,8 @@ export class DataStore {
       return JSON.stringify(lists, null, 2);
     } catch {
       throw new DataStoreError(
-        "データのエクスポートに失敗しました",
-        "EXPORT_FAILED"
+        'データのエクスポートに失敗しました',
+        'EXPORT_FAILED'
       );
     }
   }
