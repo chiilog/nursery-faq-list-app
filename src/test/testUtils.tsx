@@ -1,0 +1,37 @@
+/**
+ * テスト用ユーティリティ
+ * フックテストで共通して使用するヘルパー関数
+ */
+
+/* eslint-disable react-refresh/only-export-components */
+
+import type { ReactNode } from 'react';
+import { render } from '@testing-library/react';
+import type { RenderResult } from '@testing-library/react';
+import { ChakraProvider } from '@chakra-ui/react';
+import { renderHook } from '@testing-library/react';
+import type { RenderHookResult } from '@testing-library/react';
+import system from '../theme';
+
+// Chakra UI Provider Wrapper
+const ChakraWrapper = ({ children }: { children: ReactNode }) => (
+  <ChakraProvider value={system}>{children}</ChakraProvider>
+);
+
+export { ChakraWrapper };
+
+// コンポーネント用のrender関数
+export function renderWithChakra(ui: React.ReactElement): RenderResult {
+  return render(ui, { wrapper: ChakraWrapper });
+}
+
+// フック用のrenderHook関数
+export function renderHookWithChakra<TResult, TProps>(
+  hook: (props: TProps) => TResult,
+  options?: { initialProps?: TProps }
+): RenderHookResult<TResult, TProps> {
+  return renderHook(hook, {
+    wrapper: ChakraWrapper,
+    ...options,
+  });
+}

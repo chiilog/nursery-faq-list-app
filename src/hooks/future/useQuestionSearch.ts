@@ -3,14 +3,18 @@
  * 質問リスト、テンプレート、質問の検索機能を提供
  */
 
-import { useCallback } from 'react';
-import { useQuestionListStore } from '../stores/questionListStore';
+import { useCallback, useMemo } from 'react';
+import { useQuestionListManagement } from '../useQuestionListManagement';
+import type { QuestionList } from '../../types';
 
 /**
  * 質問検索フック
  */
 export function useQuestionSearch() {
-  const { questionLists, templates, currentList } = useQuestionListStore();
+  const { questionLists, currentList } = useQuestionListManagement();
+
+  // テンプレートは将来実装予定のため、空配列で初期化
+  const templates: QuestionList[] = useMemo(() => [], []);
 
   // 共通検索ユーティリティ
   const createSearchFunction = useCallback(

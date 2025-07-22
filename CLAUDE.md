@@ -17,6 +17,15 @@ GitHubにコミットする時は、`.kiro/steering/commit-message.md` のコミ
 
 `.kiro/steering/quality.md` の内容に従ってください。
 
+## 作業完了報告
+
+作業完了報告をする前に、必ず以下の確認を行ってください：
+
+1. **ESLint実行**: `npm run lint` でエラー・警告がないことを確認
+2. **テスト実行**: `npm run test` で全てのテストが通過することを確認
+
+これらの確認後に作業完了を報告してください。品質を犠牲にした完了報告は厳禁です。
+
 ## セキュリティ
 
 `.kiro/steering/security.md` の内容に従ってください。

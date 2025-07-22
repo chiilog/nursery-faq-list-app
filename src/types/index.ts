@@ -7,18 +7,19 @@
 export type {
   Question,
   QuestionList,
+  QuestionListStats,
   SyncState,
   CreateQuestionInput,
   CreateQuestionListInput,
   UpdateQuestionInput,
   UpdateQuestionListInput,
-} from "./data";
+} from './data';
 
 // バリデーション関連型
-export type { ValidationResult } from "../utils/validation";
+export type { ValidationResult } from '../utils/validation';
 
 // ストア関連型
-export type { AppError, LoadingState } from "../stores/questionListStore";
+export type { AppError, LoadingState } from '../stores/questionListStore';
 
 // サービス関連型
-export { DataStoreError } from "../services/dataStore";
+export { DataStoreError } from '../services/dataStore';
