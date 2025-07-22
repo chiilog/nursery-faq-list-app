@@ -15,14 +15,8 @@ GitHubにコミットする時は、`.kiro/steering/commit-message.md` のコミ
 
 ## コード品質
 
-- **pre-commitフックを絶対にスキップしない**
-  - `git commit --no-verify` は使用禁止
-  - ESLint、Prettier、その他のリンターエラーはすべて修正してからコミット
-  - コード品質を犠牲にしてスピードを優先してはいけない
-- 型安全性を最優先にする
-- すべてのリンターエラーは適切に修正する
+`.kiro/steering/quality.md` の内容に従ってください。
 
 ## セキュリティ
 
-- 環境変数、APIキー、認証情報などの秘匿情報はGitにコミットしない
-- 安全な管理方法を積極的に採用すること
+`.kiro/steering/security.md` の内容に従ってください。

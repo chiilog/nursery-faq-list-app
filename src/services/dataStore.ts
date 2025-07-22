@@ -171,7 +171,7 @@ export class DataStore {
    */
   private async saveToStorage(key: string, data: unknown): Promise<void> {
     try {
-      const jsonData = JSON.stringify(data, (key, value: unknown) => {
+      const jsonData = JSON.stringify(data, (_, value: unknown) => {
         // Dateオブジェクトを文字列に変換
         if (value instanceof Date) {
           return { __dateType: 'Date', value: value.toISOString() } as const;
@@ -200,7 +200,7 @@ export class DataStore {
       }
 
       const decryptedData = await decryptData(encryptedData);
-      return JSON.parse(decryptedData, (key, value: unknown) => {
+      return JSON.parse(decryptedData, (_, value: unknown) => {
         // 文字列をDateオブジェクトに復元
         if (
           value &&
