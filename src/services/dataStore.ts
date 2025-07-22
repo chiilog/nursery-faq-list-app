@@ -5,7 +5,6 @@
 
 import type {
   QuestionList,
-  Question,
   CreateQuestionListInput,
   UpdateQuestionListInput,
   CreateQuestionInput,
@@ -15,7 +14,6 @@ import {
   createQuestionList,
   createQuestion,
   updateQuestionListTimestamp,
-  answerQuestion,
   addQuestionToList,
   removeQuestionFromList,
   updateQuestionInList,
@@ -45,62 +43,60 @@ export class DataStoreError extends Error {
  * 基本的なデータ暗号化機能
  * Web Crypto APIを使用した簡易暗号化
  */
-class CryptoService {
-  private static async getKey(): Promise<CryptoKey> {
-    // 開発段階では固定キーを使用（本格運用時はより安全な方法を実装）
-    const keyData = new TextEncoder().encode("nursery-qa-app-key-32-chars!");
-    return await crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "AES-GCM" },
-      false,
-      ["encrypt", "decrypt"]
+async function getCryptoKey(): Promise<CryptoKey> {
+  // 開発段階では固定キーを使用（本格運用時はより安全な方法を実装）
+  const keyData = new TextEncoder().encode("nursery-qa-app-key-32-chars!");
+  return await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptData(data: string): Promise<string> {
+  try {
+    const key = await getCryptoKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encodedData = new TextEncoder().encode(data);
+    
+    const encrypted = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encodedData
     );
+    
+    // IVと暗号化データを結合してBase64エンコード
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    
+    return btoa(String.fromCharCode(...combined));
+  } catch {
+    throw new DataStoreError("データの暗号化に失敗しました", "ENCRYPTION_FAILED");
   }
+}
 
-  static async encrypt(data: string): Promise<string> {
-    try {
-      const key = await this.getKey();
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encodedData = new TextEncoder().encode(data);
-      
-      const encrypted = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        key,
-        encodedData
-      );
-      
-      // IVと暗号化データを結合してBase64エンコード
-      const combined = new Uint8Array(iv.length + encrypted.byteLength);
-      combined.set(iv);
-      combined.set(new Uint8Array(encrypted), iv.length);
-      
-      return btoa(String.fromCharCode(...combined));
-    } catch (error) {
-      throw new DataStoreError("データの暗号化に失敗しました", "ENCRYPTION_FAILED");
-    }
-  }
-
-  static async decrypt(encryptedData: string): Promise<string> {
-    try {
-      const key = await this.getKey();
-      const combined = new Uint8Array(
-        atob(encryptedData).split("").map(char => char.charCodeAt(0))
-      );
-      
-      const iv = combined.slice(0, 12);
-      const encrypted = combined.slice(12);
-      
-      const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv },
-        key,
-        encrypted
-      );
-      
-      return new TextDecoder().decode(decrypted);
-    } catch (error) {
-      throw new DataStoreError("データの復号化に失敗しました", "DECRYPTION_FAILED");
-    }
+async function decryptData(encryptedData: string): Promise<string> {
+  try {
+    const key = await getCryptoKey();
+    const combined = new Uint8Array(
+      atob(encryptedData).split("").map(char => char.charCodeAt(0))
+    );
+    
+    const iv = combined.slice(0, 12);
+    const encrypted = combined.slice(12);
+    
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encrypted
+    );
+    
+    return new TextDecoder().decode(decrypted);
+  } catch {
+    throw new DataStoreError("データの復号化に失敗しました", "DECRYPTION_FAILED");
   }
 }
 
@@ -111,19 +107,19 @@ export class DataStore {
   /**
    * 暗号化されたデータをローカルストレージに保存
    */
-  private async saveToStorage(key: string, data: any): Promise<void> {
+  private async saveToStorage(key: string, data: unknown): Promise<void> {
     try {
       const jsonData = JSON.stringify(data, (key, value) => {
         // Dateオブジェクトを文字列に変換
         if (value instanceof Date) {
-          return { __type: "Date", value: value.toISOString() };
+          return { __dateType: "Date", value: value.toISOString() };
         }
         return value;
       });
       
-      const encryptedData = await CryptoService.encrypt(jsonData);
+      const encryptedData = await encryptData(jsonData);
       localStorage.setItem(key, encryptedData);
-    } catch (error) {
+    } catch {
       throw new DataStoreError(
         "データの保存に失敗しました",
         "STORAGE_SAVE_FAILED"
@@ -141,15 +137,15 @@ export class DataStore {
         return null;
       }
       
-      const decryptedData = await CryptoService.decrypt(encryptedData);
+      const decryptedData = await decryptData(encryptedData);
       return JSON.parse(decryptedData, (key, value) => {
         // 文字列をDateオブジェクトに復元
-        if (value && typeof value === "object" && value.__type === "Date") {
-          return new Date(value.value);
+        if (value && typeof value === "object" && value && "__dateType" in value && value.__dateType === "Date" && "value" in value) {
+          return new Date(value.value as string);
         }
         return value;
-      });
-    } catch (error) {
+      }) as T;
+    } catch {
       throw new DataStoreError(
         "データの読み込みに失敗しました",
         "STORAGE_LOAD_FAILED"
@@ -228,7 +224,7 @@ export class DataStore {
     try {
       const lists = await this.getAllQuestionLists();
       return lists.find(list => list.id === id) || null;
-    } catch (error) {
+    } catch {
       throw new DataStoreError(
         "質問リストの取得に失敗しました",
         "GET_FAILED"
@@ -496,7 +492,7 @@ export class DataStore {
     try {
       const lists = await this.getAllQuestionLists();
       return lists.filter(list => list.isTemplate);
-    } catch (error) {
+    } catch {
       throw new DataStoreError(
         "テンプレートの取得に失敗しました",
         "GET_TEMPLATES_FAILED"
@@ -591,11 +587,11 @@ export class DataStore {
   /**
    * 全てのデータを削除（データプライバシー対応）
    */
-  async clearAllData(): Promise<void> {
+  clearAllData(): void {
     try {
       localStorage.removeItem(STORAGE_KEYS.QUESTION_LISTS);
       localStorage.removeItem(STORAGE_KEYS.ENCRYPTION_KEY);
-    } catch (error) {
+    } catch {
       throw new DataStoreError(
         "データの削除に失敗しました",
         "CLEAR_DATA_FAILED"
@@ -610,7 +606,7 @@ export class DataStore {
     try {
       const lists = await this.getAllQuestionLists();
       return JSON.stringify(lists, null, 2);
-    } catch (error) {
+    } catch {
       throw new DataStoreError(
         "データのエクスポートに失敗しました",
         "EXPORT_FAILED"

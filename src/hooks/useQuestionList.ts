@@ -42,7 +42,7 @@ export function useQuestionList() {
 
   // 初期データ読み込み
   useEffect(() => {
-    handleError(loadQuestionLists, {
+    void handleError(loadQuestionLists, {
       successMessage: "質問リストを読み込みました",
     });
   }, [handleError, loadQuestionLists]);

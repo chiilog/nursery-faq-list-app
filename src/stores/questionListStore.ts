@@ -7,7 +7,6 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type {
   QuestionList,
-  Question,
   CreateQuestionListInput,
   UpdateQuestionListInput,
   CreateQuestionInput,
@@ -322,15 +321,10 @@ export const useQuestionListStore = create<QuestionListState>()(
       async answerQuestion(listId: string, questionId: string, answer: string) {
         const { updateQuestion } = get();
         
-        try {
-          await updateQuestion(listId, questionId, {
-            answer,
-            isAnswered: answer.trim().length > 0,
-          });
-        } catch (error) {
-          // updateQuestionでエラーハンドリング済み
-          throw error;
-        }
+        await updateQuestion(listId, questionId, {
+          answer,
+          isAnswered: answer.trim().length > 0,
+        });
       },
 
       async reorderQuestions(listId: string, fromIndex: number, toIndex: number) {
@@ -445,7 +439,7 @@ export const useQuestionListStore = create<QuestionListState>()(
           setLoading({ isLoading: true, operation: "全データを削除中..." });
           clearError();
           
-          await dataStore.clearAllData();
+          dataStore.clearAllData();
           
           // 状態をリセット
           set(initialState);
