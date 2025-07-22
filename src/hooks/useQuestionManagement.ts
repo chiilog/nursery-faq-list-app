@@ -12,14 +12,17 @@ import type { CreateQuestionInput, UpdateQuestionInput } from '../types/data';
  * 質問管理フック
  */
 export function useQuestionManagement() {
-  const {
-    addQuestion,
-    updateQuestion,
-    deleteQuestion,
-    answerQuestion,
-    reorderQuestions,
-    sortCurrentListByAnswerStatus,
-  } = useQuestionListStore();
+  // パフォーマンス最適化：必要なアクションのみを選択的に購読
+  const addQuestion = useQuestionListStore((state) => state.addQuestion);
+  const updateQuestion = useQuestionListStore((state) => state.updateQuestion);
+  const deleteQuestion = useQuestionListStore((state) => state.deleteQuestion);
+  const answerQuestion = useQuestionListStore((state) => state.answerQuestion);
+  const reorderQuestions = useQuestionListStore(
+    (state) => state.reorderQuestions
+  );
+  const sortCurrentListByAnswerStatus = useQuestionListStore(
+    (state) => state.sortCurrentListByAnswerStatus
+  );
 
   const { handleAsyncOperation } = useErrorHandler();
 

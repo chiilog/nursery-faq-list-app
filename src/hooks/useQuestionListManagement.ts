@@ -15,16 +15,23 @@ import type {
  * 質問リスト管理フック
  */
 export function useQuestionListManagement() {
-  const {
-    questionLists,
-    currentList,
-    loading,
-    loadQuestionLists,
-    createQuestionList,
-    updateQuestionList,
-    deleteQuestionList,
-    setCurrentList,
-  } = useQuestionListStore();
+  // パフォーマンス最適化：必要な状態とアクションのみを選択的に購読
+  const questionLists = useQuestionListStore((state) => state.questionLists);
+  const currentList = useQuestionListStore((state) => state.currentList);
+  const loading = useQuestionListStore((state) => state.loading);
+  const loadQuestionLists = useQuestionListStore(
+    (state) => state.loadQuestionLists
+  );
+  const createQuestionList = useQuestionListStore(
+    (state) => state.createQuestionList
+  );
+  const updateQuestionList = useQuestionListStore(
+    (state) => state.updateQuestionList
+  );
+  const deleteQuestionList = useQuestionListStore(
+    (state) => state.deleteQuestionList
+  );
+  const setCurrentList = useQuestionListStore((state) => state.setCurrentList);
 
   const { handleError, handleAsyncOperation } = useErrorHandler();
 

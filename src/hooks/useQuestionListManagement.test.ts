@@ -31,9 +31,12 @@ let mockStore: {
   setCurrentList: vi.fn(),
 };
 
-// モジュールのモック
+// モジュールのモック - セレクター対応
 vi.mock('../stores/questionListStore', () => ({
-  useQuestionListStore: () => mockStore,
+  useQuestionListStore: <T>(selector?: (state: typeof mockStore) => T) => {
+    if (!selector) return mockStore;
+    return selector(mockStore);
+  },
 }));
 
 vi.mock('./useErrorHandler', () => ({
