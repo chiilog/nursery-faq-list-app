@@ -84,9 +84,8 @@ export async function handleErrorWithRetry(
       if (attempt < maxRetries && isRetryable(lastError)) {
         options?.onRetry?.(attempt);
         // 指数バックオフで再試行間隔を調整
-        await new Promise((resolve) =>
-          setTimeout(resolve, Math.pow(2, attempt) * 1000)
-        );
+        const delay = Math.min(Math.pow(2, attempt) * 1000, 30000); // 最大30秒
+        await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
         break;
       }

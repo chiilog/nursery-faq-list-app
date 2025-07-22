@@ -77,19 +77,37 @@ export function isRetryable(error: AppError): boolean {
 }
 
 /**
+ * 致命的なエラーコード
+ */
+const CRITICAL_ERROR_CODES = [
+  'ENCRYPTION_FAILED',
+  'DECRYPTION_FAILED',
+  'STORAGE_LOAD_FAILED',
+] as const;
+
+/**
  * エラーが致命的かどうかを判定
  */
 export function isCriticalError(error: AppError): boolean {
   if (!error.code) return true;
 
-  const criticalCodes = [
-    'ENCRYPTION_FAILED',
-    'DECRYPTION_FAILED',
-    'STORAGE_LOAD_FAILED',
-  ];
-
-  return criticalCodes.includes(error.code);
+  return CRITICAL_ERROR_CODES.includes(
+    error.code as (typeof CRITICAL_ERROR_CODES)[number]
+  );
 }
+
+/**
+ * ユーザーアクション由来のエラーコード
+ */
+const USER_ACTION_ERROR_CODES = [
+  'VALIDATION_FAILED',
+  'DUPLICATE_TITLE',
+  'NOT_FOUND',
+  'LIST_NOT_FOUND',
+  'QUESTION_NOT_FOUND',
+  'TEMPLATE_NOT_FOUND',
+  'NOT_TEMPLATE',
+] as const;
 
 /**
  * エラーがユーザーアクション由来かどうかを判定
@@ -97,15 +115,7 @@ export function isCriticalError(error: AppError): boolean {
 export function isUserActionError(error: AppError): boolean {
   if (!error.code) return false;
 
-  const userActionCodes = [
-    'VALIDATION_FAILED',
-    'DUPLICATE_TITLE',
-    'NOT_FOUND',
-    'LIST_NOT_FOUND',
-    'QUESTION_NOT_FOUND',
-    'TEMPLATE_NOT_FOUND',
-    'NOT_TEMPLATE',
-  ];
-
-  return userActionCodes.includes(error.code);
+  return USER_ACTION_ERROR_CODES.includes(
+    error.code as (typeof USER_ACTION_ERROR_CODES)[number]
+  );
 }
