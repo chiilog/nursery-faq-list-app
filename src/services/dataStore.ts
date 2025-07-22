@@ -28,7 +28,7 @@ import {
 // ストレージキー定数
 const STORAGE_KEYS = {
   QUESTION_LISTS: 'nursery-qa-question-lists',
-  ENCRYPTION_KEY: 'nursery-qa-encryption-key',
+  KEY_DERIVATION_SALT: 'nursery-qa-key-salt',
 } as const;
 
 // データストアエラークラス
@@ -44,15 +44,66 @@ export class DataStoreError extends Error {
 
 /**
  * 基本的なデータ暗号化機能
- * Web Crypto APIを使用した簡易暗号化
+ * Web Crypto APIを使用したセキュア暗号化
  */
+
+// ソルトを取得または生成
+function getOrCreateSalt(): Uint8Array {
+  const storedSalt = localStorage.getItem(STORAGE_KEYS.KEY_DERIVATION_SALT);
+  if (storedSalt) {
+    try {
+      return new Uint8Array(
+        atob(storedSalt)
+          .split('')
+          .map((char) => char.charCodeAt(0))
+      );
+    } catch {
+      // 破損している場合は新しいソルトを生成
+    }
+  }
+
+  // 新しいソルトを生成して保存
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  localStorage.setItem(
+    STORAGE_KEYS.KEY_DERIVATION_SALT,
+    btoa(String.fromCharCode(...salt))
+  );
+  return salt;
+}
+
+// セッション固有のキーマテリアルを生成
+function getSessionKeyMaterial(): string {
+  // ブラウザセッション固有の情報を組み合わせて一意性を確保
+  const timestamp = Date.now().toString();
+  const random = Math.random().toString(36);
+  const userAgent = navigator.userAgent;
+  const language = navigator.language;
+
+  return `${timestamp}-${random}-${userAgent}-${language}`;
+}
+
 async function getCryptoKey(): Promise<CryptoKey> {
-  // 開発段階では固定キーを使用（本格運用時はより安全な方法を実装）
-  const keyData = new TextEncoder().encode('nursery-qa-app-key-32-chars!');
-  return await crypto.subtle.importKey(
+  const salt = getOrCreateSalt();
+  const keyMaterial = getSessionKeyMaterial();
+
+  // キーマテリアルをPBKDF2で強化
+  const baseKey = await crypto.subtle.importKey(
     'raw',
-    keyData,
-    { name: 'AES-GCM' },
+    new TextEncoder().encode(keyMaterial),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  return await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt']
   );
@@ -472,6 +523,79 @@ export class DataStore {
   }
 
   /**
+   * 複数の質問を一括更新
+   */
+  async updateQuestionsBatch(
+    listId: string,
+    updates: Array<{ questionId: string; updates: UpdateQuestionInput }>
+  ): Promise<void> {
+    if (!listId) {
+      throw new DataStoreError(
+        'リストIDが指定されていません',
+        'INVALID_LIST_ID'
+      );
+    }
+
+    if (!updates.length) {
+      return; // 更新がない場合は何もしない
+    }
+
+    try {
+      const lists = await this.getAllQuestionLists();
+      const listIndex = lists.findIndex((list) => list.id === listId);
+
+      if (listIndex === -1) {
+        throw new DataStoreError(
+          '指定された質問リストが見つかりません',
+          'LIST_NOT_FOUND'
+        );
+      }
+
+      let questionList = lists[listIndex];
+
+      // 全ての更新を適用
+      for (const { questionId, updates: questionUpdates } of updates) {
+        // バリデーション
+        const validation = validateUpdateQuestionInput(questionUpdates);
+        if (!validation.isValid) {
+          throw new DataStoreError(
+            `質問ID ${questionId} の更新データが無効です: ${validation.errors.join(', ')}`,
+            'VALIDATION_FAILED'
+          );
+        }
+
+        const question = questionList.questions.find(
+          (q) => q.id === questionId
+        );
+        if (!question) {
+          throw new DataStoreError(
+            `質問ID ${questionId} が見つかりません`,
+            'QUESTION_NOT_FOUND'
+          );
+        }
+
+        const updatedQuestion = { ...question, ...questionUpdates };
+        questionList = updateQuestionInList(
+          questionList,
+          questionId,
+          updatedQuestion
+        );
+      }
+
+      lists[listIndex] = questionList;
+      await this.saveQuestionLists(lists);
+    } catch (error) {
+      if (error instanceof DataStoreError) {
+        throw error;
+      }
+      throw new DataStoreError(
+        '質問の一括更新に失敗しました',
+        'BATCH_UPDATE_FAILED'
+      );
+    }
+  }
+
+  /**
    * 質問を削除
    */
   async deleteQuestion(listId: string, questionId: string): Promise<void> {
@@ -631,10 +755,12 @@ export class DataStore {
   /**
    * 全てのデータを削除（データプライバシー対応）
    */
-  clearAllData(): void {
+  async clearAllData(): Promise<void> {
     try {
       localStorage.removeItem(STORAGE_KEYS.QUESTION_LISTS);
-      localStorage.removeItem(STORAGE_KEYS.ENCRYPTION_KEY);
+      localStorage.removeItem(STORAGE_KEYS.KEY_DERIVATION_SALT);
+      // 非同期処理の一貫性のため
+      await Promise.resolve();
     } catch {
       throw new DataStoreError(
         'データの削除に失敗しました',

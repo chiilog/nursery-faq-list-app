@@ -86,9 +86,7 @@ interface QuestionListState {
   clearAllData: () => Promise<void>;
 
   // アクション: ユーティリティ
-  getQuestionListStats: (
-    listId: string
-  ) => {
+  getQuestionListStats: (listId: string) => {
     total: number;
     answered: number;
     unanswered: number;
@@ -412,12 +410,13 @@ export const useQuestionListStore = create<QuestionListState>()(
             order: index,
           }));
 
-          // 個別に更新（より効率的な方法は将来的に実装）
-          for (const question of reorderedQuestions) {
-            await dataStore.updateQuestion(listId, question.id, {
-              order: question.order,
-            });
-          }
+          // バッチ更新で効率的に処理
+          const batchUpdates = reorderedQuestions.map((question) => ({
+            questionId: question.id,
+            updates: { order: question.order },
+          }));
+
+          await dataStore.updateQuestionsBatch(listId, batchUpdates);
 
           // 現在のリストを更新
           await setCurrentList(listId);
@@ -519,14 +518,14 @@ export const useQuestionListStore = create<QuestionListState>()(
         set({ loading });
       },
 
-      clearAllData() {
+      async clearAllData() {
         const { setLoading, clearError } = get();
 
         try {
           setLoading({ isLoading: true, operation: '全データを削除中...' });
           clearError();
 
-          dataStore.clearAllData();
+          await dataStore.clearAllData();
 
           // 状態をリセット
           set(initialState);
@@ -579,12 +578,13 @@ export const useQuestionListStore = create<QuestionListState>()(
             currentList.questions
           );
 
-          // 順序を一括更新
-          for (const question of sortedQuestions) {
-            await dataStore.updateQuestion(currentList.id, question.id, {
-              order: question.order,
-            });
-          }
+          // バッチ更新で効率的に処理
+          const batchUpdates = sortedQuestions.map((question) => ({
+            questionId: question.id,
+            updates: { order: question.order },
+          }));
+
+          await dataStore.updateQuestionsBatch(currentList.id, batchUpdates);
 
           // 現在のリストを更新
           await setCurrentList(currentList.id);
