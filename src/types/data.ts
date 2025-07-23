@@ -8,7 +8,7 @@ export interface Question {
   text: string;
   answer?: string;
   isAnswered: boolean;
-  priority: "high" | "medium" | "low";
+  priority: 'high' | 'medium' | 'low';
   category?: string;
   order: number;
   answeredBy?: string; // 回答者ID
@@ -31,13 +31,13 @@ export interface SyncState {
   isOnline: boolean;
   lastSyncAt?: Date;
   pendingChanges: number;
-  conflictResolution?: "local" | "remote" | "manual";
+  conflictResolution?: 'local' | 'remote' | 'manual';
 }
 
 // 質問作成時の入力データ型
 export interface CreateQuestionInput {
   text: string;
-  priority?: "high" | "medium" | "low";
+  priority?: 'high' | 'medium' | 'low';
   category?: string;
 }
 
@@ -53,7 +53,7 @@ export interface CreateQuestionListInput {
 export interface UpdateQuestionInput {
   text?: string;
   answer?: string;
-  priority?: "high" | "medium" | "low";
+  priority?: 'high' | 'medium' | 'low';
   category?: string;
   order?: number;
 }
@@ -63,4 +63,12 @@ export interface UpdateQuestionListInput {
   title?: string;
   nurseryName?: string;
   visitDate?: Date;
+}
+
+// 質問リストの統計情報型
+export interface QuestionListStats {
+  total: number;
+  answered: number;
+  unanswered: number;
+  progress: number;
 }
