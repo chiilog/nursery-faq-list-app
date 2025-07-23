@@ -30,6 +30,17 @@ import { isRetryable } from './errorClassification';
 // モック型安全性の確保
 const mockIsRetryable = vi.mocked(isRetryable);
 
+// テストヘルパー関数
+const createTestAppError = (
+  message: string,
+  code: string = 'TEST_ERROR'
+): AppError => {
+  const error = new Error(message);
+  (error as AppError).code = code;
+  (error as AppError).timestamp = new Date();
+  return error as AppError;
+};
+
 describe('errorOperations', () => {
   // テスト毎の共通セットアップ
   beforeEach(() => {
@@ -44,7 +55,7 @@ describe('errorOperations', () => {
 
   describe('handleError', () => {
     describe('成功時の振る舞い', () => {
-      test('Given: 成功する操作, When: handleErrorを実行, Then: clearErrorが呼ばれoperationが実行される', async () => {
+      test('成功する操作の場合はclearErrorを呼んでから操作を実行する', async () => {
         // Given
         const mockOperation = vi.fn().mockResolvedValue(undefined);
         const mockClearError = vi.fn();
@@ -57,7 +68,7 @@ describe('errorOperations', () => {
         expect(mockOperation).toHaveBeenCalledOnce();
       });
 
-      test('Given: 成功メッセージオプション, When: 操作が成功, Then: 成功メッセージが出力される', async () => {
+      test('成功メッセージオプションがある場合は操作成功時にメッセージを出力する', async () => {
         // Given
         const consoleSpy = vi
           .spyOn(console, 'log')
@@ -78,7 +89,7 @@ describe('errorOperations', () => {
         consoleSpy.mockRestore();
       });
 
-      test('Given: onSuccessコールバック, When: 操作が成功, Then: onSuccessが実行される', async () => {
+      test('onSuccessコールバックがある場合は操作成功時に実行する', async () => {
         // Given
         const mockOperation = vi.fn().mockResolvedValue(undefined);
         const mockClearError = vi.fn();
@@ -94,7 +105,7 @@ describe('errorOperations', () => {
     });
 
     describe('エラー時の振る舞い', () => {
-      test('Given: 失敗する操作, When: handleErrorを実行, Then: clearErrorは呼ばれるがoperationでエラーが発生', async () => {
+      test('失敗する操作でもclearErrorは呼ばれる', async () => {
         // Given
         const testError: AppError = {
           message: 'テストエラー',
@@ -112,7 +123,7 @@ describe('errorOperations', () => {
         expect(mockOperation).toHaveBeenCalledOnce();
       });
 
-      test('Given: onErrorコールバック, When: 操作が失敗, Then: onErrorにAppErrorが渡される', async () => {
+      test('onErrorコールバックがある場合は操作失敗時にAppErrorを渡して実行する', async () => {
         // Given
         const testError: AppError = {
           message: 'テストエラー',
@@ -132,7 +143,7 @@ describe('errorOperations', () => {
         expect(mockOnError).toHaveBeenCalledWith(testError);
       });
 
-      test('Given: オプションなし, When: 操作が失敗, Then: エラーを握りつぶして正常終了', async () => {
+      test('オプションがない場合はエラーを握りつぶして正常終了する', async () => {
         // Given
         const testError: AppError = {
           message: 'テストエラー',
@@ -152,7 +163,7 @@ describe('errorOperations', () => {
 
   describe('handleErrorWithRetry', () => {
     describe('成功時の振る舞い', () => {
-      test('Given: 初回で成功する操作, When: handleErrorWithRetryを実行, Then: 1回のみ実行され成功', async () => {
+      test('初回で成功する操作は1回のみ実行される', async () => {
         // Given
         const mockOperation = vi.fn().mockResolvedValue(undefined);
         const mockClearError = vi.fn();
@@ -165,7 +176,7 @@ describe('errorOperations', () => {
         expect(mockOperation).toHaveBeenCalledOnce();
       });
 
-      test('Given: 成功メッセージオプション, When: 再試行後に成功, Then: 成功メッセージが出力される', async () => {
+      test('成功メッセージオプションがある場合は再試行後の成功時にメッセージを出力する', async () => {
         // Given
         const consoleSpy = vi
           .spyOn(console, 'log')
@@ -186,7 +197,7 @@ describe('errorOperations', () => {
         consoleSpy.mockRestore();
       });
 
-      test('Given: onSuccessコールバック, When: 再試行後に成功, Then: onSuccessが実行される', async () => {
+      test('onSuccessコールバックがある場合は再試行後の成功時に実行する', async () => {
         // Given
         const mockOperation = vi.fn().mockResolvedValue(undefined);
         const mockClearError = vi.fn();
@@ -202,7 +213,7 @@ describe('errorOperations', () => {
     });
 
     describe('再試行ロジックの振る舞い', () => {
-      test('Given: 2回目で成功する操作, When: maxRetries=3で実行, Then: 2回実行され成功', async () => {
+      test('2回目で成功する操作はmaxRetriesまで再試行して2回実行される', async () => {
         // Given
         const retryableError: AppError = {
           message: 'リトライ可能エラー',
@@ -228,7 +239,7 @@ describe('errorOperations', () => {
         expect(mockClearError).toHaveBeenCalledTimes(2);
       });
 
-      test('Given: onRetryコールバック, When: 再試行が発生, Then: 試行回数付きでonRetryが実行される', async () => {
+      test('onRetryコールバックがある場合は再試行時に試行回数を渡して実行する', async () => {
         // Given
         const retryableError: AppError = {
           message: 'リトライ可能エラー',
@@ -259,7 +270,7 @@ describe('errorOperations', () => {
         expect(mockOnRetry).toHaveBeenCalledWith(1);
       });
 
-      test('Given: 再試行不可能なエラー, When: handleErrorWithRetryを実行, Then: 1回のみ実行され再試行されない', async () => {
+      test('再試行不可能なエラーの場合は1回のみ実行され再試行されない', async () => {
         // Given
         const nonRetryableError: AppError = {
           message: '再試行不可能エラー',
@@ -280,7 +291,7 @@ describe('errorOperations', () => {
         expect(mockOnError).toHaveBeenCalledWith(nonRetryableError);
       });
 
-      test('Given: maxRetries回全て失敗, When: handleErrorWithRetryを実行, Then: maxRetries回実行されonErrorが呼ばれる', async () => {
+      test('maxRetries回全て失敗した場合はmaxRetries回実行してonErrorを呼ぶ', async () => {
         // Given
         const retryableError: AppError = {
           message: 'リトライ可能エラー',
@@ -353,19 +364,35 @@ describe('errorOperations', () => {
         mockIsRetryable.mockReturnValue(true);
 
         // When
-        const promise = handleErrorWithRetry(mockOperation, mockClearError, 3);
+        const promise = handleErrorWithRetry(mockOperation, mockClearError, 6);
 
-        // 1回目: 2^1 * 1000 = 2000ms
+        // 初回実行は即座に行われる
+        expect(mockOperation).toHaveBeenCalledTimes(1);
+
+        // 1回目の再試行: 2^1 * 1000 = 2000ms待機後
         await vi.advanceTimersByTimeAsync(2000);
+        expect(mockOperation).toHaveBeenCalledTimes(2);
 
-        // 2回目: 2^2 * 1000 = 4000ms
+        // 2回目の再試行: 2^2 * 1000 = 4000ms待機後
         await vi.advanceTimersByTimeAsync(4000);
+        expect(mockOperation).toHaveBeenCalledTimes(3);
+
+        // 3回目の再試行: 2^3 * 1000 = 8000ms待機後
+        await vi.advanceTimersByTimeAsync(8000);
+        expect(mockOperation).toHaveBeenCalledTimes(4);
+
+        // 4回目の再試行: 2^4 * 1000 = 16000ms待機後
+        await vi.advanceTimersByTimeAsync(16000);
+        expect(mockOperation).toHaveBeenCalledTimes(5);
+
+        // 5回目の再試行: 2^5 * 1000 = 32000ms → 30000msに制限されるはず
+        await vi.advanceTimersByTimeAsync(30000);
+        expect(mockOperation).toHaveBeenCalledTimes(6);
 
         await promise;
 
-        // Then: 指数バックオフのロジックが実装されていることを確認
-        // 実際の待機時間の制限（最大30秒）は実装に組み込まれている
-        expect(mockOperation).toHaveBeenCalledTimes(3);
+        // Then: 6回実行されたことを確認（初回 + 5回の再試行）
+        expect(mockOperation).toHaveBeenCalledTimes(6);
       });
     });
   });
@@ -474,7 +501,7 @@ describe('errorOperations', () => {
         expect(result).toBeNull();
       });
 
-      test('Given: onErrorコールバック, When: 操作が失敗, Then: onErrorにAppErrorが渡される', async () => {
+      test('onErrorコールバックがある場合は操作失敗時にAppErrorを渡して実行する', async () => {
         // Given
         const testError: AppError = {
           message: '非同期操作エラー',
@@ -494,7 +521,7 @@ describe('errorOperations', () => {
         expect(mockOnError).toHaveBeenCalledWith(testError);
       });
 
-      test('Given: オプションなし, When: 操作が失敗, Then: エラーを握りつぶしnullを返す', async () => {
+      test('オプションがない場合はエラーを握りつぶしnullを返す', async () => {
         // Given
         const testError: AppError = {
           message: '非同期操作エラー',
@@ -516,7 +543,7 @@ describe('errorOperations', () => {
     });
 
     describe('型安全性の確認', () => {
-      test('Given: ジェネリック型の操作, When: handleAsyncOperationを実行, Then: 型安全に結果が返される', async () => {
+      test('ジェネリック型の操作で型安全に結果を返す', async () => {
         // Given
         interface TestData {
           id: number;
@@ -545,20 +572,18 @@ describe('errorOperations', () => {
   });
 
   describe('統合テスト: 実際の使用シナリオ', () => {
-    test('Given: 複数の操作を組み合わせ, When: 段階的にエラーハンドリングを実行, Then: 期待通りの動作をする', async () => {
+    test('複数の操作を組み合わせて段階的にエラーハンドリングを実行できる', async () => {
       // Given
       const mockData = { id: 1, value: 'test' };
-      const createAppError = (message: string): AppError => {
-        const error = new Error(message);
-        (error as AppError).code = 'TEMPORARY_ERROR';
-        (error as AppError).timestamp = new Date();
-        return error as AppError;
-      };
 
       const mockAsyncOperation = vi
         .fn()
-        .mockRejectedValueOnce(createAppError('Temporary error 1'))
-        .mockRejectedValueOnce(createAppError('Temporary error 2'))
+        .mockRejectedValueOnce(
+          createTestAppError('Temporary error 1', 'TEMPORARY_ERROR')
+        )
+        .mockRejectedValueOnce(
+          createTestAppError('Temporary error 2', 'TEMPORARY_ERROR')
+        )
         .mockResolvedValueOnce(mockData);
 
       const mockClearError = vi.fn();
