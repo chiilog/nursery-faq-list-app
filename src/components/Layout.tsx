@@ -28,7 +28,9 @@ export const Layout = ({ children }: LayoutProps) => {
 
             <nav aria-label="メインナビゲーション">
               {isMobile ? (
-                <Button aria-label="メニュー">メニュー</Button>
+                <Button aria-label="メニュー" variant="outline">
+                  メニュー
+                </Button>
               ) : (
                 <Flex gap={4} align="center">
                   <ChakraLink as={RouterLink} to="/" fontWeight="medium">
