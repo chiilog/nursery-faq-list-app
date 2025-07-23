@@ -108,6 +108,12 @@ export const QuestionList = ({
               <Box
                 cursor="pointer"
                 onClick={() => handleQuestionClick(question.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleQuestionClick(question.id);
+                  }
+                }}
                 _hover={{ bg: 'gray.50' }}
                 minH="44px"
                 p={4}

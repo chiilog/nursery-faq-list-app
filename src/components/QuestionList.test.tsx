@@ -135,19 +135,16 @@ describe('QuestionList', () => {
       renderWithProviders(<QuestionList questionList={mockQuestionList} />);
 
       // 最初の質問項目のクリック可能領域を取得
-      const questionButtons = screen.getAllByRole('button');
-      const firstQuestionButton = questionButtons.find((button) =>
-        button
-          .getAttribute('aria-label')
-          ?.includes('保育時間は何時から何時までですか？')
-      );
+      const firstQuestionButton = screen.getByRole('button', {
+        name: /質問: 保育時間は何時から何時までですか？/,
+      });
 
       // クリック前にはInputがないことを確認
       expect(
         screen.queryByPlaceholderText(/回答を入力してください/)
       ).not.toBeInTheDocument();
 
-      await user.click(firstQuestionButton!);
+      await user.click(firstQuestionButton);
 
       // 回答入力フィールドが表示される
       expect(
@@ -167,13 +164,10 @@ describe('QuestionList', () => {
       );
 
       // 質問をクリックして展開
-      const questionButtons = screen.getAllByRole('button');
-      const firstQuestionButton = questionButtons.find((button) =>
-        button
-          .getAttribute('aria-label')
-          ?.includes('保育時間は何時から何時までですか？')
-      );
-      await user.click(firstQuestionButton!);
+      const firstQuestionButton = screen.getByRole('button', {
+        name: /質問: 保育時間は何時から何時までですか？/,
+      });
+      await user.click(firstQuestionButton);
 
       // 回答を入力
       const answerInput = await waitFor(() =>
