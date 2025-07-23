@@ -14,8 +14,8 @@ import {
 import type { AppError } from '../stores/questionListStore';
 
 describe('getErrorSeverity', () => {
-  describe('Given an error without code', () => {
-    test('When getting error severity, Then should return error level', () => {
+  describe('エラーコードがないエラー', () => {
+    test('エラー重要度を取得するとerrorレベルを返す', () => {
       // Given: エラーコードがないエラー
       const error: AppError = {
         message: 'Unknown error',
@@ -29,7 +29,7 @@ describe('getErrorSeverity', () => {
       expect(result).toBe('error');
     });
 
-    test('When error code is undefined, Then should return error level', () => {
+    test('エラーコードがundefinedの場合はerrorレベルを返す', () => {
       // Given: エラーコードがundefinedのエラー
       const error: AppError = {
         message: 'Error with undefined code',
@@ -45,8 +45,8 @@ describe('getErrorSeverity', () => {
     });
   });
 
-  describe('Given warning level error codes', () => {
-    test('When error code is DUPLICATE_TITLE, Then should return warning level', () => {
+  describe('warningレベルのエラーコード', () => {
+    test('DUPLICATE_TITLEエラーの場合はwarningレベルを返す', () => {
       // Given: DUPLICATE_TITLEエラー
       const error: AppError = {
         message: 'Duplicate title found',
@@ -61,7 +61,7 @@ describe('getErrorSeverity', () => {
       expect(result).toBe('warning');
     });
 
-    test('When error code is NOT_FOUND, Then should return warning level', () => {
+    test('NOT_FOUNDエラーの場合はwarningレベルを返す', () => {
       // Given: NOT_FOUNDエラー
       const error: AppError = {
         message: 'Resource not found',
@@ -76,7 +76,7 @@ describe('getErrorSeverity', () => {
       expect(result).toBe('warning');
     });
 
-    test('When error code is LIST_NOT_FOUND, Then should return warning level', () => {
+    test('LIST_NOT_FOUNDエラーの場合はwarningレベルを返す', () => {
       // Given: LIST_NOT_FOUNDエラー
       const error: AppError = {
         message: 'List not found',
@@ -91,7 +91,7 @@ describe('getErrorSeverity', () => {
       expect(result).toBe('warning');
     });
 
-    test('When error code is QUESTION_NOT_FOUND, Then should return warning level', () => {
+    test('QUESTION_NOT_FOUNDエラーの場合はwarningレベルを返す', () => {
       // Given: QUESTION_NOT_FOUNDエラー
       const error: AppError = {
         message: 'Question not found',
@@ -106,7 +106,7 @@ describe('getErrorSeverity', () => {
       expect(result).toBe('warning');
     });
 
-    test('When error code is TEMPLATE_NOT_FOUND, Then should return warning level', () => {
+    test('TEMPLATE_NOT_FOUNDエラーの場合はwarningレベルを返す', () => {
       // Given: TEMPLATE_NOT_FOUNDエラー
       const error: AppError = {
         message: 'Template not found',
@@ -121,7 +121,7 @@ describe('getErrorSeverity', () => {
       expect(result).toBe('warning');
     });
 
-    test('When error code is NOT_TEMPLATE, Then should return warning level', () => {
+    test('NOT_TEMPLATEエラーの場合はwarningレベルを返す', () => {
       // Given: NOT_TEMPLATEエラー
       const error: AppError = {
         message: 'Not a template',
@@ -137,8 +137,8 @@ describe('getErrorSeverity', () => {
     });
   });
 
-  describe('Given info level error codes', () => {
-    test('When error code is VALIDATION_FAILED, Then should return info level', () => {
+  describe('infoレベルのエラーコード', () => {
+    test('VALIDATION_FAILEDエラーの場合はinfoレベルを返す', () => {
       // Given: VALIDATION_FAILEDエラー
       const error: AppError = {
         message: 'Validation failed',
@@ -154,8 +154,8 @@ describe('getErrorSeverity', () => {
     });
   });
 
-  describe('Given unrecognized error codes', () => {
-    test('When error code is not in predefined categories, Then should return error level', () => {
+  describe('未定義のエラーコード', () => {
+    test('事前定義のカテゴリにないエラーコードの場合はerrorレベルを返す', () => {
       // Given: 未定義のエラーコード
       const error: AppError = {
         message: 'Unknown error type',
@@ -173,8 +173,8 @@ describe('getErrorSeverity', () => {
 });
 
 describe('isRetryable', () => {
-  describe('Given an error without code', () => {
-    test('When checking retry possibility, Then should return false', () => {
+  describe('エラーコードがないエラー', () => {
+    test('再試行可能性を確認するとfalseを返す', () => {
       // Given: エラーコードがないエラー
       const error: AppError = {
         message: 'Unknown error',
@@ -188,7 +188,7 @@ describe('isRetryable', () => {
       expect(result).toBe(false);
     });
 
-    test('When error code is undefined, Then should return false', () => {
+    test('エラーコードがundefinedの場合はfalseを返す', () => {
       // Given: エラーコードがundefinedのエラー
       const error: AppError = {
         message: 'Error with undefined code',
@@ -204,8 +204,8 @@ describe('isRetryable', () => {
     });
   });
 
-  describe('Given retryable error codes', () => {
-    test('When error code is LOAD_FAILED, Then should return true', () => {
+  describe('再試行可能なエラーコード', () => {
+    test('LOAD_FAILEDエラーの場合はtrueを返す', () => {
       // Given: LOAD_FAILEDエラー
       const error: AppError = {
         message: 'Load operation failed',
@@ -220,7 +220,7 @@ describe('isRetryable', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is SAVE_FAILED, Then should return true', () => {
+    test('SAVE_FAILEDエラーの場合はtrueを返す', () => {
       // Given: SAVE_FAILEDエラー
       const error: AppError = {
         message: 'Save operation failed',
@@ -235,7 +235,7 @@ describe('isRetryable', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is CREATE_FAILED, Then should return true', () => {
+    test('CREATE_FAILEDエラーの場合はtrueを返す', () => {
       // Given: CREATE_FAILEDエラー
       const error: AppError = {
         message: 'Create operation failed',
@@ -250,7 +250,7 @@ describe('isRetryable', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is UPDATE_FAILED, Then should return true', () => {
+    test('UPDATE_FAILEDエラーの場合はtrueを返す', () => {
       // Given: UPDATE_FAILEDエラー
       const error: AppError = {
         message: 'Update operation failed',
@@ -265,7 +265,7 @@ describe('isRetryable', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is DELETE_FAILED, Then should return true', () => {
+    test('DELETE_FAILEDエラーの場合はtrueを返す', () => {
       // Given: DELETE_FAILEDエラー
       const error: AppError = {
         message: 'Delete operation failed',
@@ -280,7 +280,7 @@ describe('isRetryable', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is STORAGE_SAVE_FAILED, Then should return true', () => {
+    test('STORAGE_SAVE_FAILEDエラーの場合はtrueを返す', () => {
       // Given: STORAGE_SAVE_FAILEDエラー
       const error: AppError = {
         message: 'Storage save failed',
@@ -295,7 +295,7 @@ describe('isRetryable', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is STORAGE_LOAD_FAILED, Then should return true', () => {
+    test('STORAGE_LOAD_FAILEDエラーの場合はtrueを返す', () => {
       // Given: STORAGE_LOAD_FAILEDエラー
       const error: AppError = {
         message: 'Storage load failed',
@@ -310,7 +310,7 @@ describe('isRetryable', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is NETWORK_ERROR, Then should return true', () => {
+    test('NETWORK_ERRORエラーの場合はtrueを返す', () => {
       // Given: NETWORK_ERRORエラー
       const error: AppError = {
         message: 'Network error occurred',
@@ -325,7 +325,7 @@ describe('isRetryable', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is SYNC_FAILED, Then should return true', () => {
+    test('SYNC_FAILEDエラーの場合はtrueを返す', () => {
       // Given: SYNC_FAILEDエラー
       const error: AppError = {
         message: 'Sync operation failed',
@@ -341,8 +341,8 @@ describe('isRetryable', () => {
     });
   });
 
-  describe('Given non-retryable error codes', () => {
-    test('When error code is not retryable, Then should return false', () => {
+  describe('再試行不可能なエラーコード', () => {
+    test('再試行不可能なエラーコードの場合はfalseを返す', () => {
       // Given: 再試行不可能なエラーコード
       const error: AppError = {
         message: 'Validation failed',
@@ -360,8 +360,8 @@ describe('isRetryable', () => {
 });
 
 describe('isCriticalError', () => {
-  describe('Given an error without code', () => {
-    test('When checking critical status, Then should return true', () => {
+  describe('エラーコードがないエラー', () => {
+    test('致命的エラーかどうかを確認するとtrueを返す', () => {
       // Given: エラーコードがないエラー
       const error: AppError = {
         message: 'Unknown error',
@@ -375,7 +375,7 @@ describe('isCriticalError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is undefined, Then should return true', () => {
+    test('エラーコードがundefinedの場合はtrueを返す', () => {
       // Given: エラーコードがundefinedのエラー
       const error: AppError = {
         message: 'Error with undefined code',
@@ -391,8 +391,8 @@ describe('isCriticalError', () => {
     });
   });
 
-  describe('Given critical error codes', () => {
-    test('When error code is ENCRYPTION_FAILED, Then should return true', () => {
+  describe('致命的エラーコード', () => {
+    test('ENCRYPTION_FAILEDエラーの場合はtrueを返す', () => {
       // Given: ENCRYPTION_FAILEDエラー
       const error: AppError = {
         message: 'Encryption failed',
@@ -407,7 +407,7 @@ describe('isCriticalError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is DECRYPTION_FAILED, Then should return true', () => {
+    test('DECRYPTION_FAILEDエラーの場合はtrueを返す', () => {
       // Given: DECRYPTION_FAILEDエラー
       const error: AppError = {
         message: 'Decryption failed',
@@ -422,7 +422,7 @@ describe('isCriticalError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is STORAGE_LOAD_FAILED, Then should return true', () => {
+    test('STORAGE_LOAD_FAILEDエラーの場合はtrueを返す', () => {
       // Given: STORAGE_LOAD_FAILEDエラー
       const error: AppError = {
         message: 'Storage load failed',
@@ -438,8 +438,8 @@ describe('isCriticalError', () => {
     });
   });
 
-  describe('Given non-critical error codes', () => {
-    test('When error code is not critical, Then should return false', () => {
+  describe('致命的でないエラーコード', () => {
+    test('致命的でないエラーコードの場合はfalseを返す', () => {
       // Given: 致命的でないエラーコード
       const error: AppError = {
         message: 'Validation failed',
@@ -457,8 +457,8 @@ describe('isCriticalError', () => {
 });
 
 describe('isUserActionError', () => {
-  describe('Given an error without code', () => {
-    test('When checking user action origin, Then should return false', () => {
+  describe('エラーコードがないエラー', () => {
+    test('ユーザーアクション由来かどうかを確認するとfalseを返す', () => {
       // Given: エラーコードがないエラー
       const error: AppError = {
         message: 'Unknown error',
@@ -472,7 +472,7 @@ describe('isUserActionError', () => {
       expect(result).toBe(false);
     });
 
-    test('When error code is undefined, Then should return false', () => {
+    test('エラーコードがundefinedの場合はfalseを返す', () => {
       // Given: エラーコードがundefinedのエラー
       const error: AppError = {
         message: 'Error with undefined code',
@@ -488,8 +488,8 @@ describe('isUserActionError', () => {
     });
   });
 
-  describe('Given user action error codes', () => {
-    test('When error code is VALIDATION_FAILED, Then should return true', () => {
+  describe('ユーザーアクション由来のエラーコード', () => {
+    test('VALIDATION_FAILEDエラーの場合はtrueを返す', () => {
       // Given: VALIDATION_FAILEDエラー
       const error: AppError = {
         message: 'Validation failed',
@@ -504,7 +504,7 @@ describe('isUserActionError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is DUPLICATE_TITLE, Then should return true', () => {
+    test('DUPLICATE_TITLEエラーの場合はtrueを返す', () => {
       // Given: DUPLICATE_TITLEエラー
       const error: AppError = {
         message: 'Duplicate title found',
@@ -519,7 +519,7 @@ describe('isUserActionError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is NOT_FOUND, Then should return true', () => {
+    test('NOT_FOUNDエラーの場合はtrueを返す', () => {
       // Given: NOT_FOUNDエラー
       const error: AppError = {
         message: 'Resource not found',
@@ -534,7 +534,7 @@ describe('isUserActionError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is LIST_NOT_FOUND, Then should return true', () => {
+    test('LIST_NOT_FOUNDエラーの場合はtrueを返す', () => {
       // Given: LIST_NOT_FOUNDエラー
       const error: AppError = {
         message: 'List not found',
@@ -549,7 +549,7 @@ describe('isUserActionError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is QUESTION_NOT_FOUND, Then should return true', () => {
+    test('QUESTION_NOT_FOUNDエラーの場合はtrueを返す', () => {
       // Given: QUESTION_NOT_FOUNDエラー
       const error: AppError = {
         message: 'Question not found',
@@ -564,7 +564,7 @@ describe('isUserActionError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is TEMPLATE_NOT_FOUND, Then should return true', () => {
+    test('TEMPLATE_NOT_FOUNDエラーの場合はtrueを返す', () => {
       // Given: TEMPLATE_NOT_FOUNDエラー
       const error: AppError = {
         message: 'Template not found',
@@ -579,7 +579,7 @@ describe('isUserActionError', () => {
       expect(result).toBe(true);
     });
 
-    test('When error code is NOT_TEMPLATE, Then should return true', () => {
+    test('NOT_TEMPLATEエラーの場合はtrueを返す', () => {
       // Given: NOT_TEMPLATEエラー
       const error: AppError = {
         message: 'Not a template',
@@ -595,8 +595,8 @@ describe('isUserActionError', () => {
     });
   });
 
-  describe('Given non-user action error codes', () => {
-    test('When error code is not from user action, Then should return false', () => {
+  describe('ユーザーアクション由来でないエラーコード', () => {
+    test('ユーザーアクション由来でないエラーコードの場合はfalseを返す', () => {
       // Given: ユーザーアクション由来でないエラーコード
       const error: AppError = {
         message: 'Network error occurred',

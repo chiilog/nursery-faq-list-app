@@ -324,7 +324,7 @@ describe('errorOperations', () => {
     });
 
     describe('指数バックオフの振る舞い', () => {
-      test('Given: 再試行が必要な状況, When: 複数回再試行, Then: 指数的に待機時間が増加', async () => {
+      test('再試行が必要な場合は指数的に待機時間が増加する', async () => {
         // Given
         const retryableError: AppError = {
           message: 'リトライ可能エラー',
@@ -352,7 +352,7 @@ describe('errorOperations', () => {
         expect(mockOperation).toHaveBeenCalledTimes(3);
       });
 
-      test('Given: 長時間の指数バックオフ, When: 待機時間が30秒を超える, Then: 最大30秒に制限される', async () => {
+      test('待機時間が30秒を超える場合は最大30秒に制限される', async () => {
         // Given
         const retryableError: AppError = {
           message: 'リトライ可能エラー',
@@ -399,7 +399,7 @@ describe('errorOperations', () => {
 
   describe('handleAsyncOperation', () => {
     describe('成功時の振る舞い', () => {
-      test('Given: 成功する非同期操作, When: handleAsyncOperationを実行, Then: clearErrorが呼ばれoperationが実行され結果が返される', async () => {
+      test('成功する非同期操作はclearErrorを呼んでから実行し結果を返す', async () => {
         // Given
         const expectedResult = { data: 'テストデータ' };
         const mockOperation = vi.fn().mockResolvedValue(expectedResult);
@@ -417,7 +417,7 @@ describe('errorOperations', () => {
         expect(result).toBe(expectedResult);
       });
 
-      test('Given: ローディングメッセージオプション, When: 操作を実行, Then: ローディングメッセージが出力される', async () => {
+      test('ローディングメッセージオプションがある場合は操作実行時にメッセージを出力する', async () => {
         // Given
         const consoleSpy = vi
           .spyOn(console, 'log')
@@ -438,7 +438,7 @@ describe('errorOperations', () => {
         consoleSpy.mockRestore();
       });
 
-      test('Given: 成功メッセージオプション, When: 操作が成功, Then: 成功メッセージが出力される', async () => {
+      test('成功メッセージオプションがある場合は操作成功時にメッセージを出力する', async () => {
         // Given
         const consoleSpy = vi
           .spyOn(console, 'log')
@@ -459,7 +459,7 @@ describe('errorOperations', () => {
         consoleSpy.mockRestore();
       });
 
-      test('Given: onSuccessコールバック, When: 操作が成功, Then: onSuccessに結果が渡される', async () => {
+      test('onSuccessコールバックがある場合は操作成功時に結果を渡して実行する', async () => {
         // Given
         const expectedResult = { id: 1, name: 'テスト' };
         const mockOperation = vi.fn().mockResolvedValue(expectedResult);
@@ -479,7 +479,7 @@ describe('errorOperations', () => {
     });
 
     describe('エラー時の振る舞い', () => {
-      test('Given: 失敗する非同期操作, When: handleAsyncOperationを実行, Then: clearErrorは呼ばれnullが返される', async () => {
+      test('失敗する非同期操作はclearErrorを呼びnullを返す', async () => {
         // Given
         const testError: AppError = {
           message: '非同期操作エラー',

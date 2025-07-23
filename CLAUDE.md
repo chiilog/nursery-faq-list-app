@@ -11,7 +11,7 @@
 
 タスクを実行する時は、設計書を常に確認してください。設計書に書かれていないことは実行しないでください。
 
-GitHubにコミットする時は、`.kiro/steering/commit-message.md` のコミットルールに従ってください。
+GitのコミットはConventional Commitsの仕様に従うこと
 
 ## コード品質
 
