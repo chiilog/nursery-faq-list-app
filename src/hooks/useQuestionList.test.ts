@@ -120,9 +120,16 @@ describe('質問リストMVPフック', () => {
       const { result } = renderHookWithChakra(() => useQuestionList());
 
       // addQuestionToListが呼び出されることを確認
-      await result.current.addQuestionToList('テスト質問');
+      await result.current.addQuestionToList('list-id', {
+        text: 'テスト質問',
+        category: 'テスト',
+      });
       expect(mockQuestionManagement.addQuestionToList).toHaveBeenCalledWith(
-        'テスト質問'
+        'list-id',
+        {
+          text: 'テスト質問',
+          category: 'テスト',
+        }
       );
     });
 
@@ -130,8 +137,13 @@ describe('質問リストMVPフック', () => {
       const { result } = renderHookWithChakra(() => useQuestionList());
 
       // answerQuestionInListが呼び出されることを確認
-      await result.current.answerQuestionInList('question-id', 'テスト回答');
+      await result.current.answerQuestionInList(
+        'list-id',
+        'question-id',
+        'テスト回答'
+      );
       expect(mockQuestionManagement.answerQuestionInList).toHaveBeenCalledWith(
+        'list-id',
         'question-id',
         'テスト回答'
       );
