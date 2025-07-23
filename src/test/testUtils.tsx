@@ -37,14 +37,16 @@ export function renderHookWithChakra<TResult, TProps>(
   });
 }
 
-// Chakra UIとReact Routerを含むWrapper
-const AllProvidersWrapper = ({ children }: { children: ReactNode }) => (
-  <MemoryRouter>
-    <ChakraProvider value={system}>{children}</ChakraProvider>
-  </MemoryRouter>
-);
-
 // コンポーネント用のrender関数（React Router対応）
-export function renderWithProviders(ui: React.ReactElement): RenderResult {
-  return render(ui, { wrapper: AllProvidersWrapper });
+export function renderWithProviders(
+  ui: React.ReactElement,
+  options?: { initialEntries?: string[] }
+): RenderResult {
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <MemoryRouter initialEntries={options?.initialEntries}>
+      <ChakraProvider value={system}>{children}</ChakraProvider>
+    </MemoryRouter>
+  );
+
+  return render(ui, { wrapper: Wrapper });
 }

@@ -13,10 +13,9 @@ describe('AppRouter', () => {
     });
 
     test('存在しないパスで404ページが表示される', () => {
-      // 初期URLを設定
-      window.history.pushState({}, '', '/nonexistent');
-
-      renderWithProviders(<AppRouter />);
+      renderWithProviders(<AppRouter />, {
+        initialEntries: ['/nonexistent'],
+      });
 
       const notFoundText = screen.getByText(/ページが見つかりません/i);
       expect(notFoundText).toBeInTheDocument();

@@ -7,7 +7,7 @@ import {
   Link as ChakraLink,
   useBreakpointValue,
 } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, Outlet } from 'react-router-dom';
 import { ReactNode } from 'react';
 
 interface LayoutProps {
@@ -45,7 +45,7 @@ export const Layout = ({ children }: LayoutProps) => {
       </Box>
 
       <Container as="main" maxW="container.xl" py={8}>
-        {children}
+        {children || <Outlet />}
       </Container>
     </Box>
   );
