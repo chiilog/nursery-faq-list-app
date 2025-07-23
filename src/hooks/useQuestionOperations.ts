@@ -1,6 +1,6 @@
 /**
- * 質問CRUD操作フック
- * 質問の追加、更新、削除を提供
+ * 質問操作フック
+ * 質問の追加、更新、削除、回答を提供
  */
 
 import { useCallback } from 'react';
@@ -9,9 +9,9 @@ import { useErrorHandler } from './useErrorHandler';
 import type { CreateQuestionInput, UpdateQuestionInput } from '../types/data';
 
 /**
- * 質問CRUD操作フック
+ * 質問操作フック
  */
-export function useQuestionCRUD() {
+export function useQuestionOperations() {
   // パフォーマンス最適化：必要なアクションのみを選択的に購読
   const addQuestion = useQuestionListStore((state) => state.addQuestion);
   const updateQuestion = useQuestionListStore((state) => state.updateQuestion);

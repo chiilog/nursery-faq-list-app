@@ -1,5 +1,5 @@
 /**
- * useQuestionCRUD フックのテスト
+ * useQuestionOperations フックのテスト
  * TDD思想に基づく振る舞い駆動テスト
  */
 
@@ -7,7 +7,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderHookWithChakra } from '../test/testUtils';
 import { mockErrorHandler } from '../test/testData';
-import { useQuestionCRUD } from './useQuestionCRUD';
+import { useQuestionOperations } from './useQuestionOperations';
 
 // ストアのモック
 let mockStore = {
@@ -29,7 +29,7 @@ vi.mock('./useErrorHandler', () => ({
   useErrorHandler: () => mockErrorHandler,
 }));
 
-describe('質問CRUD操作', () => {
+describe('質問操作', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockErrorHandler.handleAsyncOperation.mockImplementation(
@@ -45,7 +45,7 @@ describe('質問CRUD操作', () => {
 
   describe('質問の管理', () => {
     test('新しい質問を追加できる', async () => {
-      const { result } = renderHookWithChakra(() => useQuestionCRUD());
+      const { result } = renderHookWithChakra(() => useQuestionOperations());
 
       await act(async () => {
         await result.current.addQuestionToList('list-id', {
@@ -63,7 +63,7 @@ describe('質問CRUD操作', () => {
     });
 
     test('質問内容を編集できる', async () => {
-      const { result } = renderHookWithChakra(() => useQuestionCRUD());
+      const { result } = renderHookWithChakra(() => useQuestionOperations());
 
       await act(async () => {
         await result.current.updateQuestionInList('list-id', 'q1', {
@@ -81,7 +81,7 @@ describe('質問CRUD操作', () => {
     });
 
     test('質問を削除できる', async () => {
-      const { result } = renderHookWithChakra(() => useQuestionCRUD());
+      const { result } = renderHookWithChakra(() => useQuestionOperations());
 
       await act(async () => {
         await result.current.deleteQuestionFromList('list-id', 'q1');
@@ -91,7 +91,7 @@ describe('質問CRUD操作', () => {
     });
 
     test('質問に答えられる', async () => {
-      const { result } = renderHookWithChakra(() => useQuestionCRUD());
+      const { result } = renderHookWithChakra(() => useQuestionOperations());
 
       await act(async () => {
         await result.current.answerQuestionInList(

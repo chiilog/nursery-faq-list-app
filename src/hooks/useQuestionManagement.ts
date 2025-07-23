@@ -3,19 +3,19 @@
  * 個別質問の管理操作を提供
  */
 
-import { useQuestionCRUD } from './useQuestionCRUD';
+import { useQuestionOperations } from './useQuestionOperations';
 import { useQuestionSort } from './useQuestionSort';
 
 /**
  * 質問管理フック
  */
 export function useQuestionManagement() {
-  const crudOperations = useQuestionCRUD();
+  const operations = useQuestionOperations();
   const sortOperations = useQuestionSort();
 
   return {
-    // CRUD操作
-    ...crudOperations,
+    // 質問操作
+    ...operations,
 
     // ソート操作
     ...sortOperations,
