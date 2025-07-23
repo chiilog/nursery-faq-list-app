@@ -62,9 +62,6 @@ describe('質問リストのテンプレート機能を使う時', () => {
       // Given: テンプレート機能は将来実装予定
       const { result } = renderHookWithChakra(() => useTemplateManagement());
 
-      // コンソールログをモック
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
       // When: テンプレートから質問リストを作成しようとする
       const resultValue = result.current.createListFromTemplate(
         'basic-template',
@@ -77,25 +74,11 @@ describe('質問リストのテンプレート機能を使う時', () => {
 
       // Then: 現在はnullが返される（将来実装時に変更予定）
       expect(resultValue).toBeNull();
-
-      // デバッグ情報が出力される
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'テンプレートから作成:',
-        'basic-template',
-        {
-          title: 'さくら保育園の見学チェックリスト',
-          nurseryName: 'さくら保育園',
-          visitDate: new Date('2023-06-15'),
-        }
-      );
-
-      consoleSpy.mockRestore();
     });
 
     test('必要最小限の情報でもテンプレートから作成を試みることができる', () => {
       // Given: タイトルのみを指定した作成要求
       const { result } = renderHookWithChakra(() => useTemplateManagement());
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       // When: 最小限の情報でテンプレートから作成する
       const resultValue = result.current.createListFromTemplate(
@@ -105,15 +88,8 @@ describe('質問リストのテンプレート機能を使う時', () => {
         }
       );
 
-      // Then: 現在はnullが返されるが処理は実行される
+      // Then: 現在はnullが返される（将来実装時に変更予定）
       expect(resultValue).toBeNull();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'テンプレートから作成:',
-        'minimal-template',
-        { title: 'シンプルな質問リスト' }
-      );
-
-      consoleSpy.mockRestore();
     });
 
     // 将来実装される機能の期待される振る舞いをtodoで明記

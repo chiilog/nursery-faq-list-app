@@ -21,9 +21,9 @@ export function useTemplateManagement() {
 
   // テンプレートから作成
   const createListFromTemplate = useCallback(
-    (templateId: string, customizations: CreateQuestionListInput) => {
-      // 将来実装予定
-      console.log('テンプレートから作成:', templateId, customizations);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (_templateId: string, _customizations: CreateQuestionListInput) => {
+      // TODO: テンプレートから作成機能を実装
       return null;
     },
     []
