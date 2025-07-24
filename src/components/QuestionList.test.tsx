@@ -163,29 +163,36 @@ describe('QuestionList', () => {
         />
       );
 
-      // 質問をクリックして展開
+      // 最初の質問項目のクリック可能領域を取得
       const firstQuestionButton = screen.getByRole('button', {
         name: /質問: 保育時間は何時から何時までですか？/,
       });
+
       await user.click(firstQuestionButton);
 
-      // 回答を入力
+      // 回答入力フィールドと保存ボタンが表示されるまで待機
       const answerInput = await waitFor(() =>
         screen.getByPlaceholderText(/回答を入力してください/)
       );
-      await user.type(answerInput, '7:30〜19:00');
 
-      // 保存ボタンをクリック
       const saveButton = await waitFor(() =>
         screen.getByRole('button', { name: /保存/ })
       );
+
+      // 回答を入力
+      await user.type(answerInput, '7:30〜19:00');
+
+      // 保存ボタンをクリック
       await user.click(saveButton);
 
+      // onQuestionUpdateが正しい引数で呼ばれることを確認
+      expect(mockOnQuestionUpdate).toHaveBeenCalledTimes(1);
       expect(mockOnQuestionUpdate).toHaveBeenCalledWith(
         '1',
         expect.objectContaining({
           answer: '7:30〜19:00',
           isAnswered: true,
+          answeredAt: expect.any(Date),
         })
       );
     });
