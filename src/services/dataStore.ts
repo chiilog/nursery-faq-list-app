@@ -29,6 +29,7 @@ import {
 const STORAGE_KEYS = {
   QUESTION_LISTS: 'nursery-qa-question-lists',
   KEY_DERIVATION_SALT: 'nursery-qa-key-salt',
+  USER_KEY_MATERIAL: 'nursery-qa-user-key-material',
 } as const;
 
 // データストアエラークラス
@@ -71,20 +72,37 @@ function getOrCreateSalt(): Uint8Array {
   return salt;
 }
 
-// セッション固有のキーマテリアルを生成
-function getSessionKeyMaterial(): string {
-  // ブラウザセッション固有の情報を組み合わせて一意性を確保
-  const timestamp = Date.now().toString();
-  const random = Math.random().toString(36);
+// ユーザー固有の永続的なキーマテリアルを取得または生成
+function getUserKeyMaterial(): string {
+  // 既存のキーマテリアルを取得
+  const existingKeyMaterial = localStorage.getItem(
+    STORAGE_KEYS.USER_KEY_MATERIAL
+  );
+  if (existingKeyMaterial) {
+    return existingKeyMaterial;
+  }
+
+  // 新しいキーマテリアルを生成
   const userAgent = navigator.userAgent;
   const language = navigator.language;
+  const timestamp = Date.now().toString();
+  const randomValues = new Uint8Array(32);
+  crypto.getRandomValues(randomValues);
+  const randomString = Array.from(randomValues, (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
 
-  return `${timestamp}-${random}-${userAgent}-${language}`;
+  const keyMaterial = `${userAgent}-${language}-${timestamp}-${randomString}`;
+
+  // 永続的に保存
+  localStorage.setItem(STORAGE_KEYS.USER_KEY_MATERIAL, keyMaterial);
+
+  return keyMaterial;
 }
 
 async function getCryptoKey(): Promise<CryptoKey> {
   const salt = getOrCreateSalt();
-  const keyMaterial = getSessionKeyMaterial();
+  const keyMaterial = getUserKeyMaterial();
 
   // キーマテリアルをPBKDF2で強化
   const baseKey = await crypto.subtle.importKey(
@@ -181,7 +199,8 @@ export class DataStore {
 
       const encryptedData = await encryptData(jsonData);
       localStorage.setItem(key, encryptedData);
-    } catch {
+    } catch (error) {
+      console.error('saveToStorage error:', error);
       throw new DataStoreError(
         'データの保存に失敗しました',
         'STORAGE_SAVE_FAILED'
@@ -190,39 +209,147 @@ export class DataStore {
   }
 
   /**
-   * ローカルストレージから暗号化データを読み込み
+   * 暗号化データを復号化する
+   */
+  private async decryptStoredData(storedData: string): Promise<string> {
+    try {
+      return await decryptData(storedData);
+    } catch {
+      console.warn(
+        'データの復号化に失敗しました。データをクリアして新しく開始します。'
+      );
+      throw new DataStoreError(
+        'データの復号化に失敗しました',
+        'DECRYPTION_FAILED'
+      );
+    }
+  }
+
+  /**
+   * 平文データを暗号化してマイグレーションする
+   */
+  private async migrateUnencryptedData<T>(key: string, data: T): Promise<void> {
+    try {
+      await this.saveToStorage(key, data);
+    } catch (migrationError) {
+      const errorMessage =
+        migrationError instanceof Error
+          ? migrationError.message
+          : String(migrationError);
+      console.warn('データの暗号化処理に失敗しました:', errorMessage);
+      // マイグレーション失敗は致命的ではないため継続
+    }
+  }
+
+  /**
+   * JSON文字列をパースしてDateオブジェクトを復元する
+   */
+  private parseJsonWithDateRevival<T>(jsonData: string): T {
+    return JSON.parse(jsonData, (_, value: unknown) => {
+      // 文字列をDateオブジェクトに復元
+      if (
+        value &&
+        typeof value === 'object' &&
+        '__dateType' in value &&
+        'value' in value &&
+        (value as { __dateType: unknown; value: unknown }).__dateType ===
+          'Date' &&
+        typeof (value as { __dateType: unknown; value: unknown }).value ===
+          'string'
+      ) {
+        return new Date((value as { __dateType: string; value: string }).value);
+      }
+      return value;
+    }) as T;
+  }
+
+  /**
+   * ローカルストレージからデータを読み込み（暗号化・平文両対応）
    */
   private async loadFromStorage<T>(key: string): Promise<T | null> {
     try {
-      const encryptedData = localStorage.getItem(key);
-      if (!encryptedData) {
+      const storedData = localStorage.getItem(key);
+      if (!storedData) {
         return null;
       }
 
-      const decryptedData = await decryptData(encryptedData);
-      return JSON.parse(decryptedData, (_, value: unknown) => {
-        // 文字列をDateオブジェクトに復元
-        if (
-          value &&
-          typeof value === 'object' &&
-          '__dateType' in value &&
-          'value' in value &&
-          (value as { __dateType: unknown; value: unknown }).__dateType ===
-            'Date' &&
-          typeof (value as { __dateType: unknown; value: unknown }).value ===
-            'string'
-        ) {
-          return new Date(
-            (value as { __dateType: string; value: string }).value
-          );
-        }
-        return value;
-      }) as T;
-    } catch {
+      // データが暗号化データかどうかを判別
+      const isEncryptedData = this.isBase64EncodedData(storedData);
+      let jsonData: string;
+
+      if (isEncryptedData) {
+        // 暗号化データとして復号化を試行
+        jsonData = await this.decryptStoredData(storedData);
+      } else {
+        // 平文データとして処理（後方互換性）
+        jsonData = storedData;
+      }
+
+      // JSONパースを実行
+      const parsedData = this.parseJsonWithDateRevival<T>(jsonData);
+
+      // 平文データの場合、暗号化して保存し直す（マイグレーション）
+      if (!isEncryptedData) {
+        await this.migrateUnencryptedData(key, parsedData);
+      }
+
+      return parsedData;
+    } catch (error) {
+      console.error('loadFromStorage error:', error);
+
+      // 復号化失敗エラーの場合は、データをクリアして新しく開始
+      if (
+        error instanceof DataStoreError &&
+        error.code === 'DECRYPTION_FAILED'
+      ) {
+        console.warn('データをクリアして新しく開始します');
+        localStorage.removeItem(key);
+        return null;
+      }
+
+      // 既にDataStoreErrorの場合はそのまま投げる
+      if (error instanceof DataStoreError) {
+        throw error;
+      }
+
       throw new DataStoreError(
         'データの読み込みに失敗しました',
         'STORAGE_LOAD_FAILED'
       );
+    }
+  }
+
+  /**
+   * Base64エンコードされた暗号化データかどうかを判別
+   */
+  private isBase64EncodedData(data: string): boolean {
+    // まず有効なJSONかどうかを確認
+    try {
+      JSON.parse(data);
+      // JSONとして解析できる場合は平文データ
+      return false;
+    } catch {
+      // JSONとして解析できない場合は暗号化データの可能性がある
+    }
+
+    // Base64の基本的な特徴をチェック
+    if (data.length === 0) return false;
+
+    // Base64文字セットのみで構成されているかチェック
+    const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
+    if (!base64Regex.test(data)) return false;
+
+    // Base64の長さは4の倍数である必要がある
+    if (data.length % 4 !== 0) return false;
+
+    // Base64として有効かどうかをチェック
+    try {
+      atob(data);
+      // Base64として有効で、JSONとして無効な場合は暗号化データ
+      return true;
+    } catch {
+      // Base64としても無効な場合は平文データ
+      return false;
     }
   }
 
@@ -759,6 +886,8 @@ export class DataStore {
     try {
       localStorage.removeItem(STORAGE_KEYS.QUESTION_LISTS);
       localStorage.removeItem(STORAGE_KEYS.KEY_DERIVATION_SALT);
+      localStorage.removeItem(STORAGE_KEYS.USER_KEY_MATERIAL);
+      console.info('全てのデータを削除しました');
       // 非同期処理の一貫性のため
       await Promise.resolve();
     } catch {
