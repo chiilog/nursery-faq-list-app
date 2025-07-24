@@ -82,94 +82,96 @@ function getSessionKeyMaterial(): string {
   return `${timestamp}-${random}-${userAgent}-${language}`;
 }
 
-async function getCryptoKey(): Promise<CryptoKey> {
-  const salt = getOrCreateSalt();
-  const keyMaterial = getSessionKeyMaterial();
+// 開発用：暗号化機能を一時的に無効化
+// async function getCryptoKey(): Promise<CryptoKey> {
+//   const salt = getOrCreateSalt();
+//   const keyMaterial = getSessionKeyMaterial();
 
-  // キーマテリアルをPBKDF2で強化
-  const baseKey = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(keyMaterial),
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  );
+//   // キーマテリアルをPBKDF2で強化
+//   const baseKey = await crypto.subtle.importKey(
+//     'raw',
+//     new TextEncoder().encode(keyMaterial),
+//     'PBKDF2',
+//     false,
+//     ['deriveKey']
+//   );
 
-  return await crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: salt,
-      iterations: 100000,
-      hash: 'SHA-256',
-    },
-    baseKey,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  );
-}
+//   return await crypto.subtle.deriveKey(
+//     {
+//       name: 'PBKDF2',
+//       salt: salt,
+//       iterations: 100000,
+//       hash: 'SHA-256',
+//     },
+//     baseKey,
+//     { name: 'AES-GCM', length: 256 },
+//     false,
+//     ['encrypt', 'decrypt']
+//   );
+// }
 
-async function encryptData(data: string): Promise<string> {
-  try {
-    const key = await getCryptoKey();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encodedData = new TextEncoder().encode(data);
+// 開発用：暗号化機能を一時的に無効化
+// async function encryptData(data: string): Promise<string> {
+//   try {
+//     const key = await getCryptoKey();
+//     const iv = crypto.getRandomValues(new Uint8Array(12));
+//     const encodedData = new TextEncoder().encode(data);
 
-    const encrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      encodedData
-    );
+//     const encrypted = await crypto.subtle.encrypt(
+//       { name: 'AES-GCM', iv },
+//       key,
+//       encodedData
+//     );
 
-    // IVと暗号化データを結合してBase64エンコード
-    const combined = new Uint8Array(iv.length + encrypted.byteLength);
-    combined.set(iv);
-    combined.set(new Uint8Array(encrypted), iv.length);
+//     // IVと暗号化データを結合してBase64エンコード
+//     const combined = new Uint8Array(iv.length + encrypted.byteLength);
+//     combined.set(iv);
+//     combined.set(new Uint8Array(encrypted), iv.length);
 
-    return btoa(String.fromCharCode(...combined));
-  } catch {
-    throw new DataStoreError(
-      'データの暗号化に失敗しました',
-      'ENCRYPTION_FAILED'
-    );
-  }
-}
+//     return btoa(String.fromCharCode(...combined));
+//   } catch {
+//     throw new DataStoreError(
+//       'データの暗号化に失敗しました',
+//       'ENCRYPTION_FAILED'
+//     );
+//   }
+// }
 
-async function decryptData(encryptedData: string): Promise<string> {
-  try {
-    const key = await getCryptoKey();
-    const combined = new Uint8Array(
-      atob(encryptedData)
-        .split('')
-        .map((char) => char.charCodeAt(0))
-    );
+// async function decryptData(encryptedData: string): Promise<string> {
+//   try {
+//     const key = await getCryptoKey();
+//     const combined = new Uint8Array(
+//       atob(encryptedData)
+//         .split('')
+//         .map((char) => char.charCodeAt(0))
+//     );
 
-    const iv = combined.slice(0, 12);
-    const encrypted = combined.slice(12);
+//     const iv = combined.slice(0, 12);
+//     const encrypted = combined.slice(12);
 
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      encrypted
-    );
+//     const decrypted = await crypto.subtle.decrypt(
+//       { name: 'AES-GCM', iv },
+//       key,
+//       encrypted
+//     );
 
-    return new TextDecoder().decode(decrypted);
-  } catch {
-    throw new DataStoreError(
-      'データの復号化に失敗しました',
-      'DECRYPTION_FAILED'
-    );
-  }
-}
+//     return new TextDecoder().decode(decrypted);
+//   } catch {
+//     throw new DataStoreError(
+//       'データの復号化に失敗しました',
+//       'DECRYPTION_FAILED'
+//     );
+//   }
+// }
 
 /**
  * ローカルストレージを使用したデータストア実装
  */
 export class DataStore {
   /**
-   * 暗号化されたデータをローカルストレージに保存
+   * データをローカルストレージに保存（開発用：暗号化無効）
    */
-  private async saveToStorage(key: string, data: unknown): Promise<void> {
+  private saveToStorage(key: string, data: unknown): void {
     try {
       const jsonData = JSON.stringify(data, (_, value: unknown) => {
         // Dateオブジェクトを文字列に変換
@@ -179,9 +181,10 @@ export class DataStore {
         return value;
       });
 
-      const encryptedData = await encryptData(jsonData);
-      localStorage.setItem(key, encryptedData);
-    } catch {
+      // 開発用：暗号化を無効化
+      localStorage.setItem(key, jsonData);
+    } catch (error) {
+      console.error('saveToStorage error:', error);
       throw new DataStoreError(
         'データの保存に失敗しました',
         'STORAGE_SAVE_FAILED'
@@ -190,17 +193,17 @@ export class DataStore {
   }
 
   /**
-   * ローカルストレージから暗号化データを読み込み
+   * ローカルストレージからデータを読み込み（開発用：暗号化無効）
    */
-  private async loadFromStorage<T>(key: string): Promise<T | null> {
+  private loadFromStorage<T>(key: string): T | null {
     try {
-      const encryptedData = localStorage.getItem(key);
-      if (!encryptedData) {
+      const jsonData = localStorage.getItem(key);
+      if (!jsonData) {
         return null;
       }
 
-      const decryptedData = await decryptData(encryptedData);
-      return JSON.parse(decryptedData, (_, value: unknown) => {
+      // 開発用：暗号化を無効化
+      return JSON.parse(jsonData, (_, value: unknown) => {
         // 文字列をDateオブジェクトに復元
         if (
           value &&
@@ -218,7 +221,8 @@ export class DataStore {
         }
         return value;
       }) as T;
-    } catch {
+    } catch (error) {
+      console.error('loadFromStorage error:', error);
       throw new DataStoreError(
         'データの読み込みに失敗しました',
         'STORAGE_LOAD_FAILED'
@@ -229,8 +233,8 @@ export class DataStore {
   /**
    * 全ての質問リストを取得
    */
-  async getAllQuestionLists(): Promise<QuestionList[]> {
-    const lists = await this.loadFromStorage<QuestionList[]>(
+  getAllQuestionLists(): QuestionList[] {
+    const lists = this.loadFromStorage<QuestionList[]>(
       STORAGE_KEYS.QUESTION_LISTS
     );
     return lists || [];
@@ -239,14 +243,14 @@ export class DataStore {
   /**
    * 質問リストを保存
    */
-  private async saveQuestionLists(lists: QuestionList[]): Promise<void> {
-    await this.saveToStorage(STORAGE_KEYS.QUESTION_LISTS, lists);
+  private saveQuestionLists(lists: QuestionList[]): void {
+    this.saveToStorage(STORAGE_KEYS.QUESTION_LISTS, lists);
   }
 
   /**
    * 質問リストを作成
    */
-  async createQuestionList(input: CreateQuestionListInput): Promise<string> {
+  createQuestionList(input: CreateQuestionListInput): string {
     // バリデーション
     const validation = validateCreateQuestionListInput(input);
     if (!validation.isValid) {
@@ -258,7 +262,7 @@ export class DataStore {
 
     try {
       const newList = createQuestionList(input);
-      const existingLists = await this.getAllQuestionLists();
+      const existingLists = this.getAllQuestionLists();
 
       // 同名チェック
       const duplicateName = existingLists.some(
@@ -272,7 +276,7 @@ export class DataStore {
       }
 
       const updatedLists = [...existingLists, newList];
-      await this.saveQuestionLists(updatedLists);
+      this.saveQuestionLists(updatedLists);
 
       return newList.id;
     } catch (error) {

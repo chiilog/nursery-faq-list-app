@@ -127,7 +127,7 @@ export const useQuestionListStore = create<QuestionListState>()(
           });
           clearError();
 
-          const lists = await dataStore.getAllQuestionLists();
+          const lists = dataStore.getAllQuestionLists();
 
           set((state) => ({
             questionLists: lists,
@@ -158,7 +158,7 @@ export const useQuestionListStore = create<QuestionListState>()(
           setLoading({ isLoading: true, operation: '質問リストを作成中...' });
           clearError();
 
-          const newListId = await dataStore.createQuestionList(input);
+          const newListId = dataStore.createQuestionList(input);
 
           // リストを再読み込み
           await loadQuestionLists();
