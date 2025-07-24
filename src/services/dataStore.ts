@@ -240,21 +240,10 @@ export class DataStore {
       } else {
         // 平文データとして処理（後方互換性）
         jsonData = storedData;
-
-        // 平文データを暗号化して保存し直す（マイグレーション）
-        try {
-          const parsedData = JSON.parse(jsonData) as unknown;
-          await this.saveToStorage(key, parsedData);
-        } catch (migrationError) {
-          console.warn(
-            'データの暗号化処理に失敗しました:',
-            (migrationError as Error).message
-          );
-          // マイグレーション失敗は致命的ではないため継続
-        }
       }
 
-      return JSON.parse(jsonData, (_, value: unknown) => {
+      // JSONパースを一度だけ実行
+      const parsedData = JSON.parse(jsonData, (_, value: unknown) => {
         // 文字列をDateオブジェクトに復元
         if (
           value &&
@@ -272,6 +261,21 @@ export class DataStore {
         }
         return value;
       }) as T;
+
+      // 平文データの場合、暗号化して保存し直す（マイグレーション）
+      if (!isEncryptedData) {
+        try {
+          await this.saveToStorage(key, parsedData);
+        } catch (migrationError) {
+          console.warn(
+            'データの暗号化処理に失敗しました:',
+            (migrationError as Error).message
+          );
+          // マイグレーション失敗は致命的ではないため継続
+        }
+      }
+
+      return parsedData;
     } catch (error) {
       console.error('loadFromStorage error:', error);
 

@@ -1,9 +1,30 @@
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './Layout';
-import { Box, Heading, Text, Button, VStack, HStack, Badge, Spinner } from '@chakra-ui/react';
+import {
+  Box,
+  Heading,
+  Text,
+  Button,
+  VStack,
+  HStack,
+  Badge,
+  Spinner,
+} from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { QuestionListCreator } from './QuestionListCreator';
 import { useQuestionListStore } from '../stores/questionListStore';
+
+// 日付フォーマット用のユーティリティ関数
+const formatDate = (date: unknown): string => {
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date as string);
+    return isNaN(dateObj.getTime())
+      ? '日付不正'
+      : dateObj.toLocaleDateString('ja-JP');
+  } catch {
+    return '日付不正';
+  }
+};
 
 // ホームページコンポーネント
 const HomePage = () => {
@@ -38,7 +59,7 @@ const HomePage = () => {
       });
       setIsCreating(false);
     } catch (error) {
-      // エラーはストアで管理されているので、ここでは何もしない
+      // エラーはストアで管理されているので、ここではログ出力のみ
       console.error('質問リスト作成エラー:', error);
     }
   };
@@ -61,7 +82,7 @@ const HomePage = () => {
       <Heading as="h2" size="xl" mb={4}>
         質問リスト一覧
       </Heading>
-      
+
       {error && (
         <Box
           p={3}
@@ -116,29 +137,11 @@ const HomePage = () => {
                       )}
                       {list.visitDate && (
                         <Text color="gray.600" fontSize="sm">
-                          見学予定日: {(() => {
-                            try {
-                              const date = list.visitDate instanceof Date 
-                                ? list.visitDate 
-                                : new Date(list.visitDate);
-                              return isNaN(date.getTime()) ? '日付不正' : date.toLocaleDateString('ja-JP');
-                            } catch {
-                              return '日付不正';
-                            }
-                          })()}
+                          見学予定日: {formatDate(list.visitDate)}
                         </Text>
                       )}
                       <Text color="gray.500" fontSize="xs">
-                        作成日: {(() => {
-                          try {
-                            const date = list.createdAt instanceof Date 
-                              ? list.createdAt 
-                              : new Date(list.createdAt);
-                            return isNaN(date.getTime()) ? '日付不正' : date.toLocaleDateString('ja-JP');
-                          } catch {
-                            return '日付不正';
-                          }
-                        })()}
+                        作成日: {formatDate(list.createdAt)}
                       </Text>
                     </VStack>
                   </Box>
@@ -147,7 +150,7 @@ const HomePage = () => {
                 console.error('質問リスト表示エラー:', error);
                 return (
                   <Box
-                    key={list.id || Math.random()}
+                    key={list.id || `error-item-${questionLists.indexOf(list)}`}
                     p={4}
                     borderWidth={1}
                     borderRadius="md"
@@ -163,9 +166,13 @@ const HomePage = () => {
             })}
           </VStack>
         )}
-        
+
         <Box>
-          <Button colorScheme="teal" onClick={handleCreateNew} disabled={loading.isLoading}>
+          <Button
+            colorScheme="teal"
+            onClick={handleCreateNew}
+            disabled={loading.isLoading}
+          >
             新しい質問リストを作成
           </Button>
         </Box>
