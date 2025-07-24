@@ -209,6 +209,60 @@ export class DataStore {
   }
 
   /**
+   * 暗号化データを復号化する
+   */
+  private async decryptStoredData(storedData: string): Promise<string> {
+    try {
+      return await decryptData(storedData);
+    } catch {
+      console.warn(
+        'データの復号化に失敗しました。データをクリアして新しく開始します。'
+      );
+      throw new DataStoreError(
+        'データの復号化に失敗しました',
+        'DECRYPTION_FAILED'
+      );
+    }
+  }
+
+  /**
+   * 平文データを暗号化してマイグレーションする
+   */
+  private async migrateUnencryptedData<T>(key: string, data: T): Promise<void> {
+    try {
+      await this.saveToStorage(key, data);
+    } catch (migrationError) {
+      console.warn(
+        'データの暗号化処理に失敗しました:',
+        (migrationError as Error).message
+      );
+      // マイグレーション失敗は致命的ではないため継続
+    }
+  }
+
+  /**
+   * JSON文字列をパースしてDateオブジェクトを復元する
+   */
+  private parseJsonWithDateRevival<T>(jsonData: string): T {
+    return JSON.parse(jsonData, (_, value: unknown) => {
+      // 文字列をDateオブジェクトに復元
+      if (
+        value &&
+        typeof value === 'object' &&
+        '__dateType' in value &&
+        'value' in value &&
+        (value as { __dateType: unknown; value: unknown }).__dateType ===
+          'Date' &&
+        typeof (value as { __dateType: unknown; value: unknown }).value ===
+          'string'
+      ) {
+        return new Date((value as { __dateType: string; value: string }).value);
+      }
+      return value;
+    }) as T;
+  }
+
+  /**
    * ローカルストレージからデータを読み込み（暗号化・平文両対応）
    */
   private async loadFromStorage<T>(key: string): Promise<T | null> {
@@ -218,61 +272,24 @@ export class DataStore {
         return null;
       }
 
-      let jsonData: string;
-
       // データが暗号化データかどうかを判別
       const isEncryptedData = this.isBase64EncodedData(storedData);
+      let jsonData: string;
 
       if (isEncryptedData) {
         // 暗号化データとして復号化を試行
-        try {
-          jsonData = await decryptData(storedData);
-        } catch {
-          console.warn(
-            'データの復号化に失敗しました。データをクリアして新しく開始します。'
-          );
-
-          // 復号化に失敗した場合は、古いキーで暗号化されたデータの可能性があるため
-          // データをクリアして新しく開始する
-          localStorage.removeItem(key);
-          return null;
-        }
+        jsonData = await this.decryptStoredData(storedData);
       } else {
         // 平文データとして処理（後方互換性）
         jsonData = storedData;
       }
 
-      // JSONパースを一度だけ実行
-      const parsedData = JSON.parse(jsonData, (_, value: unknown) => {
-        // 文字列をDateオブジェクトに復元
-        if (
-          value &&
-          typeof value === 'object' &&
-          '__dateType' in value &&
-          'value' in value &&
-          (value as { __dateType: unknown; value: unknown }).__dateType ===
-            'Date' &&
-          typeof (value as { __dateType: unknown; value: unknown }).value ===
-            'string'
-        ) {
-          return new Date(
-            (value as { __dateType: string; value: string }).value
-          );
-        }
-        return value;
-      }) as T;
+      // JSONパースを実行
+      const parsedData = this.parseJsonWithDateRevival<T>(jsonData);
 
       // 平文データの場合、暗号化して保存し直す（マイグレーション）
       if (!isEncryptedData) {
-        try {
-          await this.saveToStorage(key, parsedData);
-        } catch (migrationError) {
-          console.warn(
-            'データの暗号化処理に失敗しました:',
-            (migrationError as Error).message
-          );
-          // マイグレーション失敗は致命的ではないため継続
-        }
+        await this.migrateUnencryptedData(key, parsedData);
       }
 
       return parsedData;
