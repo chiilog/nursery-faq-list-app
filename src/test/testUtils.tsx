@@ -11,6 +11,7 @@ import type { RenderResult } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { renderHook } from '@testing-library/react';
 import type { RenderHookResult } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import system from '../theme';
 
 // Chakra UI Provider Wrapper
@@ -34,4 +35,18 @@ export function renderHookWithChakra<TResult, TProps>(
     wrapper: ChakraWrapper,
     ...options,
   });
+}
+
+// コンポーネント用のrender関数（React Router対応）
+export function renderWithProviders(
+  ui: React.ReactElement,
+  options?: { initialEntries?: string[] }
+): RenderResult {
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <MemoryRouter initialEntries={options?.initialEntries}>
+      <ChakraProvider value={system}>{children}</ChakraProvider>
+    </MemoryRouter>
+  );
+
+  return render(ui, { wrapper: Wrapper });
 }
