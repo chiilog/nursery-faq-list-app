@@ -232,10 +232,11 @@ export class DataStore {
     try {
       await this.saveToStorage(key, data);
     } catch (migrationError) {
-      console.warn(
-        'データの暗号化処理に失敗しました:',
-        (migrationError as Error).message
-      );
+      const errorMessage =
+        migrationError instanceof Error
+          ? migrationError.message
+          : String(migrationError);
+      console.warn('データの暗号化処理に失敗しました:', errorMessage);
       // マイグレーション失敗は致命的ではないため継続
     }
   }
