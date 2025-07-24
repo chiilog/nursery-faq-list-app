@@ -81,7 +81,7 @@ class NurseryDataStore {
     try {
       const nurseryId = generateId('nursery');
       const now = getCurrentTimestamp();
-      
+
       const nursery: Nursery = {
         id: nurseryId,
         name: input.name,
@@ -95,15 +95,18 @@ class NurseryDataStore {
       };
 
       const nurseries = await this.getAllNurseries();
-      const nurseriesMap = nurseries.reduce((acc, n) => {
-        acc[n.id] = n;
-        return acc;
-      }, {} as Record<string, Nursery>);
-      
+      const nurseriesMap = nurseries.reduce(
+        (acc, n) => {
+          acc[n.id] = n;
+          return acc;
+        },
+        {} as Record<string, Nursery>
+      );
+
       nurseriesMap[nurseryId] = nursery;
-      
+
       localStorage.setItem(NURSERIES_STORAGE_KEY, JSON.stringify(nurseriesMap));
-      
+
       return nurseryId;
     } catch (error) {
       if (error instanceof Error) {
@@ -125,41 +128,52 @@ class NurseryDataStore {
           resolve(null);
           return;
         }
-        
-        const nurseries = JSON.parse(nurseriesData) as Record<string, SerializedNursery>;
+
+        const nurseries = JSON.parse(nurseriesData) as Record<
+          string,
+          SerializedNursery
+        >;
         const nurseryData = nurseries[id];
-        
+
         if (!nurseryData) {
           resolve(null);
           return;
         }
-        
+
         const nursery: Nursery = {
           ...nurseryData,
           createdAt: new Date(nurseryData.createdAt),
           updatedAt: new Date(nurseryData.updatedAt),
-          visitSessions: nurseryData.visitSessions.map((session: SerializedVisitSession): VisitSession => ({
-            ...session,
-            visitDate: new Date(session.visitDate),
-            createdAt: new Date(session.createdAt),
-            updatedAt: new Date(session.updatedAt),
-            questions: session.questions.map((question: SerializedQuestion) => ({
-              ...question,
-              answeredAt: question.answeredAt ? new Date(question.answeredAt) : undefined,
-            })),
-          })),
+          visitSessions: nurseryData.visitSessions.map(
+            (session: SerializedVisitSession): VisitSession => ({
+              ...session,
+              visitDate: new Date(session.visitDate),
+              createdAt: new Date(session.createdAt),
+              updatedAt: new Date(session.updatedAt),
+              questions: session.questions.map(
+                (question: SerializedQuestion) => ({
+                  ...question,
+                  answeredAt: question.answeredAt
+                    ? new Date(question.answeredAt)
+                    : undefined,
+                })
+              ),
+            })
+          ),
         };
-        
+
         resolve(nursery);
       } catch (error) {
         if (error instanceof Error) {
-          reject(new NurseryDataStoreError(
-            'データの読み込みに失敗しました',
-            'LOAD_FAILED',
-            error
-          ));
+          reject(
+            new NurseryDataStoreError(
+              'データの読み込みに失敗しました',
+              'LOAD_FAILED',
+              error
+            )
+          );
         } else {
-          reject(error);
+          reject(new Error('Unknown error occurred'));
         }
       }
     });
@@ -173,35 +187,48 @@ class NurseryDataStore {
           resolve([]);
           return;
         }
-        
-        const serializedNurseries = JSON.parse(nurseriesData) as Record<string, SerializedNursery>;
-        
-        const nurseries = Object.values(serializedNurseries).map((nurseryData: SerializedNursery): Nursery => ({
-          ...nurseryData,
-          createdAt: new Date(nurseryData.createdAt),
-          updatedAt: new Date(nurseryData.updatedAt),
-          visitSessions: nurseryData.visitSessions.map((session: SerializedVisitSession): VisitSession => ({
-            ...session,
-            visitDate: new Date(session.visitDate),
-            createdAt: new Date(session.createdAt),
-            updatedAt: new Date(session.updatedAt),
-            questions: session.questions.map((question: SerializedQuestion) => ({
-              ...question,
-              answeredAt: question.answeredAt ? new Date(question.answeredAt) : undefined,
-            })),
-          })),
-        }));
-        
+
+        const serializedNurseries = JSON.parse(nurseriesData) as Record<
+          string,
+          SerializedNursery
+        >;
+
+        const nurseries = Object.values(serializedNurseries).map(
+          (nurseryData: SerializedNursery): Nursery => ({
+            ...nurseryData,
+            createdAt: new Date(nurseryData.createdAt),
+            updatedAt: new Date(nurseryData.updatedAt),
+            visitSessions: nurseryData.visitSessions.map(
+              (session: SerializedVisitSession): VisitSession => ({
+                ...session,
+                visitDate: new Date(session.visitDate),
+                createdAt: new Date(session.createdAt),
+                updatedAt: new Date(session.updatedAt),
+                questions: session.questions.map(
+                  (question: SerializedQuestion) => ({
+                    ...question,
+                    answeredAt: question.answeredAt
+                      ? new Date(question.answeredAt)
+                      : undefined,
+                  })
+                ),
+              })
+            ),
+          })
+        );
+
         resolve(nurseries);
       } catch (error) {
         if (error instanceof Error) {
-          reject(new NurseryDataStoreError(
-            'データの読み込みに失敗しました',
-            'LOAD_FAILED',
-            error
-          ));
+          reject(
+            new NurseryDataStoreError(
+              'データの読み込みに失敗しました',
+              'LOAD_FAILED',
+              error
+            )
+          );
         } else {
-          reject(error);
+          reject(new Error('Unknown error occurred'));
         }
       }
     });
@@ -224,10 +251,13 @@ class NurseryDataStore {
       };
 
       const nurseries = await this.getAllNurseries();
-      const nurseriesMap = nurseries.reduce((acc, n) => {
-        acc[n.id] = n.id === id ? updatedNursery : n;
-        return acc;
-      }, {} as Record<string, Nursery>);
+      const nurseriesMap = nurseries.reduce(
+        (acc, n) => {
+          acc[n.id] = n.id === id ? updatedNursery : n;
+          return acc;
+        },
+        {} as Record<string, Nursery>
+      );
 
       localStorage.setItem(NURSERIES_STORAGE_KEY, JSON.stringify(nurseriesMap));
     } catch (error) {
@@ -248,12 +278,15 @@ class NurseryDataStore {
   async deleteNursery(id: string): Promise<void> {
     try {
       const nurseries = await this.getAllNurseries();
-      const nurseriesMap = nurseries.reduce((acc, n) => {
-        if (n.id !== id) {
-          acc[n.id] = n;
-        }
-        return acc;
-      }, {} as Record<string, Nursery>);
+      const nurseriesMap = nurseries.reduce(
+        (acc, n) => {
+          if (n.id !== id) {
+            acc[n.id] = n;
+          }
+          return acc;
+        },
+        {} as Record<string, Nursery>
+      );
 
       localStorage.setItem(NURSERIES_STORAGE_KEY, JSON.stringify(nurseriesMap));
     } catch (error) {
@@ -289,15 +322,16 @@ class NurseryDataStore {
         id: sessionId,
         visitDate: input.visitDate,
         status: input.status || 'planned',
-        questions: input.questions?.map((q, index) => ({
-          id: generateId('question'),
-          text: q.text,
-          answer: '',
-          isAnswered: false,
-          priority: q.priority || 'medium',
-          category: q.category,
-          order: index,
-        })) || [],
+        questions:
+          input.questions?.map((q, index) => ({
+            id: generateId('question'),
+            text: q.text,
+            answer: '',
+            isAnswered: false,
+            priority: q.priority || 'medium',
+            category: q.category,
+            order: index,
+          })) || [],
         notes: input.notes,
         sharedWith: [],
         createdAt: now,
@@ -311,10 +345,13 @@ class NurseryDataStore {
       };
 
       const nurseries = await this.getAllNurseries();
-      const nurseriesMap = nurseries.reduce((acc, n) => {
-        acc[n.id] = n.id === nurseryId ? updatedNursery : n;
-        return acc;
-      }, {} as Record<string, Nursery>);
+      const nurseriesMap = nurseries.reduce(
+        (acc, n) => {
+          acc[n.id] = n.id === nurseryId ? updatedNursery : n;
+          return acc;
+        },
+        {} as Record<string, Nursery>
+      );
 
       localStorage.setItem(NURSERIES_STORAGE_KEY, JSON.stringify(nurseriesMap));
 
@@ -337,14 +374,14 @@ class NurseryDataStore {
   async getVisitSession(sessionId: string): Promise<VisitSession | null> {
     try {
       const nurseries = await this.getAllNurseries();
-      
+
       for (const nursery of nurseries) {
-        const session = nursery.visitSessions.find(s => s.id === sessionId);
+        const session = nursery.visitSessions.find((s) => s.id === sessionId);
         if (session) {
           return session;
         }
       }
-      
+
       return null;
     } catch (error) {
       if (error instanceof Error) {
@@ -364,19 +401,21 @@ class NurseryDataStore {
   ): Promise<void> {
     try {
       const nurseries = await this.getAllNurseries();
-      
+
       let targetNursery: Nursery | null = null;
       let sessionIndex = -1;
-      
+
       for (const nursery of nurseries) {
-        const index = nursery.visitSessions.findIndex(s => s.id === sessionId);
+        const index = nursery.visitSessions.findIndex(
+          (s) => s.id === sessionId
+        );
         if (index !== -1) {
           targetNursery = nursery;
           sessionIndex = index;
           break;
         }
       }
-      
+
       if (!targetNursery || sessionIndex === -1) {
         throw new NurseryDataStoreError(
           '見学セッションが見つかりません',
@@ -414,17 +453,19 @@ class NurseryDataStore {
   async deleteVisitSession(sessionId: string): Promise<void> {
     try {
       const nurseries = await this.getAllNurseries();
-      
+
       let targetNursery: Nursery | null = null;
-      
+
       for (const nursery of nurseries) {
-        const sessionExists = nursery.visitSessions.some(s => s.id === sessionId);
+        const sessionExists = nursery.visitSessions.some(
+          (s) => s.id === sessionId
+        );
         if (sessionExists) {
           targetNursery = nursery;
           break;
         }
       }
-      
+
       if (!targetNursery) {
         throw new NurseryDataStoreError(
           '見学セッションが見つかりません',
@@ -433,7 +474,7 @@ class NurseryDataStore {
       }
 
       const updatedVisitSessions = targetNursery.visitSessions.filter(
-        s => s.id !== sessionId
+        (s) => s.id !== sessionId
       );
 
       await this.updateNursery(targetNursery.id, {
@@ -455,19 +496,25 @@ class NurseryDataStore {
   }
 
   // データクリア
-  async clearAllData(): Promise<void> {
-    try {
-      localStorage.removeItem(NURSERIES_STORAGE_KEY);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new NurseryDataStoreError(
-          'データの削除に失敗しました',
-          'CLEAR_DATA_FAILED',
-          error
-        );
+  clearAllData(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        localStorage.removeItem(NURSERIES_STORAGE_KEY);
+        resolve();
+      } catch (error) {
+        if (error instanceof Error) {
+          reject(
+            new NurseryDataStoreError(
+              'データの削除に失敗しました',
+              'CLEAR_DATA_FAILED',
+              error
+            )
+          );
+        } else {
+          reject(new Error('Unknown error occurred'));
+        }
       }
-      throw error;
-    }
+    });
   }
 }
 

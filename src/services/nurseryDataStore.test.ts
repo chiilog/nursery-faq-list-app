@@ -8,6 +8,18 @@ import type {
   UpdateVisitSessionInput,
 } from '../types/data';
 
+// テスト用の型定義
+interface MockLocalStorageData {
+  [key: string]: {
+    id: string;
+    name: string;
+    visitSessions?: any[];
+    createdAt: string | Date;
+    updatedAt: string | Date;
+    [key: string]: any;
+  };
+}
+
 // モック化したlocalStorageとnurseryDataStore（実装前）
 const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
@@ -66,7 +78,9 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
         updatedAt: new Date('2024-01-01'),
       };
 
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify({ 'nursery-1': mockNursery }));
+      mockLocalStorage.getItem.mockReturnValue(
+        JSON.stringify({ 'nursery-1': mockNursery })
+      );
 
       // Green: 実装されたので成功することが期待される
       const nursery = await nurseryDataStore.getNursery('nursery-1');
@@ -84,7 +98,7 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
           updatedAt: new Date('2024-01-01'),
         },
         {
-          id: 'nursery-2', 
+          id: 'nursery-2',
           name: 'テスト保育園B',
           visitSessions: [],
           createdAt: new Date('2024-01-02'),
@@ -92,10 +106,12 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
         },
       ];
 
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify({
-        'nursery-1': mockNurseries[0],
-        'nursery-2': mockNurseries[1],
-      }));
+      mockLocalStorage.getItem.mockReturnValue(
+        JSON.stringify({
+          'nursery-1': mockNurseries[0],
+          'nursery-2': mockNurseries[1],
+        })
+      );
 
       // Green: 実装されたので成功することが期待される
       const nurseries = await nurseryDataStore.getAllNurseries();
@@ -103,7 +119,7 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
     });
 
     test('保育園データを更新できること', async () => {
-      // Red: まだ実装されていない機能のテスト  
+      // Red: まだ実装されていない機能のテスト
       const updates: UpdateNurseryInput = {
         name: '更新されたテスト保育園',
         phoneNumber: '03-9999-8888',
@@ -117,7 +133,9 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
         updatedAt: new Date('2024-01-01'),
       };
 
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify({ 'nursery-1': existingNursery }));
+      mockLocalStorage.getItem.mockReturnValue(
+        JSON.stringify({ 'nursery-1': existingNursery })
+      );
 
       // Green: 実装されたので成功することが期待される
       await nurseryDataStore.updateNursery('nursery-1', updates);
@@ -127,15 +145,15 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
     test('保育園データを削除できること', async () => {
       // Red: まだ実装されていない機能のテスト
       const existingData = {
-        'nursery-1': { 
-          id: 'nursery-1', 
+        'nursery-1': {
+          id: 'nursery-1',
           name: 'テスト保育園A',
           visitSessions: [],
           createdAt: new Date('2024-01-01'),
           updatedAt: new Date('2024-01-01'),
         },
-        'nursery-2': { 
-          id: 'nursery-2', 
+        'nursery-2': {
+          id: 'nursery-2',
           name: 'テスト保育園B',
           visitSessions: [],
           createdAt: new Date('2024-01-02'),
@@ -147,10 +165,10 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
 
       // Green: 実装されたので成功することが期待される
       await nurseryDataStore.deleteNursery('nursery-1');
-      
+
       const setItemCalls = mockLocalStorage.setItem.mock.calls;
       const lastCall = setItemCalls[setItemCalls.length - 1];
-      const updatedData = JSON.parse(lastCall[1] as string) as Record<string, any>;
+      const updatedData = JSON.parse(lastCall[1]) as MockLocalStorageData;
       expect(updatedData).not.toHaveProperty('nursery-1');
       expect(updatedData).toHaveProperty('nursery-2');
     });
@@ -173,10 +191,15 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
         updatedAt: new Date('2024-01-01'),
       };
 
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify({ 'nursery-1': existingNursery }));
+      mockLocalStorage.getItem.mockReturnValue(
+        JSON.stringify({ 'nursery-1': existingNursery })
+      );
 
       // Green: 実装されたので成功することが期待される
-      const sessionId = await nurseryDataStore.createVisitSession('nursery-1', sessionInput);
+      const sessionId = await nurseryDataStore.createVisitSession(
+        'nursery-1',
+        sessionInput
+      );
       expect(sessionId).toMatch(/^session-[a-f0-9-]+$/);
     });
 
@@ -205,7 +228,9 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
         updatedAt: new Date('2024-01-01'),
       };
 
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify({ 'nursery-1': existingNursery }));
+      mockLocalStorage.getItem.mockReturnValue(
+        JSON.stringify({ 'nursery-1': existingNursery })
+      );
 
       // Green: 実装されたので成功することが期待される
       await nurseryDataStore.updateVisitSession('session-1', updates);
@@ -231,15 +256,17 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
         updatedAt: new Date('2024-01-01'),
       };
 
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify({ 'nursery-1': existingNursery }));
+      mockLocalStorage.getItem.mockReturnValue(
+        JSON.stringify({ 'nursery-1': existingNursery })
+      );
 
       // Green: 実装されたので成功することが期待される
       await nurseryDataStore.deleteVisitSession('session-1');
-      
+
       const setItemCalls = mockLocalStorage.setItem.mock.calls;
       const lastCall = setItemCalls[setItemCalls.length - 1];
-      const updatedData = JSON.parse(lastCall[1] as string) as Record<string, any>;
-      const nursery = updatedData['nursery-1'] as any;
+      const updatedData = JSON.parse(lastCall[1]) as MockLocalStorageData;
+      const nursery = updatedData['nursery-1'];
       expect(nursery.visitSessions).toHaveLength(0);
     });
   });
@@ -262,16 +289,16 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
 
       // Green: 実装されたので成功することが期待される
       const nurseryId = await nurseryDataStore.createNursery(nurseryInput);
-      
+
       const setItemCalls = mockLocalStorage.setItem.mock.calls;
       const lastCall = setItemCalls[setItemCalls.length - 1];
-      const savedData = JSON.parse(lastCall[1] as string) as Record<string, any>;
-      const savedNursery = savedData[nurseryId] as any;
-      
+      const savedData = JSON.parse(lastCall[1]) as MockLocalStorageData;
+      const savedNursery = savedData[nurseryId];
+
       expect(savedNursery.createdAt).toBeDefined();
       expect(savedNursery.updatedAt).toBeDefined();
-      expect(new Date(savedNursery.updatedAt as string).getTime()).toBeGreaterThanOrEqual(
-        new Date(savedNursery.createdAt as string).getTime()
+      expect(new Date(savedNursery.updatedAt).getTime()).toBeGreaterThanOrEqual(
+        new Date(savedNursery.createdAt).getTime()
       );
     });
   });
@@ -288,7 +315,9 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
       };
 
       // Green: 実装されたので成功することが期待される
-      await expect(nurseryDataStore.createNursery(nurseryInput)).rejects.toThrow('データの保存に失敗しました');
+      await expect(
+        nurseryDataStore.createNursery(nurseryInput)
+      ).rejects.toThrow('データの保存に失敗しました');
     });
 
     test('不正なJSONデータが適切に処理されること', async () => {
@@ -296,7 +325,9 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
       mockLocalStorage.getItem.mockReturnValue('invalid json');
 
       // Green: 実装されたので成功することが期待される
-      await expect(nurseryDataStore.getAllNurseries()).rejects.toThrow('データの読み込みに失敗しました');
+      await expect(nurseryDataStore.getAllNurseries()).rejects.toThrow(
+        'データの読み込みに失敗しました'
+      );
     });
   });
 });

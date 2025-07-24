@@ -29,6 +29,15 @@ export default tseslint.config([
         'warn',
         { allowConstantExport: true },
       ],
+      // アンダースコアプレフィックス付きの未使用変数を許可（TODO実装用）
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
     },
   },
   {
@@ -40,8 +49,22 @@ export default tseslint.config([
       },
     },
     rules: {
+      // 既存のテスト用ルール
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
+
+      // 追加のテスト用ルール
+      '@typescript-eslint/no-explicit-any': 'off', // テストデータやモックでanyを許可
+      '@typescript-eslint/no-unsafe-call': 'off', // モック関数の呼び出しを許可
+      '@typescript-eslint/no-unsafe-member-access': 'off', // モックオブジェクトのプロパティアクセスを許可
+      '@typescript-eslint/no-unsafe-return': 'off', // モック関数の戻り値を許可
+      '@typescript-eslint/no-unsafe-argument': 'off', // モック関数への引数を許可
+    },
+  },
+  {
+    files: ['**/test/**/*.{ts,tsx}', '**/testUtils.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off', // テストユーティリティでの複数エクスポートを許可
     },
   },
 ]);
