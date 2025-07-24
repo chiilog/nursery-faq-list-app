@@ -102,6 +102,7 @@ export interface UpdateNurseryInput {
   phoneNumber?: string;
   website?: string;
   notes?: string;
+  visitSessions?: VisitSession[]; // 内部実装用（一時的に追加）
 }
 
 // 見学セッション作成時の入力データ型

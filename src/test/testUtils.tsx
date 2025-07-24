@@ -3,8 +3,6 @@
  * フックテストで共通して使用するヘルパー関数
  */
 
-/* eslint-disable react-refresh/only-export-components */
-
 import type { ReactNode } from 'react';
 import { render } from '@testing-library/react';
 import type { RenderResult } from '@testing-library/react';
