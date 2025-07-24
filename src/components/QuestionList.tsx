@@ -107,7 +107,18 @@ export const QuestionList = ({
             <Box as="li" key={question.id} role="listitem" mb={4}>
               <Box
                 cursor="pointer"
-                onClick={() => handleQuestionClick(question.id)}
+                onClick={(e) => {
+                  // 子要素（input、button）がクリックされた場合は処理をスキップ
+                  const target = e.target as HTMLElement;
+                  if (
+                    target.tagName === 'INPUT' ||
+                    target.tagName === 'BUTTON' ||
+                    target.closest('input, button')
+                  ) {
+                    return;
+                  }
+                  handleQuestionClick(question.id);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
