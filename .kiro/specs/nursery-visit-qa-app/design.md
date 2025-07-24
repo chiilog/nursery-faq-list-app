@@ -47,11 +47,13 @@
 #### ハイブリッド構成の選択理由
 
 **Supabase（認証・リアルタイム）**:
+
 - **OAuth認証**: Google/LINE簡単設定
 - **リアルタイム機能**: WebSocket ベースの自動同期
 - **実績**: 安定した認証・リアルタイム機能
 
 **Cloudflare（API・データベース・ホスティング）**:
+
 - **エッジ実行**: 世界中で低レイテンシ
 - **D1データベース**: SQLiteベース、高速クエリ
 - **統合プラットフォーム**: Workers + D1 + Static Assets
@@ -70,35 +72,56 @@
 
 #### 2. ページコンポーネント
 
-- **HomePage**: 質問リスト一覧、新規作成
-- **QuestionListPage**: 質問リスト表示・編集
-- **TemplatePage**: テンプレート選択・管理
+- **HomePage**: 保育園一覧、新規保育園追加
+- **NurseryDetailPage**: 保育園詳細、見学セッション一覧
+- **VisitSessionPage**: 見学セッション詳細、質問リスト表示・編集
+- **TemplatePage**: 質問テンプレート選択・管理
 - **SettingsPage**: アプリ設定、データ管理
 - **PrintPage**: 印刷用レイアウト
 
 #### 3. 機能コンポーネント
 
+- **NurseryCard**: 保育園カード表示
+- **NurseryForm**: 保育園情報入力・編集フォーム
+- **VisitSessionCard**: 見学セッションカード表示
+- **VisitSessionForm**: 見学セッション作成・編集フォーム
 - **QuestionItem**: 個別質問表示・編集
 - **AnswerInput**: 回答入力フォーム
+- **TemplateSelector**: 質問テンプレート選択
 - **SyncIndicator**: 同期状況表示
 - **OfflineIndicator**: オフライン状態表示
 - **ShareModal**: 共有設定モーダル
 
 ### データモデル
 
-#### QuestionList（質問リスト）
+#### Nursery（保育園）
 
 ```typescript
-interface QuestionList {
+interface Nursery {
   id: string;
-  title: string;
-  nurseryName?: string;
-  visitDate?: Date;
+  name: string;
+  address?: string;
+  phoneNumber?: string;
+  website?: string;
+  visitSessions: VisitSession[];
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+#### VisitSession（見学セッション）
+
+```typescript
+interface VisitSession {
+  id: string;
+  visitDate: Date;
+  status: 'planned' | 'completed' | 'cancelled';
   questions: Question[];
+  notes?: string;
   sharedWith?: string[]; // 共有相手のID
   createdAt: Date;
   updatedAt: Date;
-  isTemplate: boolean;
 }
 ```
 
@@ -110,11 +133,28 @@ interface Question {
   text: string;
   answer?: string;
   isAnswered: boolean;
-  priority: "high" | "medium" | "low";
+  priority: 'high' | 'medium' | 'low';
   category?: string;
   order: number;
   answeredBy?: string; // 回答者ID
   answeredAt?: Date;
+}
+```
+
+#### QuestionTemplate（質問テンプレート）
+
+```typescript
+interface QuestionTemplate {
+  id: string;
+  title: string;
+  description?: string;
+  ageGroup?: string; // '0-1歳', '1-2歳', '2-3歳', '一般'
+  questions: Omit<
+    Question,
+    'id' | 'answer' | 'isAnswered' | 'answeredBy' | 'answeredAt'
+  >[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
@@ -125,7 +165,7 @@ interface SyncState {
   isOnline: boolean;
   lastSyncAt?: Date;
   pendingChanges: number;
-  conflictResolution?: "local" | "remote" | "manual";
+  conflictResolution?: 'local' | 'remote' | 'manual';
 }
 ```
 
@@ -155,7 +195,7 @@ class DataStore {
   ): Promise<void>;
   async addQuestion(
     listId: string,
-    question: Omit<Question, "id">
+    question: Omit<Question, 'id'>
   ): Promise<string>;
   async deleteQuestion(listId: string, questionId: string): Promise<void>;
 
@@ -186,12 +226,9 @@ class SupabaseRealtimeService {
     listId: string,
     callback: (payload: any) => void
   ): RealtimeSubscription;
-  
-  broadcastQuestionUpdate(
-    listId: string,
-    questionData: any
-  ): Promise<void>;
-  
+
+  broadcastQuestionUpdate(listId: string, questionData: any): Promise<void>;
+
   subscribeToUserPresence(
     listId: string,
     callback: (users: any[]) => void
@@ -205,31 +242,31 @@ class SupabaseRealtimeService {
 class CloudflareAPIService {
   // 質問リスト管理（D1データベース）
   async createQuestionList(
-    list: Omit<QuestionList, "id" | "createdAt" | "updatedAt">,
+    list: Omit<QuestionList, 'id' | 'createdAt' | 'updatedAt'>,
     authToken: string
   ): Promise<QuestionList>;
-  
+
   async getQuestionLists(authToken: string): Promise<QuestionList[]>;
-  
+
   async updateQuestionList(
     id: string,
     updates: Partial<QuestionList>,
     authToken: string
   ): Promise<QuestionList>;
-  
+
   async deleteQuestionList(id: string, authToken: string): Promise<void>;
 
   // 共有機能
   async shareQuestionList(
-    listId: string, 
+    listId: string,
     email: string,
     authToken: string
   ): Promise<void>;
-  
+
   async getSharedLists(authToken: string): Promise<QuestionList[]>;
-  
+
   async removeShare(
-    listId: string, 
+    listId: string,
     userId: string,
     authToken: string
   ): Promise<void>;
@@ -310,7 +347,7 @@ sequenceDiagram
     participant S as Supabase Realtime
     participant W as Cloudflare Workers
     participant D as D1 Database
-    
+
     F->>W: 質問リスト作成 (JWT付き)
     W->>W: JWT検証 (Supabase Auth)
     W->>D: データ保存
@@ -394,11 +431,11 @@ class ErrorHandler {
 
 ```typescript
 // 例: 質問の回答状態更新
-describe("Question", () => {
-  test("回答を入力すると isAnswered が true になる", () => {
+describe('Question', () => {
+  test('回答を入力すると isAnswered が true になる', () => {
     // Red: 失敗するテストを先に書く
-    const question = new Question("質問内容");
-    question.setAnswer("回答内容");
+    const question = new Question('質問内容');
+    question.setAnswer('回答内容');
     expect(question.isAnswered).toBe(true);
   });
 });
@@ -449,21 +486,21 @@ describe("質問リスト作成", () => {
 
 ```typescript
 // 例: 見学当日の使用シナリオ
-test("見学当日: 質問リストを使って回答を記録できる", async ({ page }) => {
+test('見学当日: 質問リストを使って回答を記録できる', async ({ page }) => {
   // ログイン（ボタンのテキストで特定）
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Googleでログイン" }).click();
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Googleでログイン' }).click();
 
   // 質問リスト選択（見出しで特定）
-  await page.getByRole("heading", { name: "保育園見学質問リスト" }).click();
+  await page.getByRole('heading', { name: '保育園見学質問リスト' }).click();
 
   // 質問に回答（ラベルで特定）
-  const answerInput = page.getByLabelText("回答を入力してください");
-  await answerInput.fill("回答内容");
-  await answerInput.press("Enter");
+  const answerInput = page.getByLabelText('回答を入力してください');
+  await answerInput.fill('回答内容');
+  await answerInput.press('Enter');
 
   // 回答済み質問が下に移動することを確認（テキストで特定）
-  await expect(page.getByText("回答済み")).toBeVisible();
+  await expect(page.getByText('回答済み')).toBeVisible();
 });
 ```
 
