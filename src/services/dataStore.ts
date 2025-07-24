@@ -29,6 +29,7 @@ import {
 const STORAGE_KEYS = {
   QUESTION_LISTS: 'nursery-qa-question-lists',
   KEY_DERIVATION_SALT: 'nursery-qa-key-salt',
+  USER_KEY_MATERIAL: 'nursery-qa-user-key-material',
 } as const;
 
 // データストアエラークラス
@@ -71,107 +72,122 @@ function getOrCreateSalt(): Uint8Array {
   return salt;
 }
 
-// セッション固有のキーマテリアルを生成
-function getSessionKeyMaterial(): string {
-  // ブラウザセッション固有の情報を組み合わせて一意性を確保
-  const timestamp = Date.now().toString();
-  const random = Math.random().toString(36);
+// ユーザー固有の永続的なキーマテリアルを取得または生成
+function getUserKeyMaterial(): string {
+  // 既存のキーマテリアルを取得
+  const existingKeyMaterial = localStorage.getItem(
+    STORAGE_KEYS.USER_KEY_MATERIAL
+  );
+  if (existingKeyMaterial) {
+    return existingKeyMaterial;
+  }
+
+  // 新しいキーマテリアルを生成
   const userAgent = navigator.userAgent;
   const language = navigator.language;
+  const timestamp = Date.now().toString();
+  const randomValues = new Uint8Array(32);
+  crypto.getRandomValues(randomValues);
+  const randomString = Array.from(randomValues, (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
 
-  return `${timestamp}-${random}-${userAgent}-${language}`;
+  const keyMaterial = `${userAgent}-${language}-${timestamp}-${randomString}`;
+
+  // 永続的に保存
+  localStorage.setItem(STORAGE_KEYS.USER_KEY_MATERIAL, keyMaterial);
+
+  return keyMaterial;
 }
 
-// 開発用：暗号化機能を一時的に無効化
-// async function getCryptoKey(): Promise<CryptoKey> {
-//   const salt = getOrCreateSalt();
-//   const keyMaterial = getSessionKeyMaterial();
+async function getCryptoKey(): Promise<CryptoKey> {
+  const salt = getOrCreateSalt();
+  const keyMaterial = getUserKeyMaterial();
 
-//   // キーマテリアルをPBKDF2で強化
-//   const baseKey = await crypto.subtle.importKey(
-//     'raw',
-//     new TextEncoder().encode(keyMaterial),
-//     'PBKDF2',
-//     false,
-//     ['deriveKey']
-//   );
+  // キーマテリアルをPBKDF2で強化
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(keyMaterial),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
 
-//   return await crypto.subtle.deriveKey(
-//     {
-//       name: 'PBKDF2',
-//       salt: salt,
-//       iterations: 100000,
-//       hash: 'SHA-256',
-//     },
-//     baseKey,
-//     { name: 'AES-GCM', length: 256 },
-//     false,
-//     ['encrypt', 'decrypt']
-//   );
-// }
+  return await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
 
-// 開発用：暗号化機能を一時的に無効化
-// async function encryptData(data: string): Promise<string> {
-//   try {
-//     const key = await getCryptoKey();
-//     const iv = crypto.getRandomValues(new Uint8Array(12));
-//     const encodedData = new TextEncoder().encode(data);
+async function encryptData(data: string): Promise<string> {
+  try {
+    const key = await getCryptoKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encodedData = new TextEncoder().encode(data);
 
-//     const encrypted = await crypto.subtle.encrypt(
-//       { name: 'AES-GCM', iv },
-//       key,
-//       encodedData
-//     );
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      encodedData
+    );
 
-//     // IVと暗号化データを結合してBase64エンコード
-//     const combined = new Uint8Array(iv.length + encrypted.byteLength);
-//     combined.set(iv);
-//     combined.set(new Uint8Array(encrypted), iv.length);
+    // IVと暗号化データを結合してBase64エンコード
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
 
-//     return btoa(String.fromCharCode(...combined));
-//   } catch {
-//     throw new DataStoreError(
-//       'データの暗号化に失敗しました',
-//       'ENCRYPTION_FAILED'
-//     );
-//   }
-// }
+    return btoa(String.fromCharCode(...combined));
+  } catch {
+    throw new DataStoreError(
+      'データの暗号化に失敗しました',
+      'ENCRYPTION_FAILED'
+    );
+  }
+}
 
-// async function decryptData(encryptedData: string): Promise<string> {
-//   try {
-//     const key = await getCryptoKey();
-//     const combined = new Uint8Array(
-//       atob(encryptedData)
-//         .split('')
-//         .map((char) => char.charCodeAt(0))
-//     );
+async function decryptData(encryptedData: string): Promise<string> {
+  try {
+    const key = await getCryptoKey();
+    const combined = new Uint8Array(
+      atob(encryptedData)
+        .split('')
+        .map((char) => char.charCodeAt(0))
+    );
 
-//     const iv = combined.slice(0, 12);
-//     const encrypted = combined.slice(12);
+    const iv = combined.slice(0, 12);
+    const encrypted = combined.slice(12);
 
-//     const decrypted = await crypto.subtle.decrypt(
-//       { name: 'AES-GCM', iv },
-//       key,
-//       encrypted
-//     );
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      encrypted
+    );
 
-//     return new TextDecoder().decode(decrypted);
-//   } catch {
-//     throw new DataStoreError(
-//       'データの復号化に失敗しました',
-//       'DECRYPTION_FAILED'
-//     );
-//   }
-// }
+    return new TextDecoder().decode(decrypted);
+  } catch {
+    throw new DataStoreError(
+      'データの復号化に失敗しました',
+      'DECRYPTION_FAILED'
+    );
+  }
+}
 
 /**
  * ローカルストレージを使用したデータストア実装
  */
 export class DataStore {
   /**
-   * データをローカルストレージに保存（開発用：暗号化無効）
+   * 暗号化されたデータをローカルストレージに保存
    */
-  private saveToStorage(key: string, data: unknown): void {
+  private async saveToStorage(key: string, data: unknown): Promise<void> {
     try {
       const jsonData = JSON.stringify(data, (_, value: unknown) => {
         // Dateオブジェクトを文字列に変換
@@ -181,8 +197,8 @@ export class DataStore {
         return value;
       });
 
-      // 開発用：暗号化を無効化
-      localStorage.setItem(key, jsonData);
+      const encryptedData = await encryptData(jsonData);
+      localStorage.setItem(key, encryptedData);
     } catch (error) {
       console.error('saveToStorage error:', error);
       throw new DataStoreError(
@@ -193,16 +209,51 @@ export class DataStore {
   }
 
   /**
-   * ローカルストレージからデータを読み込み（開発用：暗号化無効）
+   * ローカルストレージからデータを読み込み（暗号化・平文両対応）
    */
-  private loadFromStorage<T>(key: string): T | null {
+  private async loadFromStorage<T>(key: string): Promise<T | null> {
     try {
-      const jsonData = localStorage.getItem(key);
-      if (!jsonData) {
+      const storedData = localStorage.getItem(key);
+      if (!storedData) {
         return null;
       }
 
-      // 開発用：暗号化を無効化
+      let jsonData: string;
+
+      // データが暗号化データかどうかを判別
+      const isEncryptedData = this.isBase64EncodedData(storedData);
+
+      if (isEncryptedData) {
+        // 暗号化データとして復号化を試行
+        try {
+          jsonData = await decryptData(storedData);
+        } catch {
+          console.warn(
+            'データの復号化に失敗しました。データをクリアして新しく開始します。'
+          );
+
+          // 復号化に失敗した場合は、古いキーで暗号化されたデータの可能性があるため
+          // データをクリアして新しく開始する
+          localStorage.removeItem(key);
+          return null;
+        }
+      } else {
+        // 平文データとして処理（後方互換性）
+        jsonData = storedData;
+
+        // 平文データを暗号化して保存し直す（マイグレーション）
+        try {
+          const parsedData = JSON.parse(jsonData) as unknown;
+          await this.saveToStorage(key, parsedData);
+        } catch (migrationError) {
+          console.warn(
+            'データの暗号化処理に失敗しました:',
+            (migrationError as Error).message
+          );
+          // マイグレーション失敗は致命的ではないため継続
+        }
+      }
+
       return JSON.parse(jsonData, (_, value: unknown) => {
         // 文字列をDateオブジェクトに復元
         if (
@@ -223,6 +274,22 @@ export class DataStore {
       }) as T;
     } catch (error) {
       console.error('loadFromStorage error:', error);
+
+      // 復号化失敗エラーの場合は、データをクリアして新しく開始
+      if (
+        error instanceof DataStoreError &&
+        error.code === 'DECRYPTION_FAILED'
+      ) {
+        console.warn('データをクリアして新しく開始します');
+        localStorage.removeItem(key);
+        return null;
+      }
+
+      // 既にDataStoreErrorの場合はそのまま投げる
+      if (error instanceof DataStoreError) {
+        throw error;
+      }
+
       throw new DataStoreError(
         'データの読み込みに失敗しました',
         'STORAGE_LOAD_FAILED'
@@ -231,10 +298,44 @@ export class DataStore {
   }
 
   /**
+   * Base64エンコードされた暗号化データかどうかを判別
+   */
+  private isBase64EncodedData(data: string): boolean {
+    // まず有効なJSONかどうかを確認
+    try {
+      JSON.parse(data);
+      // JSONとして解析できる場合は平文データ
+      return false;
+    } catch {
+      // JSONとして解析できない場合は暗号化データの可能性がある
+    }
+
+    // Base64の基本的な特徴をチェック
+    if (data.length === 0) return false;
+
+    // Base64文字セットのみで構成されているかチェック
+    const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
+    if (!base64Regex.test(data)) return false;
+
+    // Base64の長さは4の倍数である必要がある
+    if (data.length % 4 !== 0) return false;
+
+    // Base64として有効かどうかをチェック
+    try {
+      atob(data);
+      // Base64として有効で、JSONとして無効な場合は暗号化データ
+      return true;
+    } catch {
+      // Base64としても無効な場合は平文データ
+      return false;
+    }
+  }
+
+  /**
    * 全ての質問リストを取得
    */
-  getAllQuestionLists(): QuestionList[] {
-    const lists = this.loadFromStorage<QuestionList[]>(
+  async getAllQuestionLists(): Promise<QuestionList[]> {
+    const lists = await this.loadFromStorage<QuestionList[]>(
       STORAGE_KEYS.QUESTION_LISTS
     );
     return lists || [];
@@ -243,14 +344,14 @@ export class DataStore {
   /**
    * 質問リストを保存
    */
-  private saveQuestionLists(lists: QuestionList[]): void {
-    this.saveToStorage(STORAGE_KEYS.QUESTION_LISTS, lists);
+  private async saveQuestionLists(lists: QuestionList[]): Promise<void> {
+    await this.saveToStorage(STORAGE_KEYS.QUESTION_LISTS, lists);
   }
 
   /**
    * 質問リストを作成
    */
-  createQuestionList(input: CreateQuestionListInput): string {
+  async createQuestionList(input: CreateQuestionListInput): Promise<string> {
     // バリデーション
     const validation = validateCreateQuestionListInput(input);
     if (!validation.isValid) {
@@ -262,7 +363,7 @@ export class DataStore {
 
     try {
       const newList = createQuestionList(input);
-      const existingLists = this.getAllQuestionLists();
+      const existingLists = await this.getAllQuestionLists();
 
       // 同名チェック
       const duplicateName = existingLists.some(
@@ -276,7 +377,7 @@ export class DataStore {
       }
 
       const updatedLists = [...existingLists, newList];
-      this.saveQuestionLists(updatedLists);
+      await this.saveQuestionLists(updatedLists);
 
       return newList.id;
     } catch (error) {
@@ -763,6 +864,8 @@ export class DataStore {
     try {
       localStorage.removeItem(STORAGE_KEYS.QUESTION_LISTS);
       localStorage.removeItem(STORAGE_KEYS.KEY_DERIVATION_SALT);
+      localStorage.removeItem(STORAGE_KEYS.USER_KEY_MATERIAL);
+      console.info('全てのデータを削除しました');
       // 非同期処理の一貫性のため
       await Promise.resolve();
     } catch {
