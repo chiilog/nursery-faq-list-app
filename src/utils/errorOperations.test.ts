@@ -35,10 +35,11 @@ const createTestAppError = (
   message: string,
   code: string = 'TEST_ERROR'
 ): AppError => {
-  const error = new Error(message);
-  (error as AppError).code = code;
-  (error as AppError).timestamp = new Date();
-  return error as AppError;
+  return {
+    message,
+    code,
+    timestamp: new Date(),
+  };
 };
 
 describe('errorOperations', () => {
