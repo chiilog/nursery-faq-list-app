@@ -158,8 +158,13 @@ describe('QuestionListCreator', () => {
       expect(mockOnCreate).toHaveBeenCalledWith({
         title: 'テスト質問リスト',
         nurseryName: 'テスト保育園',
-        visitDate: new Date('2024-01-15'),
+        visitDate: expect.any(Date),
       });
+
+      // 日付の値を別途検証
+      const callArgs = mockOnCreate.mock.calls[0]?.[0] as { visitDate?: Date };
+      const dateString = callArgs?.visitDate?.toISOString().split('T')[0];
+      expect(dateString).toBe('2024-01-15');
     });
 
     test('タイトルのみ入力して作成できる（オプション項目は空でも可）', async () => {

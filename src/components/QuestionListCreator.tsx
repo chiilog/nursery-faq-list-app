@@ -10,15 +10,25 @@ interface QuestionListCreatorProps {
   onCancel: () => void;
 }
 
+interface FormState {
+  title: string;
+  nurseryName: string;
+  visitDate: string;
+  errors: { [key: string]: string };
+  touched: { [key: string]: boolean };
+}
+
 export const QuestionListCreator = ({
   onCreate,
   onCancel,
 }: QuestionListCreatorProps) => {
-  const [title, setTitle] = useState('');
-  const [nurseryName, setNurseryName] = useState('');
-  const [visitDate, setVisitDate] = useState('');
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+  const [formState, setFormState] = useState<FormState>({
+    title: '',
+    nurseryName: '',
+    visitDate: '',
+    errors: {},
+    touched: {},
+  });
 
   const validateTitle = (value: string): string => {
     if (!value.trim()) {
@@ -31,38 +41,60 @@ export const QuestionListCreator = ({
   };
 
   const handleTitleChange = (value: string) => {
-    setTitle(value);
-    if (touched.title) {
-      const error = validateTitle(value);
-      setErrors((prev) => ({ ...prev, title: error }));
-    }
+    setFormState((prev) => ({
+      ...prev,
+      title: value,
+      errors: prev.touched.title
+        ? { ...prev.errors, title: validateTitle(value) }
+        : prev.errors,
+    }));
   };
 
   const handleTitleBlur = () => {
-    setTouched((prev) => ({ ...prev, title: true }));
-    const error = validateTitle(title);
-    setErrors((prev) => ({ ...prev, title: error }));
+    const error = validateTitle(formState.title);
+    setFormState((prev) => ({
+      ...prev,
+      touched: { ...prev.touched, title: true },
+      errors: { ...prev.errors, title: error },
+    }));
   };
 
   const isFormValid = () => {
-    const titleError = validateTitle(title);
-    return title.trim() && !titleError;
+    return formState.title.trim() && !formState.errors.title;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const titleError = validateTitle(title);
+    const titleError = validateTitle(formState.title);
     if (titleError) {
-      setErrors({ title: titleError });
-      setTouched({ title: true });
+      setFormState((prev) => ({
+        ...prev,
+        errors: { title: titleError },
+        touched: { title: true },
+      }));
       return;
     }
 
+    // 日付の妥当性チェック
+    const parsedDate = formState.visitDate
+      ? new Date(formState.visitDate)
+      : undefined;
+    const validDate =
+      parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : undefined;
+
     onCreate({
-      title: title.trim(),
-      nurseryName: nurseryName.trim(),
-      visitDate: visitDate ? new Date(visitDate) : undefined,
+      title: formState.title.trim(),
+      nurseryName: formState.nurseryName.trim(),
+      visitDate: validDate,
     });
+  };
+
+  const handleNurseryNameChange = (value: string) => {
+    setFormState((prev) => ({ ...prev, nurseryName: value }));
+  };
+
+  const handleVisitDateChange = (value: string) => {
+    setFormState((prev) => ({ ...prev, visitDate: value }));
   };
 
   const titleErrorId = 'title-error';
@@ -76,67 +108,113 @@ export const QuestionListCreator = ({
         aria-label="質問リスト作成フォーム"
         onSubmit={handleSubmit}
         p={6}
+        bg="white"
+        borderRadius="lg"
+        boxShadow="sm"
+        border="1px solid #e2e8f0"
       >
         <VStack spacing={4} align="stretch">
           <div>
-            <label htmlFor="title">タイトル</label>
+            <label
+              htmlFor="title"
+              style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: 'medium',
+                color: '#4a5568',
+              }}
+            >
+              タイトル
+            </label>
             <input
               id="title"
               type="text"
-              value={title}
+              value={formState.title}
               onChange={(e) => handleTitleChange(e.target.value)}
               onBlur={handleTitleBlur}
               placeholder="質問リストのタイトルを入力"
               aria-required="true"
               aria-describedby={
-                touched.title && errors.title ? titleErrorId : undefined
+                formState.touched.title && formState.errors.title
+                  ? titleErrorId
+                  : undefined
               }
               style={{
                 width: '100%',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
+                padding: '12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                backgroundColor: '#f7fafc',
+                fontSize: '16px',
+                borderColor:
+                  formState.touched.title && formState.errors.title
+                    ? '#e53e3e'
+                    : '#e2e8f0',
               }}
             />
-            {touched.title && errors.title && (
+            {formState.touched.title && formState.errors.title && (
               <div
                 id={titleErrorId}
-                style={{ color: 'red', fontSize: '14px', marginTop: '4px' }}
+                style={{ color: '#e53e3e', fontSize: '14px', marginTop: '4px' }}
               >
-                {errors.title}
+                {formState.errors.title}
               </div>
             )}
           </div>
 
           <div>
-            <label htmlFor="nurseryName">保育園名</label>
+            <label
+              htmlFor="nurseryName"
+              style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: 'medium',
+                color: '#4a5568',
+              }}
+            >
+              保育園名
+            </label>
             <input
               id="nurseryName"
               type="text"
-              value={nurseryName}
-              onChange={(e) => setNurseryName(e.target.value)}
+              value={formState.nurseryName}
+              onChange={(e) => handleNurseryNameChange(e.target.value)}
               placeholder="見学予定の保育園名（任意）"
               style={{
                 width: '100%',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
+                padding: '12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                backgroundColor: '#f7fafc',
+                fontSize: '16px',
               }}
             />
           </div>
 
           <div>
-            <label htmlFor="visitDate">見学予定日</label>
+            <label
+              htmlFor="visitDate"
+              style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: 'medium',
+                color: '#4a5568',
+              }}
+            >
+              見学予定日
+            </label>
             <input
               id="visitDate"
               type="date"
-              value={visitDate}
-              onChange={(e) => setVisitDate(e.target.value)}
+              value={formState.visitDate}
+              onChange={(e) => handleVisitDateChange(e.target.value)}
               style={{
                 width: '100%',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
+                padding: '12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                backgroundColor: '#f7fafc',
+                fontSize: '16px',
               }}
             />
           </div>
@@ -144,20 +222,23 @@ export const QuestionListCreator = ({
           <div
             style={{
               display: 'flex',
-              gap: '12px',
+              gap: '16px',
               justifyContent: 'flex-end',
-              paddingTop: '16px',
+              paddingTop: '24px',
             }}
           >
             <button
               type="button"
               onClick={onCancel}
               style={{
-                padding: '8px 16px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
+                padding: '12px 24px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
                 backgroundColor: 'white',
                 cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: 'medium',
+                minWidth: '100px',
               }}
             >
               キャンセル
@@ -166,12 +247,16 @@ export const QuestionListCreator = ({
               type="submit"
               disabled={!isFormValid()}
               style={{
-                padding: '8px 16px',
+                padding: '12px 24px',
                 border: 'none',
-                borderRadius: '4px',
-                backgroundColor: isFormValid() ? '#3182ce' : '#ccc',
+                borderRadius: '6px',
+                backgroundColor: isFormValid() ? '#3182ce' : '#cbd5e0',
                 color: 'white',
                 cursor: isFormValid() ? 'pointer' : 'not-allowed',
+                fontSize: '16px',
+                fontWeight: 'medium',
+                minWidth: '100px',
+                opacity: isFormValid() ? 1 : 0.6,
               }}
             >
               作成
