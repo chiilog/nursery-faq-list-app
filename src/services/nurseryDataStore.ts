@@ -12,6 +12,42 @@ import type {
   UpdateVisitSessionInput,
 } from '../types/data';
 
+// シリアライズされたデータの型定義（JSON形式）
+interface SerializedNursery {
+  id: string;
+  name: string;
+  address?: string;
+  phoneNumber?: string;
+  website?: string;
+  visitSessions: SerializedVisitSession[];
+  notes?: string;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+}
+
+interface SerializedVisitSession {
+  id: string;
+  visitDate: string; // ISO date string
+  status: 'planned' | 'completed' | 'cancelled';
+  questions: SerializedQuestion[];
+  notes?: string;
+  sharedWith?: string[];
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+}
+
+interface SerializedQuestion {
+  id: string;
+  text: string;
+  answer?: string;
+  isAnswered: boolean;
+  priority: 'high' | 'medium' | 'low';
+  category?: string;
+  order: number;
+  answeredBy?: string;
+  answeredAt?: string; // ISO date string
+}
+
 // データストアエラークラス
 export class NurseryDataStoreError extends Error {
   constructor(
@@ -81,67 +117,94 @@ class NurseryDataStore {
     }
   }
 
-  async getNursery(id: string): Promise<Nursery | null> {
-    try {
-      const nurseriesData = localStorage.getItem(NURSERIES_STORAGE_KEY);
-      if (!nurseriesData) return null;
-      
-      const nurseries = JSON.parse(nurseriesData) as Record<string, any>;
-      const nurseryData = nurseries[id];
-      
-      if (!nurseryData) return null;
-      
-      return {
-        ...nurseryData,
-        createdAt: new Date(nurseryData.createdAt),
-        updatedAt: new Date(nurseryData.updatedAt),
-        visitSessions: nurseryData.visitSessions.map((session: any) => ({
-          ...session,
-          visitDate: new Date(session.visitDate),
-          createdAt: new Date(session.createdAt),
-          updatedAt: new Date(session.updatedAt),
-        })),
-      };
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new NurseryDataStoreError(
-          'データの読み込みに失敗しました',
-          'LOAD_FAILED',
-          error
-        );
+  getNursery(id: string): Promise<Nursery | null> {
+    return new Promise((resolve, reject) => {
+      try {
+        const nurseriesData = localStorage.getItem(NURSERIES_STORAGE_KEY);
+        if (!nurseriesData) {
+          resolve(null);
+          return;
+        }
+        
+        const nurseries = JSON.parse(nurseriesData) as Record<string, SerializedNursery>;
+        const nurseryData = nurseries[id];
+        
+        if (!nurseryData) {
+          resolve(null);
+          return;
+        }
+        
+        const nursery: Nursery = {
+          ...nurseryData,
+          createdAt: new Date(nurseryData.createdAt),
+          updatedAt: new Date(nurseryData.updatedAt),
+          visitSessions: nurseryData.visitSessions.map((session: SerializedVisitSession): VisitSession => ({
+            ...session,
+            visitDate: new Date(session.visitDate),
+            createdAt: new Date(session.createdAt),
+            updatedAt: new Date(session.updatedAt),
+            questions: session.questions.map((question: SerializedQuestion) => ({
+              ...question,
+              answeredAt: question.answeredAt ? new Date(question.answeredAt) : undefined,
+            })),
+          })),
+        };
+        
+        resolve(nursery);
+      } catch (error) {
+        if (error instanceof Error) {
+          reject(new NurseryDataStoreError(
+            'データの読み込みに失敗しました',
+            'LOAD_FAILED',
+            error
+          ));
+        } else {
+          reject(error);
+        }
       }
-      throw error;
-    }
+    });
   }
 
-  async getAllNurseries(): Promise<Nursery[]> {
-    try {
-      const nurseriesData = localStorage.getItem(NURSERIES_STORAGE_KEY);
-      if (!nurseriesData) return [];
-      
-      const nurseries = JSON.parse(nurseriesData) as Record<string, any>;
-      
-      return Object.values(nurseries).map((nurseryData: any) => ({
-        ...nurseryData,
-        createdAt: new Date(nurseryData.createdAt),
-        updatedAt: new Date(nurseryData.updatedAt),
-        visitSessions: nurseryData.visitSessions.map((session: any) => ({
-          ...session,
-          visitDate: new Date(session.visitDate),
-          createdAt: new Date(session.createdAt),
-          updatedAt: new Date(session.updatedAt),
-        })),
-      }));
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new NurseryDataStoreError(
-          'データの読み込みに失敗しました',
-          'LOAD_FAILED',
-          error
-        );
+  getAllNurseries(): Promise<Nursery[]> {
+    return new Promise((resolve, reject) => {
+      try {
+        const nurseriesData = localStorage.getItem(NURSERIES_STORAGE_KEY);
+        if (!nurseriesData) {
+          resolve([]);
+          return;
+        }
+        
+        const serializedNurseries = JSON.parse(nurseriesData) as Record<string, SerializedNursery>;
+        
+        const nurseries = Object.values(serializedNurseries).map((nurseryData: SerializedNursery): Nursery => ({
+          ...nurseryData,
+          createdAt: new Date(nurseryData.createdAt),
+          updatedAt: new Date(nurseryData.updatedAt),
+          visitSessions: nurseryData.visitSessions.map((session: SerializedVisitSession): VisitSession => ({
+            ...session,
+            visitDate: new Date(session.visitDate),
+            createdAt: new Date(session.createdAt),
+            updatedAt: new Date(session.updatedAt),
+            questions: session.questions.map((question: SerializedQuestion) => ({
+              ...question,
+              answeredAt: question.answeredAt ? new Date(question.answeredAt) : undefined,
+            })),
+          })),
+        }));
+        
+        resolve(nurseries);
+      } catch (error) {
+        if (error instanceof Error) {
+          reject(new NurseryDataStoreError(
+            'データの読み込みに失敗しました',
+            'LOAD_FAILED',
+            error
+          ));
+        } else {
+          reject(error);
+        }
       }
-      throw error;
-    }
+    });
   }
 
   async updateNursery(id: string, updates: UpdateNurseryInput): Promise<void> {

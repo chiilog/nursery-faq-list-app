@@ -356,7 +356,7 @@ export const useNurseryStore = create<NurseryState>()(
       },
 
       async setCurrentVisitSession(sessionId: string | null) {
-        const { setLoading, clearError, currentNursery } = get();
+        const { setLoading, clearError } = get();
 
         if (!sessionId) {
           set({ currentVisitSession: null });

@@ -150,7 +150,7 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
       
       const setItemCalls = mockLocalStorage.setItem.mock.calls;
       const lastCall = setItemCalls[setItemCalls.length - 1];
-      const updatedData = JSON.parse(lastCall[1]);
+      const updatedData = JSON.parse(lastCall[1] as string) as Record<string, any>;
       expect(updatedData).not.toHaveProperty('nursery-1');
       expect(updatedData).toHaveProperty('nursery-2');
     });
@@ -238,8 +238,8 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
       
       const setItemCalls = mockLocalStorage.setItem.mock.calls;
       const lastCall = setItemCalls[setItemCalls.length - 1];
-      const updatedData = JSON.parse(lastCall[1]);
-      const nursery = updatedData['nursery-1'];
+      const updatedData = JSON.parse(lastCall[1] as string) as Record<string, any>;
+      const nursery = updatedData['nursery-1'] as any;
       expect(nursery.visitSessions).toHaveLength(0);
     });
   });
@@ -265,13 +265,13 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
       
       const setItemCalls = mockLocalStorage.setItem.mock.calls;
       const lastCall = setItemCalls[setItemCalls.length - 1];
-      const savedData = JSON.parse(lastCall[1]);
-      const savedNursery = savedData[nurseryId];
+      const savedData = JSON.parse(lastCall[1] as string) as Record<string, any>;
+      const savedNursery = savedData[nurseryId] as any;
       
       expect(savedNursery.createdAt).toBeDefined();
       expect(savedNursery.updatedAt).toBeDefined();
-      expect(new Date(savedNursery.updatedAt).getTime()).toBeGreaterThanOrEqual(
-        new Date(savedNursery.createdAt).getTime()
+      expect(new Date(savedNursery.updatedAt as string).getTime()).toBeGreaterThanOrEqual(
+        new Date(savedNursery.createdAt as string).getTime()
       );
     });
   });
