@@ -12,7 +12,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { renderHook } from '@testing-library/react';
 import type { RenderHookResult } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import system from '../theme';
+import system from '../theme/index';
 
 // Chakra UI Provider Wrapper
 const ChakraWrapper = ({ children }: { children: ReactNode }) => (

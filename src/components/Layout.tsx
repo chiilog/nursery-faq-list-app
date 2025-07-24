@@ -5,9 +5,11 @@ import {
   Flex,
   Heading,
   Link as ChakraLink,
+  Menu,
+  Portal,
   useBreakpointValue,
 } from '@chakra-ui/react';
-import { Link as RouterLink, Outlet } from 'react-router-dom';
+import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom';
 import { ReactNode } from 'react';
 
 interface LayoutProps {
@@ -16,6 +18,15 @@ interface LayoutProps {
 
 export const Layout = ({ children }: LayoutProps) => {
   const isMobile = useBreakpointValue({ base: true, md: false }) ?? true;
+  const navigate = useNavigate();
+
+  const handleCreateNew = () => {
+    void navigate('/create');
+  };
+
+  const handleNavigateHome = () => {
+    void navigate('/');
+  };
 
   return (
     <Box minH="100vh" bg="gray.50">
@@ -28,15 +39,33 @@ export const Layout = ({ children }: LayoutProps) => {
 
             <nav aria-label="メインナビゲーション">
               {isMobile ? (
-                <Button aria-label="メニュー" variant="outline">
-                  メニュー
-                </Button>
+                <Menu.Root>
+                  <Menu.Trigger asChild>
+                    <Button aria-label="メニュー" variant="outline">
+                      メニュー
+                    </Button>
+                  </Menu.Trigger>
+                  <Portal>
+                    <Menu.Positioner>
+                      <Menu.Content>
+                        <Menu.Item value="home" onClick={handleNavigateHome}>
+                          ホーム
+                        </Menu.Item>
+                        <Menu.Item value="create" onClick={handleCreateNew}>
+                          新規作成
+                        </Menu.Item>
+                      </Menu.Content>
+                    </Menu.Positioner>
+                  </Portal>
+                </Menu.Root>
               ) : (
                 <Flex gap={4} align="center">
                   <ChakraLink as={RouterLink} to="/" fontWeight="medium">
                     ホーム
                   </ChakraLink>
-                  <Button colorScheme="teal">新規作成</Button>
+                  <Button colorScheme="teal" onClick={handleCreateNew}>
+                    新規作成
+                  </Button>
                 </Flex>
               )}
             </nav>
