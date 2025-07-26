@@ -9,7 +9,7 @@ describe('Layout', () => {
       renderWithProviders(<Layout />);
 
       const title = screen.getByRole('heading', {
-        name: /保育園見学アプリ/i,
+        name: /保育園見学質問リスト/i,
       });
       expect(title).toBeInTheDocument();
     });
@@ -18,7 +18,7 @@ describe('Layout', () => {
       renderWithProviders(<Layout />);
 
       const title = screen.getByRole('heading', {
-        name: /保育園見学アプリ/i,
+        name: /保育園見学質問リスト/i,
       });
       expect(title).toHaveStyle({ textAlign: 'center' });
     });
@@ -48,7 +48,7 @@ describe('Layout', () => {
 
       const title = screen.getByRole('heading', { level: 1 });
       expect(title).toBeInTheDocument();
-      expect(title).toHaveTextContent('保育園見学アプリ');
+      expect(title).toHaveTextContent('保育園見学質問リスト');
     });
   });
 });

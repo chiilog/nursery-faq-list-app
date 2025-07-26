@@ -12,7 +12,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <Box as="header" bg="white" shadow="sm">
         <Container maxW="container.xl" py={4}>
           <Heading as="h1" size="lg" color="teal.600" textAlign="center">
-            保育園見学アプリ
+            保育園見学質問リスト
           </Heading>
         </Container>
       </Box>
