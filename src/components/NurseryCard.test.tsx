@@ -4,6 +4,7 @@
  */
 
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { renderWithProviders, testUtils } from '../test/test-utils';
 import { NurseryCard } from './NurseryCard';
@@ -80,7 +81,8 @@ describe('NurseryCard コンポーネント', () => {
   });
 
   describe('インタラクション', () => {
-    test('カードクリックでonClickコールバックが呼ばれる', () => {
+    test('カードクリックでonClickコールバックが呼ばれる', async () => {
+      const user = userEvent.setup();
       const mockOnClick = vi.fn();
       const nursery = testUtils.createMockNursery();
 
@@ -89,12 +91,13 @@ describe('NurseryCard コンポーネント', () => {
       );
 
       const card = screen.getByRole('button', { name: /テスト保育園/ });
-      card.click();
+      await user.click(card);
 
       expect(mockOnClick).toHaveBeenCalledWith(nursery);
     });
 
-    test('Enterキーでもカードが操作できる', () => {
+    test('Enterキーでカードが操作できる', async () => {
+      const user = userEvent.setup();
       const mockOnClick = vi.fn();
       const nursery = testUtils.createMockNursery();
 
@@ -104,11 +107,94 @@ describe('NurseryCard コンポーネント', () => {
 
       const card = screen.getByRole('button', { name: /テスト保育園/ });
       card.focus();
-      card.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
-      );
+      await user.keyboard('{Enter}');
 
       expect(mockOnClick).toHaveBeenCalledWith(nursery);
+    });
+
+    test('Spaceキーでカードが操作できる', async () => {
+      const user = userEvent.setup();
+      const mockOnClick = vi.fn();
+      const nursery = testUtils.createMockNursery();
+
+      renderWithProviders(
+        <NurseryCard nursery={nursery} onClick={mockOnClick} />
+      );
+
+      const card = screen.getByRole('button', { name: /テスト保育園/ });
+      card.focus();
+      await user.keyboard(' ');
+
+      expect(mockOnClick).toHaveBeenCalledWith(nursery);
+    });
+
+    test('その他のキーでは操作されない', async () => {
+      const user = userEvent.setup();
+      const mockOnClick = vi.fn();
+      const nursery = testUtils.createMockNursery();
+
+      renderWithProviders(
+        <NurseryCard nursery={nursery} onClick={mockOnClick} />
+      );
+
+      const card = screen.getByRole('button', { name: /テスト保育園/ });
+      card.focus();
+      await user.keyboard('{Escape}');
+
+      expect(mockOnClick).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('エラーケースの処理', () => {
+    test('onClickコールバックがundefinedでもエラーが発生しない', async () => {
+      const user = userEvent.setup();
+      const nursery = testUtils.createMockNursery();
+
+      // TypeScriptエラーを回避するためのキャスト
+      const onClickUndefined = undefined as unknown as (
+        nursery: typeof nursery
+      ) => void;
+
+      expect(() => {
+        renderWithProviders(
+          <NurseryCard nursery={nursery} onClick={onClickUndefined} />
+        );
+      }).not.toThrow();
+
+      const card = screen.getByRole('button', { name: /テスト保育園/ });
+
+      // クリックしてもエラーが発生せず、UIが正常に表示されることを確認
+      await user.click(card);
+      expect(screen.getByText('テスト保育園')).toBeInTheDocument();
+    });
+
+    test('onClickコールバックで例外が発生してもUIに影響しない', async () => {
+      const user = userEvent.setup();
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const mockOnClick = vi.fn().mockImplementation(() => {
+        throw new Error('テスト用エラー');
+      });
+      const nursery = testUtils.createMockNursery();
+
+      renderWithProviders(
+        <NurseryCard nursery={nursery} onClick={mockOnClick} />
+      );
+
+      const card = screen.getByRole('button', { name: /テスト保育園/ });
+
+      // クリックしてもUIが正常に表示されることを確認
+      await user.click(card);
+      expect(screen.getByText('テスト保育園')).toBeInTheDocument();
+
+      // コンソールエラーが記録されることを確認
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'NurseryCard onClick error:',
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
     });
   });
 

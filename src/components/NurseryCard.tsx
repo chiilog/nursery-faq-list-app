@@ -73,7 +73,14 @@ const getQuestionProgress = (visitSessions: VisitSession[]): string => {
  */
 export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
   const handleInteraction = () => {
-    onClick(nursery);
+    try {
+      if (typeof onClick === 'function') {
+        onClick(nursery);
+      }
+    } catch (error) {
+      // エラーをコンソールに記録するが、UIには影響させない
+      console.error('NurseryCard onClick error:', error);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
