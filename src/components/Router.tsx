@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Layout } from './Layout';
 import { Box, Heading, Text, Button, VStack, Spinner } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
@@ -9,6 +9,7 @@ import type { Nursery } from '../types/data';
 
 // ホームページコンポーネント（保育園カード一覧）
 const HomePage = () => {
+  const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const {
     nurseries,
@@ -36,8 +37,7 @@ const HomePage = () => {
   const handleNurseryClick = async (nursery: Nursery) => {
     try {
       await setCurrentNursery(nursery.id);
-      // TODO: 保育園詳細ページへの遷移を実装
-      console.log('保育園詳細ページに遷移:', nursery.name);
+      void navigate(`/nursery/${nursery.id}`);
     } catch (error) {
       console.error('保育園選択エラー:', error);
     }
