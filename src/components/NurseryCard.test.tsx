@@ -5,8 +5,8 @@
 
 import { screen } from '@testing-library/react';
 import { vi } from 'vitest';
-import { renderWithProviders, testUtils } from '../../test/test-utils';
-import { NurseryCard } from '../NurseryCard';
+import { renderWithProviders, testUtils } from '../test/test-utils';
+import { NurseryCard } from './NurseryCard';
 // Nursery型は testUtils.createMockNursery で使用
 
 describe('NurseryCard コンポーネント', () => {
