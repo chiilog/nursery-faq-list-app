@@ -73,7 +73,7 @@ export const QuestionList = ({
   if (questionList.questions.length === 0) {
     return (
       <Container maxW="container.md" py={6}>
-        <VStack spacing={4} align="stretch">
+        <VStack gap={4} align="stretch">
           <Heading as="h1" size="lg" textAlign="center">
             {questionList.title}
           </Heading>
@@ -87,7 +87,7 @@ export const QuestionList = ({
 
   return (
     <Container maxW="container.md" py={6}>
-      <VStack spacing={6} align="stretch">
+      <VStack gap={6} align="stretch">
         <Box textAlign="center">
           <Heading as="h1" size="lg" mb={2}>
             {questionList.title}
@@ -136,12 +136,12 @@ export const QuestionList = ({
                 aria-label={`質問: ${question.text}`}
                 tabIndex={0}
               >
-                <VStack align="stretch" spacing={2}>
+                <VStack align="stretch" gap={2}>
                   <HStack justify="space-between" align="flex-start">
                     <Text fontWeight="medium" flex={1}>
                       {question.text}
                     </Text>
-                    <HStack spacing={2}>
+                    <HStack gap={2}>
                       <Badge
                         colorScheme={
                           question.priority === 'high'
@@ -172,7 +172,7 @@ export const QuestionList = ({
                   )}
 
                   {expandedQuestionId === question.id && (
-                    <VStack spacing={3} align="stretch" pt={2}>
+                    <VStack gap={3} align="stretch" pt={2}>
                       <Input
                         placeholder="回答を入力してください"
                         value={answerText}

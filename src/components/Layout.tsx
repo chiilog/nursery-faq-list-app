@@ -4,13 +4,12 @@ import {
   Container,
   Flex,
   Heading,
-  Link as ChakraLink,
   Menu,
   Portal,
   useBreakpointValue,
 } from '@chakra-ui/react';
 import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface LayoutProps {
   children?: ReactNode;
@@ -26,6 +25,10 @@ export const Layout = ({ children }: LayoutProps) => {
 
   const handleNavigateHome = () => {
     void navigate('/');
+  };
+
+  const handleNavigateNursery = () => {
+    void navigate('/nursery');
   };
 
   return (
@@ -51,6 +54,12 @@ export const Layout = ({ children }: LayoutProps) => {
                         <Menu.Item value="home" onClick={handleNavigateHome}>
                           ホーム
                         </Menu.Item>
+                        <Menu.Item
+                          value="nursery"
+                          onClick={handleNavigateNursery}
+                        >
+                          保育園管理
+                        </Menu.Item>
                         <Menu.Item value="create" onClick={handleCreateNew}>
                           新規作成
                         </Menu.Item>
@@ -60,9 +69,24 @@ export const Layout = ({ children }: LayoutProps) => {
                 </Menu.Root>
               ) : (
                 <Flex gap={4} align="center">
-                  <ChakraLink as={RouterLink} to="/" fontWeight="medium">
-                    ホーム
-                  </ChakraLink>
+                  <RouterLink to="/" style={{ textDecoration: 'none' }}>
+                    <Box
+                      fontWeight="medium"
+                      color="inherit"
+                      _hover={{ color: 'teal.500' }}
+                    >
+                      ホーム
+                    </Box>
+                  </RouterLink>
+                  <RouterLink to="/nursery" style={{ textDecoration: 'none' }}>
+                    <Box
+                      fontWeight="medium"
+                      color="inherit"
+                      _hover={{ color: 'teal.500' }}
+                    >
+                      保育園管理
+                    </Box>
+                  </RouterLink>
                   <Button colorScheme="teal" onClick={handleCreateNew}>
                     新規作成
                   </Button>

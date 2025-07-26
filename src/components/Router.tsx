@@ -13,6 +13,7 @@ import {
 import { useState, useEffect } from 'react';
 import { QuestionListCreator } from './QuestionListCreator';
 import { useQuestionListStore } from '../stores/questionListStore';
+// import { NurseryPage } from '../pages/NurseryPage';
 
 // 日付フォーマット用のユーティリティ関数
 const formatDate = (date: unknown): string => {
@@ -99,7 +100,7 @@ const HomePage = () => {
         </Box>
       )}
 
-      <VStack spacing={4} align="stretch">
+      <VStack gap={4} align="stretch">
         {loading.isLoading ? (
           <Box textAlign="center" py={4}>
             <Spinner size="md" />
@@ -108,7 +109,7 @@ const HomePage = () => {
         ) : questionLists.length === 0 ? (
           <Text color="gray.600">まだ質問リストがありません。</Text>
         ) : (
-          <VStack spacing={2} align="stretch">
+          <VStack gap={2} align="stretch">
             {questionLists.map((list) => {
               try {
                 return (
@@ -121,7 +122,7 @@ const HomePage = () => {
                     shadow="sm"
                     _hover={{ shadow: 'md' }}
                   >
-                    <VStack align="stretch" spacing={2}>
+                    <VStack align="stretch" gap={2}>
                       <HStack justify="space-between">
                         <Text fontWeight="bold" fontSize="lg">
                           {list.title || '無題'}
@@ -195,6 +196,14 @@ export const AppRouter = () => {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
+        <Route
+          path="/nursery"
+          element={<Text>保育園管理ページ（実装中）</Text>}
+        />
+        <Route
+          path="/nursery/:nurseryId"
+          element={<Text>保育園詳細ページ（実装中）</Text>}
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
