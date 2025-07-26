@@ -89,10 +89,7 @@ export interface SyncState {
 // 保育園作成時の入力データ型
 export interface CreateNurseryInput {
   name: string;
-  address?: string;
-  phoneNumber?: string;
-  website?: string;
-  notes?: string;
+  visitDate?: Date;
 }
 
 // 保育園更新時の入力データ型
