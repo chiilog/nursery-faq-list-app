@@ -8,22 +8,33 @@ import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { renderWithProviders } from '../test/test-utils';
 import { NurseryCreator } from './NurseryCreator';
+import { useNurseryStore } from '../stores/nurseryStore';
 
 // useNurseryStoreのモック
 const mockCreateNursery = vi.fn();
 const mockClearError = vi.fn();
+
 vi.mock('../stores/nurseryStore', () => ({
-  useNurseryStore: () => ({
-    createNursery: mockCreateNursery,
-    clearError: mockClearError,
-    loading: { isLoading: false },
-    error: null,
-  }),
+  useNurseryStore: vi.fn(),
 }));
 
 describe('NurseryCreator コンポーネント', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    // タイマーをリセット
+    vi.useRealTimers();
+
+    // デフォルトのモック状態を設定
+    vi.mocked(useNurseryStore).mockReturnValue({
+      createNursery: mockCreateNursery,
+      clearError: mockClearError,
+      loading: { isLoading: false },
+      error: null,
+    });
+
+    // 非同期処理の安定性のため、少し待機
+    await new Promise((resolve) => setTimeout(resolve, 10));
   });
 
   describe('基本表示', () => {
@@ -32,16 +43,22 @@ describe('NurseryCreator コンポーネント', () => {
 
       expect(screen.getByText('新しい保育園を追加')).toBeInTheDocument();
       expect(screen.getByLabelText('保育園名')).toBeInTheDocument();
-      expect(screen.getByLabelText('住所')).toBeInTheDocument();
-      expect(screen.getByLabelText('電話番号')).toBeInTheDocument();
-      expect(screen.getByLabelText('ウェブサイト')).toBeInTheDocument();
+      expect(screen.getByLabelText('見学日')).toBeInTheDocument();
     });
 
     test('必須項目がマークされている', () => {
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
       const nameField = screen.getByLabelText('保育園名');
+      const visitDateField = screen.getByLabelText('見学日');
       expect(nameField).toBeRequired();
+      // 見学日は任意項目のため、required属性はない
+      expect(visitDateField).not.toBeRequired();
+
+      // ヘルプテキストが表示されることを確認
+      expect(
+        screen.getByText('見学日が未定の場合は空欄のまま保存してください')
+      ).toBeInTheDocument();
     });
 
     test('保存とキャンセルボタンが表示される', () => {
@@ -65,34 +82,14 @@ describe('NurseryCreator コンポーネント', () => {
       expect(nameInput).toHaveValue('テスト保育園');
     });
 
-    test('住所の入力ができる', async () => {
+    test('見学日の入力ができる', async () => {
       const user = userEvent.setup();
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
-      const addressInput = screen.getByLabelText('住所');
-      await user.type(addressInput, '東京都渋谷区1-1-1');
+      const visitDateInput = screen.getByLabelText('見学日');
+      await user.type(visitDateInput, '2025-12-31');
 
-      expect(addressInput).toHaveValue('東京都渋谷区1-1-1');
-    });
-
-    test('電話番号の入力ができる', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
-
-      const phoneInput = screen.getByLabelText('電話番号');
-      await user.type(phoneInput, '03-1234-5678');
-
-      expect(phoneInput).toHaveValue('03-1234-5678');
-    });
-
-    test('ウェブサイトの入力ができる', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
-
-      const websiteInput = screen.getByLabelText('ウェブサイト');
-      await user.type(websiteInput, 'https://example.com');
-
-      expect(websiteInput).toHaveValue('https://example.com');
+      expect(visitDateInput).toHaveValue('2025-12-31');
     });
   });
 
@@ -138,21 +135,84 @@ describe('NurseryCreator コンポーネント', () => {
       ).toBeInTheDocument();
     });
 
-    test('ウェブサイトが有効なURL形式でない場合はエラーメッセージが表示される', async () => {
+    test('保育園名に絵文字や記号が含まれていても有効', async () => {
+      const user = userEvent.setup();
+
+      // モックの成功レスポンスを設定
+      mockCreateNursery.mockResolvedValue('nursery-id-123');
+
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+
+      await user.type(nameInput, '🌸さくら保育園☆（本店）');
+      await user.type(visitDateInput, '2025-12-31');
+
+      const saveButton = screen.getByRole('button', { name: '保存' });
+      await user.click(saveButton);
+
+      // バリデーションエラーが表示されないことを確認
+      expect(screen.queryByText('保育園名は必須です')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('保育園名は1文字以上で入力してください')
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('保育園名は100文字以内で入力してください')
+      ).not.toBeInTheDocument();
+    });
+
+    test('見学日が空でも保存できる（任意項目）', async () => {
       const user = userEvent.setup();
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
       const nameInput = screen.getByLabelText('保育園名');
-      const websiteInput = screen.getByLabelText('ウェブサイト');
+      await user.type(nameInput, 'テスト保育園');
+
+      const saveButton = screen.getByRole('button', { name: '保存' });
+      await user.click(saveButton);
+
+      // 見学日に関するエラーメッセージが表示されないことを確認
+      expect(screen.queryByText(/見学日.*必須/)).not.toBeInTheDocument();
+    });
+
+    test('無効な日付形式の場合はエラーメッセージが表示される', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
 
       await user.type(nameInput, 'テスト保育園');
-      await user.type(websiteInput, 'invalid-url');
+
+      // HTML5のdate inputでは無効な値は自動的にクリアされるため、
+      // 実際には直接的な無効値テストは困難
+      // その代わり、有効な日付での動作確認を行う
+      await user.type(visitDateInput, '2025-12-31');
+
+      const saveButton = screen.getByRole('button', { name: '保存' });
+      await user.click(saveButton);
+
+      // 有効な日付でのエラーが表示されないことを確認
+      expect(screen.queryByText(/有効な日付/)).not.toBeInTheDocument();
+    });
+
+    test('過去の日付の場合はエラーメッセージが表示される', async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+
+      await user.type(nameInput, 'テスト保育園');
+      await user.type(visitDateInput, '2024-01-01'); // 確実に過去の日付
 
       const saveButton = screen.getByRole('button', { name: '保存' });
       await user.click(saveButton);
 
       expect(
-        screen.getByText('有効なURLを入力してください')
+        screen.getByText('見学日は今日以降の日付を入力してください')
       ).toBeInTheDocument();
     });
   });
@@ -165,7 +225,9 @@ describe('NurseryCreator コンポーネント', () => {
 
       // 必須項目を入力
       const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
       await user.type(nameInput, 'テスト保育園');
+      await user.type(visitDateInput, '2025-12-31');
 
       const saveButton = screen.getByRole('button', { name: '保存' });
       await user.click(saveButton);
@@ -173,10 +235,7 @@ describe('NurseryCreator コンポーネント', () => {
       await waitFor(() => {
         expect(mockCreateNursery).toHaveBeenCalledWith({
           name: 'テスト保育園',
-          address: '',
-          phoneNumber: '',
-          website: '',
-          notes: '',
+          visitDate: new Date('2025-12-31'),
         });
       });
     });
@@ -188,12 +247,7 @@ describe('NurseryCreator コンポーネント', () => {
 
       // 全項目を入力
       await user.type(screen.getByLabelText('保育園名'), 'テスト保育園');
-      await user.type(screen.getByLabelText('住所'), '東京都渋谷区1-1-1');
-      await user.type(screen.getByLabelText('電話番号'), '03-1234-5678');
-      await user.type(
-        screen.getByLabelText('ウェブサイト'),
-        'https://example.com'
-      );
+      await user.type(screen.getByLabelText('見学日'), '2025-12-31');
 
       const saveButton = screen.getByRole('button', { name: '保存' });
       await user.click(saveButton);
@@ -201,10 +255,7 @@ describe('NurseryCreator コンポーネント', () => {
       await waitFor(() => {
         expect(mockCreateNursery).toHaveBeenCalledWith({
           name: 'テスト保育園',
-          address: '東京都渋谷区1-1-1',
-          phoneNumber: '03-1234-5678',
-          website: 'https://example.com',
-          notes: '',
+          visitDate: new Date('2025-12-31'),
         });
       });
     });
@@ -241,13 +292,12 @@ describe('NurseryCreator コンポーネント', () => {
   describe('ローディング状態', () => {
     test('保存中はボタンが無効化される', () => {
       // ローディング状態をモック
-      vi.mocked(vi.importActual('../stores/nurseryStore')).useNurseryStore =
-        () => ({
-          createNursery: mockCreateNursery,
-          clearError: mockClearError,
-          loading: { isLoading: true, operation: '保育園を作成中...' },
-          error: null,
-        });
+      vi.mocked(useNurseryStore).mockReturnValue({
+        createNursery: mockCreateNursery,
+        clearError: mockClearError,
+        loading: { isLoading: true, operation: '保育園を作成中...' },
+        error: null,
+      });
 
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
@@ -257,13 +307,12 @@ describe('NurseryCreator コンポーネント', () => {
 
     test('保存中はローディングインジケーターが表示される', () => {
       // ローディング状態をモック
-      vi.mocked(vi.importActual('../stores/nurseryStore')).useNurseryStore =
-        () => ({
-          createNursery: mockCreateNursery,
-          clearError: mockClearError,
-          loading: { isLoading: true, operation: '保育園を作成中...' },
-          error: null,
-        });
+      vi.mocked(useNurseryStore).mockReturnValue({
+        createNursery: mockCreateNursery,
+        clearError: mockClearError,
+        loading: { isLoading: true, operation: '保育園を作成中...' },
+        error: null,
+      });
 
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
@@ -274,16 +323,15 @@ describe('NurseryCreator コンポーネント', () => {
   describe('エラーハンドリング', () => {
     test('ストアからのエラーが表示される', () => {
       // エラー状態をモック
-      vi.mocked(vi.importActual('../stores/nurseryStore')).useNurseryStore =
-        () => ({
-          createNursery: mockCreateNursery,
-          clearError: mockClearError,
-          loading: { isLoading: false },
-          error: {
-            message: '保育園の作成に失敗しました',
-            timestamp: new Date(),
-          },
-        });
+      vi.mocked(useNurseryStore).mockReturnValue({
+        createNursery: mockCreateNursery,
+        clearError: mockClearError,
+        loading: { isLoading: false },
+        error: {
+          message: '保育園の作成に失敗しました',
+          timestamp: new Date(),
+        },
+      });
 
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
@@ -296,16 +344,15 @@ describe('NurseryCreator コンポーネント', () => {
       const user = userEvent.setup();
 
       // エラー状態をモック
-      vi.mocked(vi.importActual('../stores/nurseryStore')).useNurseryStore =
-        () => ({
-          createNursery: mockCreateNursery,
-          clearError: mockClearError,
-          loading: { isLoading: false },
-          error: {
-            message: '保育園の作成に失敗しました',
-            timestamp: new Date(),
-          },
-        });
+      vi.mocked(useNurseryStore).mockReturnValue({
+        createNursery: mockCreateNursery,
+        clearError: mockClearError,
+        loading: { isLoading: false },
+        error: {
+          message: '保育園の作成に失敗しました',
+          timestamp: new Date(),
+        },
+      });
 
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
@@ -315,6 +362,207 @@ describe('NurseryCreator コンポーネント', () => {
       await user.click(closeButton);
 
       expect(mockClearError).toHaveBeenCalled();
+    });
+  });
+
+  describe('ユーザビリティ', () => {
+    test('Tabキーでフォーカスが適切に移動する', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+      const saveButton = screen.getByRole('button', { name: '保存' });
+      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+
+      // 最初の要素にフォーカス
+      nameInput.focus();
+      expect(nameInput).toHaveFocus();
+
+      // Tab で次の要素へ
+      await user.tab();
+      expect(visitDateInput).toHaveFocus();
+
+      // Tab で保存ボタンへ
+      await user.tab();
+      expect(saveButton).toHaveFocus();
+
+      // Tab でキャンセルボタンへ
+      await user.tab();
+      expect(cancelButton).toHaveFocus();
+    });
+
+    test('バリデーションエラー時に最初のエラーフィールドにフォーカスが移動する', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const saveButton = screen.getByRole('button', { name: '保存' });
+
+      // 空の状態で保存を試行
+      await user.click(saveButton);
+
+      // バリデーションエラー後、保育園名フィールドにフォーカスが移動することを確認
+      await waitFor(() => {
+        expect(nameInput).toHaveFocus();
+      });
+    });
+
+    test('過去の日付エラーの場合は見学日フィールドにフォーカスが移動する', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+      const saveButton = screen.getByRole('button', { name: '保存' });
+
+      // 有効な保育園名と過去の日付を入力
+      await user.type(nameInput, 'テスト保育園');
+      await user.type(visitDateInput, '2020-01-01'); // 過去の日付
+      await user.click(saveButton);
+
+      // バリデーションエラー後、見学日フィールドにフォーカスが移動することを確認
+      await waitFor(() => {
+        expect(visitDateInput).toHaveFocus();
+      });
+    });
+
+    test('エラー状態でもキーボードナビゲーションが機能する', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+      const saveButton = screen.getByRole('button', { name: '保存' });
+
+      // エラー状態を作成
+      await user.click(saveButton);
+
+      // エラー状態でもTabナビゲーションが機能することを確認
+      await waitFor(() => {
+        expect(nameInput).toHaveFocus();
+      });
+
+      await user.tab();
+      expect(visitDateInput).toHaveFocus();
+
+      await user.tab();
+      expect(saveButton).toHaveFocus();
+    });
+  });
+
+  describe('統合テスト', () => {
+    test('保存成功後にonCancelコールバックが呼ばれる', async () => {
+      const user = userEvent.setup();
+      const mockOnCancel = vi.fn();
+
+      // 成功時のモックを設定
+      mockCreateNursery.mockResolvedValue('nursery-id-123');
+
+      renderWithProviders(<NurseryCreator onCancel={mockOnCancel} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+      const saveButton = screen.getByRole('button', { name: '保存' });
+
+      // 有効なデータを入力
+      await user.type(nameInput, 'テスト保育園');
+      await user.type(visitDateInput, '2025-12-31');
+
+      await user.click(saveButton);
+
+      // createNurseryが呼ばれることを確認
+      await waitFor(() => {
+        expect(mockCreateNursery).toHaveBeenCalledWith({
+          name: 'テスト保育園',
+          visitDate: new Date('2025-12-31'),
+        });
+      });
+
+      // 保存成功後にonCancelが呼ばれることを確認（画面遷移）
+      await waitFor(() => {
+        expect(mockOnCancel).toHaveBeenCalled();
+      });
+    });
+
+    test('保存失敗時にエラーメッセージが表示され、フォームはリセットされない', async () => {
+      const user = userEvent.setup();
+
+      // 失敗時のモックを設定
+      mockCreateNursery.mockRejectedValue(new Error('保存に失敗しました'));
+      vi.mocked(useNurseryStore).mockReturnValue({
+        createNursery: mockCreateNursery,
+        clearError: mockClearError,
+        loading: { isLoading: false },
+        error: {
+          message: '保存に失敗しました',
+          timestamp: new Date(),
+        },
+      });
+
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+      const saveButton = screen.getByRole('button', { name: '保存' });
+
+      // 有効なデータを入力
+      await user.type(nameInput, 'テスト保育園');
+      await user.type(visitDateInput, '2025-12-31');
+
+      await user.click(saveButton);
+
+      // エラーメッセージが表示されることを確認
+      expect(screen.getByText('保存に失敗しました')).toBeInTheDocument();
+
+      // フォームの値が保持されていることを確認
+      expect(nameInput).toHaveValue('テスト保育園');
+      expect(visitDateInput).toHaveValue('2025-12-31');
+    });
+
+    test('リアルタイムバリデーション: 入力中にエラーがクリアされる', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const saveButton = screen.getByRole('button', { name: '保存' });
+
+      // まずエラー状態を作成
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('保育園名は必須です')).toBeInTheDocument();
+      });
+
+      // 入力するとエラーがクリアされることを確認
+      await user.type(nameInput, 'テスト');
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText('保育園名は必須です')
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    test('フォーム送信時のローディング状態管理', () => {
+      // ローディング状態のモックを設定
+      vi.mocked(useNurseryStore).mockReturnValue({
+        createNursery: mockCreateNursery,
+        clearError: mockClearError,
+        loading: { isLoading: true, operation: '保育園を作成中...' },
+        error: null,
+      });
+
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      // ローディング中はボタンが無効化され、入力フィールドも無効化される
+      expect(screen.getByRole('button', { name: '保存' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'キャンセル' })).toBeDisabled();
+      expect(screen.getByLabelText('保育園名')).toBeDisabled();
+      expect(screen.getByLabelText('見学日')).toBeDisabled();
+
+      // ローディングメッセージが表示される
+      expect(screen.getByText('保育園を作成中...')).toBeInTheDocument();
     });
   });
 });

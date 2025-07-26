@@ -82,14 +82,24 @@ class NurseryDataStore {
       const nurseryId = generateId('nursery');
       const now = getCurrentTimestamp();
 
+      // 見学日が指定されている場合は初期見学セッションを作成
+      const visitSessions: VisitSession[] = [];
+      if (input.visitDate) {
+        const sessionId = generateId('session');
+        visitSessions.push({
+          id: sessionId,
+          visitDate: input.visitDate,
+          status: 'planned',
+          questions: [],
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
       const nursery: Nursery = {
         id: nurseryId,
         name: input.name,
-        address: input.address,
-        phoneNumber: input.phoneNumber,
-        website: input.website,
-        notes: input.notes,
-        visitSessions: [],
+        visitSessions,
         createdAt: now,
         updatedAt: now,
       };
