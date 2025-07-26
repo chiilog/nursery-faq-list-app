@@ -113,7 +113,7 @@ export const QuestionListCreator = ({
         boxShadow="sm"
         border="1px solid #e2e8f0"
       >
-        <VStack spacing={4} align="stretch">
+        <VStack gap={4} align="stretch">
           <div>
             <label
               htmlFor="title"

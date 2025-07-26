@@ -117,12 +117,12 @@ export const QuestionItem = ({
       shadow="sm"
       _hover={{ shadow: 'md' }}
     >
-      <VStack align="stretch" spacing={3}>
+      <VStack align="stretch" gap={3}>
         {/* 質問文とメタ情報 */}
         <HStack justify="space-between" align="flex-start">
-          <VStack align="stretch" flex={1} spacing={2}>
+          <VStack align="stretch" flex={1} gap={2}>
             {isEditing ? (
-              <VStack align="stretch" spacing={2}>
+              <VStack align="stretch" gap={2}>
                 <Input
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
@@ -155,7 +155,7 @@ export const QuestionItem = ({
                 <Text fontWeight="medium" fontSize="md">
                   {question.text}
                 </Text>
-                <HStack spacing={2}>
+                <HStack gap={2}>
                   <Badge
                     colorScheme={getPriorityColorScheme(question.priority)}
                   >
@@ -185,7 +185,7 @@ export const QuestionItem = ({
 
         {/* 回答入力モード */}
         {isAnswering && (
-          <VStack align="stretch" spacing={3}>
+          <VStack align="stretch" gap={3}>
             <Textarea
               value={answerText}
               onChange={(e) => setAnswerText(e.target.value)}
@@ -193,7 +193,7 @@ export const QuestionItem = ({
               aria-label="回答を入力してください"
               rows={3}
             />
-            <HStack spacing={2}>
+            <HStack gap={2}>
               <Button
                 colorScheme="teal"
                 size="sm"
@@ -215,7 +215,7 @@ export const QuestionItem = ({
         )}
 
         {/* アクションボタン */}
-        <HStack spacing={2} justify="flex-end">
+        <HStack gap={2} justify="flex-end">
           {isEditing ? (
             <>
               <Button
