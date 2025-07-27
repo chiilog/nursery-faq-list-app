@@ -2,7 +2,7 @@
  * 保育園詳細ページヘッダーコンポーネント
  */
 
-import { Button, Heading, Text, Box } from '@chakra-ui/react';
+import { Button, Heading, Box } from '@chakra-ui/react';
 
 interface NurseryHeaderProps {
   nurseryName: string;
@@ -18,7 +18,7 @@ export const NurseryHeader = ({ nurseryName, onBack }: NurseryHeaderProps) => {
         size={{ base: 'sm', md: 'md' }}
         px={0}
       >
-        <Text>←</Text>戻る
+        ← 戻る
       </Button>
       <Heading
         as="h1"

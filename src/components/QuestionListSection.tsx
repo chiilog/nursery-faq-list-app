@@ -12,6 +12,7 @@ import {
   Button,
   Badge,
 } from '@chakra-ui/react';
+import { useMemo } from 'react';
 import type { Question } from '../types/data';
 
 interface QuestionEditFormProps {
@@ -77,6 +78,34 @@ interface QuestionDisplayProps {
   ) => void;
 }
 
+/**
+ * 優先度に基づいてバッジの色を取得
+ */
+const getPriorityColorScheme = (priority: string): string => {
+  switch (priority) {
+    case 'high':
+      return 'red';
+    case 'medium':
+      return 'yellow';
+    default:
+      return 'gray';
+  }
+};
+
+/**
+ * 優先度に基づいてバッジのテキストを取得
+ */
+const getPriorityText = (priority: string): string => {
+  switch (priority) {
+    case 'high':
+      return '高';
+    case 'medium':
+      return '中';
+    default:
+      return '低';
+  }
+};
+
 const QuestionDisplay = ({
   question,
   onQuestionClick,
@@ -104,20 +133,10 @@ const QuestionDisplay = ({
           </Badge>
         )}
         <Badge
-          colorScheme={
-            question.priority === 'high'
-              ? 'red'
-              : question.priority === 'medium'
-                ? 'yellow'
-                : 'gray'
-          }
+          colorScheme={getPriorityColorScheme(question.priority)}
           size="sm"
         >
-          {question.priority === 'high'
-            ? '高'
-            : question.priority === 'medium'
-              ? '中'
-              : '低'}
+          {getPriorityText(question.priority)}
         </Badge>
       </HStack>
     </HStack>
@@ -183,13 +202,15 @@ export const QuestionListSection = ({
   onSaveAnswer,
   onCancelEdit,
 }: QuestionListSectionProps) => {
-  // 未回答の質問を先に表示
-  const sortedQuestions = [...questions].sort((a, b) => {
-    if (a.isAnswered === b.isAnswered) {
-      return a.orderIndex - b.orderIndex;
-    }
-    return a.isAnswered ? 1 : -1;
-  });
+  // 未回答の質問を先に表示（useMemoでパフォーマンス最適化）
+  const sortedQuestions = useMemo(() => {
+    return [...questions].sort((a, b) => {
+      if (a.isAnswered === b.isAnswered) {
+        return a.orderIndex - b.orderIndex;
+      }
+      return a.isAnswered ? 1 : -1;
+    });
+  }, [questions]);
 
   if (questions.length === 0) {
     return (

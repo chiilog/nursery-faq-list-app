@@ -3,6 +3,7 @@
  */
 
 import { Box, Text, VStack, HStack, Input, Button } from '@chakra-ui/react';
+import { useMemo } from 'react';
 import type { Question } from '../types/data';
 
 interface NurseryInfoProps {
@@ -30,9 +31,16 @@ const formatDate = (date: Date): string => {
 /**
  * 質問進捗計算
  */
-const getQuestionProgress = (questions: Question[]): string => {
+const getQuestionProgress = (
+  questions: Question[]
+): { text: string; percentage: number } => {
   const answeredCount = questions.filter((q) => q.isAnswered).length;
-  return `${answeredCount}/${questions.length} 回答済み`;
+  const percentage =
+    questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+  return {
+    text: `${answeredCount}/${questions.length} 回答済み`,
+    percentage,
+  };
 };
 
 export const NurseryInfo = ({
@@ -45,6 +53,12 @@ export const NurseryInfo = ({
   onSaveVisitDate,
   onCancelVisitDate,
 }: NurseryInfoProps) => {
+  // 進捗データをメモ化してパフォーマンス最適化
+  const progressData = useMemo(
+    () => getQuestionProgress(questions),
+    [questions]
+  );
+
   return (
     <Box
       bg="gray.50"
@@ -120,7 +134,7 @@ export const NurseryInfo = ({
             fontSize={{ base: 'md', md: 'lg' }}
             fontWeight="medium"
           >
-            {getQuestionProgress(questions)}
+            {progressData.text}
           </Text>
           {questions.length > 0 && (
             <Box mt={2} bg="gray.200" borderRadius="full" h={2}>
@@ -128,7 +142,7 @@ export const NurseryInfo = ({
                 bg="brand.500"
                 borderRadius="full"
                 h={2}
-                width={`${(questions.filter((q) => q.isAnswered).length / questions.length) * 100}%`}
+                width={`${progressData.percentage}%`}
                 transition="width 0.3s"
               />
             </Box>

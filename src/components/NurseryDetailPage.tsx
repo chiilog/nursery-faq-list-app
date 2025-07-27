@@ -176,14 +176,6 @@ export const NurseryDetailPage = () => {
   const session = currentNursery.visitSessions[0];
   const questions = session?.questions || [];
 
-  // 未回答の質問を先に表示
-  const sortedQuestions = [...questions].sort((a, b) => {
-    if (a.isAnswered === b.isAnswered) {
-      return a.orderIndex - b.orderIndex;
-    }
-    return a.isAnswered ? 1 : -1;
-  });
-
   return (
     <Layout
       headerContent={
@@ -216,7 +208,7 @@ export const NurseryDetailPage = () => {
 
           {/* 質問リスト */}
           <QuestionListSection
-            questions={sortedQuestions}
+            questions={questions}
             editingQuestionId={editingQuestionId}
             editingAnswer={editingAnswer}
             editingQuestionText={editingQuestionText}
