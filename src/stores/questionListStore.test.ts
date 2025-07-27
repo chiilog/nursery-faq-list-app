@@ -11,9 +11,12 @@ import type {
   QuestionList,
   CreateQuestionListInput,
   UpdateQuestionListInput,
-  CreateQuestionInput,
   UpdateQuestionInput,
 } from '../types/data';
+import {
+  createQuestionMock,
+  createCreateQuestionInputMock,
+} from '../test/test-utils';
 
 // DataStore のモック
 vi.mock('../services/dataStore', () => ({
@@ -61,24 +64,24 @@ const mockQuestionList: QuestionList = {
   nurseryName: 'テスト保育園',
   isTemplate: false,
   questions: [
-    {
+    createQuestionMock({
       id: 'q1',
       text: '保育時間を教えてください',
       answer: '7:00-19:00',
       isAnswered: true,
       priority: 'high',
       category: '基本情報',
-      order: 0,
-    },
-    {
+      orderIndex: 0,
+    }),
+    createQuestionMock({
       id: 'q2',
       text: '給食はありますか',
       answer: '',
       isAnswered: false,
       priority: 'medium',
       category: '食事',
-      order: 1,
-    },
+      orderIndex: 1,
+    }),
   ],
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
@@ -90,11 +93,11 @@ const mockCreateInput: CreateQuestionListInput = {
   isTemplate: false,
 };
 
-const mockQuestionInput: CreateQuestionInput = {
+const mockQuestionInput = createCreateQuestionInputMock({
   text: '新しい質問',
   category: 'テスト',
   priority: 'medium',
-};
+});
 
 describe('useQuestionListStore', () => {
   beforeEach(() => {

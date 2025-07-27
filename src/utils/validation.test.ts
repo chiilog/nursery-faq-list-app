@@ -6,13 +6,16 @@
 
 import { describe, it, expect } from 'vitest';
 import type {
-  CreateQuestionInput,
   CreateQuestionListInput,
   UpdateQuestionInput,
   UpdateQuestionListInput,
   Question,
   QuestionList,
 } from '../types/data';
+import {
+  createQuestionMock,
+  createCreateQuestionInputMock,
+} from '../test/test-utils';
 import {
   validateQuestionText,
   validateAnswerText,
@@ -404,9 +407,9 @@ describe('validateCreateQuestionInput', () => {
   describe('必須項目のケース', () => {
     it('テキストが空の入力を渡した時、バリデーションエラーが返される', () => {
       // Given: テキストが空の入力
-      const input: CreateQuestionInput = {
+      const input = createCreateQuestionInputMock({
         text: '',
-      };
+      });
 
       // When: バリデーションを実行
       const result = validateCreateQuestionInput(input);
@@ -418,9 +421,9 @@ describe('validateCreateQuestionInput', () => {
 
     it('有効なテキストの入力を渡した時、バリデーションが成功する', () => {
       // Given: 有効なテキストの入力
-      const input: CreateQuestionInput = {
+      const input = createCreateQuestionInputMock({
         text: '開園時間はいつですか？',
-      };
+      });
 
       // When: バリデーションを実行
       const result = validateCreateQuestionInput(input);
@@ -434,11 +437,11 @@ describe('validateCreateQuestionInput', () => {
   describe('オプション項目のケース', () => {
     it('優先度とカテゴリを含む有効な入力を渡した時、バリデーションが成功する', () => {
       // Given: 優先度とカテゴリを含む有効な入力
-      const input: CreateQuestionInput = {
+      const input = createCreateQuestionInputMock({
         text: '開園時間はいつですか？',
         priority: 'high',
         category: '基本情報',
-      };
+      });
 
       // When: バリデーションを実行
       const result = validateCreateQuestionInput(input);
@@ -529,7 +532,7 @@ describe('validateUpdateQuestionInput', () => {
     it('負の順序で更新しようとした時、バリデーションエラーが返される', () => {
       // Given: 負の順序で更新
       const input: UpdateQuestionInput = {
-        order: -1,
+        orderIndex: -1,
       };
 
       // When: バリデーションを実行
@@ -543,7 +546,7 @@ describe('validateUpdateQuestionInput', () => {
     it('有効な順序で更新する時、バリデーションが成功する', () => {
       // Given: 有効な順序で更新
       const input: UpdateQuestionInput = {
-        order: 5,
+        orderIndex: 5,
       };
 
       // When: バリデーションを実行
@@ -561,7 +564,7 @@ describe('validateUpdateQuestionInput', () => {
       const input: UpdateQuestionInput = {
         text: '', // エラー
         answer: 'あ'.repeat(1001), // エラー
-        order: -1, // エラー
+        orderIndex: -1, // エラー
       };
 
       // When: バリデーションを実行
@@ -724,13 +727,14 @@ describe('validateUpdateQuestionListInput', () => {
 });
 
 describe('validateQuestion', () => {
-  const createValidQuestion = (): Question => ({
-    id: 'test-id',
-    text: '開園時間はいつですか？',
-    isAnswered: false,
-    priority: 'medium',
-    order: 0,
-  });
+  const createValidQuestion = (): Question =>
+    createQuestionMock({
+      id: 'test-id',
+      text: '開園時間はいつですか？',
+      isAnswered: false,
+      priority: 'medium',
+      orderIndex: 0,
+    });
 
   describe('必須項目のケース', () => {
     it('テキストが空の質問を渡した時、バリデーションエラーが返される', () => {
@@ -752,7 +756,7 @@ describe('validateQuestion', () => {
       // Given: 負の順序の質問
       const question: Question = {
         ...createValidQuestion(),
-        order: -1,
+        orderIndex: -1,
       };
 
       // When: バリデーションを実行
@@ -821,7 +825,7 @@ describe('validateQuestion', () => {
         answer: '開園時間は午前7時から午後7時までです。',
         priority: 'high',
         category: '基本情報',
-        order: 1,
+        orderIndex: 1,
       };
 
       // When: バリデーションを実行
@@ -844,13 +848,14 @@ describe('validateQuestionList', () => {
     isTemplate: false,
   });
 
-  const createValidQuestion = (id: string, order: number): Question => ({
-    id,
-    text: `質問${order}`,
-    isAnswered: false,
-    priority: 'medium',
-    order,
-  });
+  const createValidQuestion = (id: string, orderIndex: number): Question =>
+    createQuestionMock({
+      id,
+      text: `質問${orderIndex}`,
+      isAnswered: false,
+      priority: 'medium',
+      orderIndex,
+    });
 
   describe('基本項目のケース', () => {
     it('タイトルが空の質問リストを渡した時、バリデーションエラーが返される', () => {
@@ -908,13 +913,13 @@ describe('validateQuestionList', () => {
   describe('質問配列のケース', () => {
     it('無効な質問を含む質問リストを渡した時、バリデーションエラーが返される', () => {
       // Given: 無効な質問を含む質問リスト
-      const invalidQuestion: Question = {
+      const invalidQuestion = createQuestionMock({
         id: 'invalid-id',
         text: '', // エラー
         isAnswered: false,
         priority: 'medium',
-        order: 0,
-      };
+        orderIndex: 0,
+      });
       const questionList: QuestionList = {
         ...createValidQuestionList(),
         questions: [invalidQuestion],
@@ -968,13 +973,13 @@ describe('validateQuestionList', () => {
       // Given: 複数のエラーを含む質問リスト
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const invalidQuestion: Question = {
+      const invalidQuestion = createQuestionMock({
         id: 'invalid-id',
         text: '', // エラー
         isAnswered: false,
         priority: 'medium',
-        order: -1, // エラー
-      };
+        orderIndex: -1, // エラー
+      });
       const questionList: QuestionList = {
         ...createValidQuestionList(),
         title: '', // エラー

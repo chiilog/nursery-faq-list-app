@@ -2,49 +2,49 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { QuestionList } from './QuestionList';
-import { renderWithProviders } from '../test/testUtils';
+import { renderWithProviders, testUtils } from '../test/test-utils';
 import type { Question, QuestionList as QuestionListType } from '../types';
 
 // テスト用のモックデータ
 const mockQuestions: Question[] = [
-  {
+  testUtils.createMockQuestion({
     id: '1',
     text: '保育時間は何時から何時までですか？',
     answer: '',
     isAnswered: false,
     priority: 'high',
     category: '基本情報',
-    order: 1,
-  },
-  {
+    orderIndex: 1,
+  }),
+  testUtils.createMockQuestion({
     id: '2',
     text: '給食はありますか？アレルギー対応は？',
     answer: '完全給食、アレルギー個別対応可能',
     isAnswered: true,
     priority: 'high',
     category: '食事',
-    order: 2,
+    orderIndex: 2,
     answeredAt: new Date('2024-01-15T10:00:00'),
-  },
-  {
+  }),
+  testUtils.createMockQuestion({
     id: '3',
     text: '年間行事について教えてください',
     answer: '',
     isAnswered: false,
     priority: 'medium',
     category: '行事',
-    order: 3,
-  },
-  {
+    orderIndex: 3,
+  }),
+  testUtils.createMockQuestion({
     id: '4',
     text: '保育料以外の費用はありますか？',
     answer: '教材費月1000円',
     isAnswered: true,
     priority: 'high',
     category: '費用',
-    order: 4,
+    orderIndex: 4,
     answeredAt: new Date('2024-01-15T10:05:00'),
-  },
+  }),
 ];
 
 const mockQuestionList: QuestionListType = {

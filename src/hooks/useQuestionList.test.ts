@@ -123,12 +123,14 @@ describe('質問リストMVPフック', () => {
       await result.current.addQuestionToList('list-id', {
         text: 'テスト質問',
         category: 'テスト',
+        orderIndex: 0,
       });
       expect(mockQuestionManagement.addQuestionToList).toHaveBeenCalledWith(
         'list-id',
         {
           text: 'テスト質問',
           category: 'テスト',
+          orderIndex: 0,
         }
       );
     });

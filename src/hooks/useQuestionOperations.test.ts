@@ -51,6 +51,7 @@ describe('質問操作', () => {
         await result.current.addQuestionToList('list-id', {
           text: '園庭の幅さはどれくらいですか？',
           category: '環境',
+          orderIndex: 0,
         });
       });
 

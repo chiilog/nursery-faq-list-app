@@ -10,7 +10,7 @@ import type {
   UpdateQuestionListInput,
   Question,
   QuestionList,
-} from "../types/data";
+} from '../types/data';
 
 // エラーメッセージの型定義
 export interface ValidationResult {
@@ -25,11 +25,11 @@ export function validateQuestionText(text: string): ValidationResult {
   const errors: string[] = [];
 
   if (!text || text.trim().length === 0) {
-    errors.push("質問内容を入力してください");
+    errors.push('質問内容を入力してください');
   }
 
   if (text.trim().length > 500) {
-    errors.push("質問内容は500文字以内で入力してください");
+    errors.push('質問内容は500文字以内で入力してください');
   }
 
   return {
@@ -45,7 +45,7 @@ export function validateAnswerText(answer: string): ValidationResult {
   const errors: string[] = [];
 
   if (answer.trim().length > 1000) {
-    errors.push("回答は1000文字以内で入力してください");
+    errors.push('回答は1000文字以内で入力してください');
   }
 
   return {
@@ -61,11 +61,11 @@ export function validateQuestionListTitle(title: string): ValidationResult {
   const errors: string[] = [];
 
   if (!title || title.trim().length === 0) {
-    errors.push("質問リストのタイトルを入力してください");
+    errors.push('質問リストのタイトルを入力してください');
   }
 
   if (title.trim().length > 100) {
-    errors.push("タイトルは100文字以内で入力してください");
+    errors.push('タイトルは100文字以内で入力してください');
   }
 
   return {
@@ -81,7 +81,7 @@ export function validateNurseryName(name: string): ValidationResult {
   const errors: string[] = [];
 
   if (name && name.trim().length > 100) {
-    errors.push("保育園名は100文字以内で入力してください");
+    errors.push('保育園名は100文字以内で入力してください');
   }
 
   return {
@@ -100,11 +100,11 @@ export function validateVisitDate(date: Date): ValidationResult {
   oneYearFromNow.setFullYear(now.getFullYear() + 1);
 
   if (date < now) {
-    errors.push("見学日は今日以降の日付を選択してください");
+    errors.push('見学日は今日以降の日付を選択してください');
   }
 
   if (date > oneYearFromNow) {
-    errors.push("見学日は1年以内の日付を選択してください");
+    errors.push('見学日は1年以内の日付を選択してください');
   }
 
   return {
@@ -145,8 +145,8 @@ export function validateUpdateQuestionInput(
     errors.push(...answerValidation.errors);
   }
 
-  if (input.order !== undefined && input.order < 0) {
-    errors.push("順序は0以上の数値を指定してください");
+  if (input.orderIndex !== undefined && input.orderIndex < 0) {
+    errors.push('順序は0以上の数値を指定してください');
   }
 
   return {
@@ -225,12 +225,12 @@ export function validateQuestion(question: Question): ValidationResult {
     errors.push(...answerValidation.errors);
   }
 
-  if (question.order < 0) {
-    errors.push("順序は0以上の数値を指定してください");
+  if (question.orderIndex < 0) {
+    errors.push('順序は0以上の数値を指定してください');
   }
 
-  if (!["high", "medium", "low"].includes(question.priority)) {
-    errors.push("優先度は high、medium、low のいずれかを指定してください");
+  if (!['high', 'medium', 'low'].includes(question.priority)) {
+    errors.push('優先度は high、medium、low のいずれかを指定してください');
   }
 
   return {
@@ -242,7 +242,9 @@ export function validateQuestion(question: Question): ValidationResult {
 /**
  * 質問リストオブジェクト全体のバリデーション
  */
-export function validateQuestionList(questionList: QuestionList): ValidationResult {
+export function validateQuestionList(
+  questionList: QuestionList
+): ValidationResult {
   const errors: string[] = [];
 
   const titleValidation = validateQuestionListTitle(questionList.title);
@@ -262,15 +264,15 @@ export function validateQuestionList(questionList: QuestionList): ValidationResu
   questionList.questions.forEach((question, index) => {
     const questionValidation = validateQuestion(question);
     if (!questionValidation.isValid) {
-      errors.push(`質問${index + 1}: ${questionValidation.errors.join(", ")}`);
+      errors.push(`質問${index + 1}: ${questionValidation.errors.join(', ')}`);
     }
   });
 
   // 質問の順序重複チェック
-  const orders = questionList.questions.map(q => q.order);
+  const orders = questionList.questions.map((q) => q.orderIndex);
   const uniqueOrders = new Set(orders);
   if (orders.length !== uniqueOrders.size) {
-    errors.push("質問の順序に重複があります");
+    errors.push('質問の順序に重複があります');
   }
 
   return {

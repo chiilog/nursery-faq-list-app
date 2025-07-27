@@ -406,13 +406,13 @@ export const useQuestionListStore = create<QuestionListState>()(
           // 順序番号を更新して一括保存
           const reorderedQuestions = questions.map((question, index) => ({
             ...question,
-            order: index,
+            orderIndex: index,
           }));
 
           // バッチ更新で効率的に処理
           const batchUpdates = reorderedQuestions.map((question) => ({
             questionId: question.id,
-            updates: { order: question.order },
+            updates: { orderIndex: question.orderIndex },
           }));
 
           await dataStore.updateQuestionsBatch(listId, batchUpdates);
@@ -580,7 +580,7 @@ export const useQuestionListStore = create<QuestionListState>()(
           // バッチ更新で効率的に処理
           const batchUpdates = sortedQuestions.map((question) => ({
             questionId: question.id,
-            updates: { order: question.order },
+            updates: { orderIndex: question.orderIndex },
           }));
 
           await dataStore.updateQuestionsBatch(currentList.id, batchUpdates);

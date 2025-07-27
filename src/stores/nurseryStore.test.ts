@@ -6,6 +6,7 @@ import type {
   CreateVisitSessionInput,
   UpdateVisitSessionInput,
 } from '../types/data';
+import { createQuestionMock } from '../test/test-utils';
 
 // モック関数を先に定義（TDD Green Phase）
 vi.mock('../services/nurseryDataStore', () => ({
@@ -269,22 +270,22 @@ describe('NurseryStore (TDD Green Phase)', () => {
             visitDate: new Date(),
             status: 'completed',
             questions: [
-              {
+              createQuestionMock({
                 id: 'q1',
                 text: '質問1',
                 isAnswered: true,
                 priority: 'high',
-                order: 0,
+                orderIndex: 0,
                 answer: 'はい',
-              },
-              {
+              }),
+              createQuestionMock({
                 id: 'q2',
                 text: '質問2',
                 isAnswered: false,
                 priority: 'medium',
-                order: 1,
+                orderIndex: 1,
                 answer: '',
-              },
+              }),
             ],
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -294,14 +295,14 @@ describe('NurseryStore (TDD Green Phase)', () => {
             visitDate: new Date(),
             status: 'planned',
             questions: [
-              {
+              createQuestionMock({
                 id: 'q3',
                 text: '質問3',
                 isAnswered: true,
                 priority: 'low',
-                order: 0,
+                orderIndex: 0,
                 answer: 'いいえ',
-              },
+              }),
             ],
             createdAt: new Date(),
             updatedAt: new Date(),

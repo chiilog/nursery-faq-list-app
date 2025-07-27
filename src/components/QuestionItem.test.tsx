@@ -2,30 +2,27 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { QuestionItem } from './QuestionItem';
-import { renderWithProviders } from '../test/testUtils';
+import { renderWithProviders, testUtils } from '../test/test-utils';
 import type { Question } from '../types';
 
 // テスト用のモックデータ
-const mockQuestion: Question = {
+const mockQuestion: Question = testUtils.createMockQuestion({
   id: '1',
   text: '保育時間は何時から何時までですか？',
-  answer: '',
-  isAnswered: false,
   priority: 'high',
-  category: '基本情報',
-  order: 1,
-};
+  orderIndex: 1,
+});
 
-const mockAnsweredQuestion: Question = {
+const mockAnsweredQuestion: Question = testUtils.createMockQuestion({
   id: '2',
   text: '給食はありますか？',
   answer: '完全給食です',
   isAnswered: true,
   priority: 'medium',
   category: '食事',
-  order: 2,
+  orderIndex: 2,
   answeredAt: new Date('2024-01-15T10:00:00'),
-};
+});
 
 describe('QuestionItem', () => {
   describe('質問の表示', () => {

@@ -29,7 +29,7 @@ export const QuestionList = ({
   // 質問を並び替え: 未回答を上、回答済みを下
   const sortedQuestions = [...questionList.questions].sort((a, b) => {
     if (a.isAnswered === b.isAnswered) {
-      return a.order - b.order;
+      return a.orderIndex - b.orderIndex;
     }
     return a.isAnswered ? 1 : -1;
   });

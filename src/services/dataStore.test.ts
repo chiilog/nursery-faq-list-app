@@ -84,6 +84,7 @@ const mockQuestionInput: CreateQuestionInput = {
   text: '保育時間を教えてください',
   category: '基本情報',
   priority: 'medium',
+  orderIndex: 0,
 };
 
 describe('DataStore', () => {
@@ -162,7 +163,9 @@ describe('DataStore', () => {
       category: '基本情報',
       isAnswered: false,
       priority: 'medium',
-      order: 0,
+      orderIndex: 0,
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+      updatedAt: new Date('2024-01-01T00:00:00Z'),
     });
     vi.mocked(updateQuestionListTimestamp).mockImplementation(
       (list: QuestionList) => ({
@@ -181,7 +184,9 @@ describe('DataStore', () => {
           category: '基本情報',
           isAnswered: false,
           priority: 'medium',
-          order: 0,
+          orderIndex: 0,
+          createdAt: new Date('2024-01-01T00:00:00Z'),
+          updatedAt: new Date('2024-01-01T00:00:00Z'),
         },
       ],
     }));

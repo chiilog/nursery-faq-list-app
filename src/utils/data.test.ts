@@ -8,7 +8,6 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import type {
   Question,
   QuestionList,
-  CreateQuestionInput,
   CreateQuestionListInput,
 } from '../types/data';
 import {
@@ -26,6 +25,10 @@ import {
   getQuestionListStats,
   createQuestionListFromTemplate,
 } from './data';
+import {
+  createQuestionMock,
+  createCreateQuestionInputMock,
+} from '../test/test-utils';
 
 // モックデータ
 const mockDate = new Date('2023-12-01T10:00:00Z');
@@ -67,13 +70,13 @@ describe('データユーティリティ関数', () => {
     describe('必須フィールドのみで質問を作成する時', () => {
       test('デフォルト値が設定された質問オブジェクトを返す', () => {
         // Given: 必須フィールドのみの入力データ
-        const input: CreateQuestionInput = {
+        const input = createCreateQuestionInputMock({
           text: 'テスト質問',
-        };
-        const order = 0;
+        });
+        const orderIndex = 0;
 
         // When: 質問を作成する
-        const question = createQuestion(input, order);
+        const question = createQuestion(input, orderIndex);
 
         // Then: デフォルト値が設定された質問オブジェクトが返される
         expect(question).toEqual({
@@ -83,7 +86,7 @@ describe('データユーティリティ関数', () => {
           isAnswered: false,
           priority: 'medium',
           category: undefined,
-          order: 0,
+          orderIndex: 0,
           answeredBy: undefined,
           answeredAt: undefined,
         });
@@ -93,15 +96,15 @@ describe('データユーティリティ関数', () => {
     describe('全フィールドを指定して質問を作成する時', () => {
       test('指定した値が設定された質問オブジェクトを返す', () => {
         // Given: 全フィールドを含む入力データ
-        const input: CreateQuestionInput = {
+        const input = createCreateQuestionInputMock({
           text: '  保育時間を教えてください  ',
           priority: 'high',
           category: '  基本情報  ',
-        };
-        const order = 1;
+        });
+        const orderIndex = 1;
 
         // When: 質問を作成する
-        const question = createQuestion(input, order);
+        const question = createQuestion(input, orderIndex);
 
         // Then: 指定した値とトリム処理が適用された質問オブジェクトが返される
         expect(question).toEqual({
@@ -111,7 +114,7 @@ describe('データユーティリティ関数', () => {
           isAnswered: false,
           priority: 'high',
           category: '基本情報',
-          order: 1,
+          orderIndex: 1,
           answeredBy: undefined,
           answeredAt: undefined,
         });
@@ -121,13 +124,13 @@ describe('データユーティリティ関数', () => {
     describe('テキストに前後の空白がある時', () => {
       test('空白がトリムされた質問オブジェクトを返す', () => {
         // Given: 前後に空白があるテキスト
-        const input: CreateQuestionInput = {
+        const input = createCreateQuestionInputMock({
           text: '   給食はありますか？   ',
-        };
-        const order = 0;
+        });
+        const orderIndex = 0;
 
         // When: 質問を作成する
-        const question = createQuestion(input, order);
+        const question = createQuestion(input, orderIndex);
 
         // Then: 空白がトリムされたテキストが設定される
         expect(question.text).toBe('給食はありますか？');
@@ -137,14 +140,14 @@ describe('データユーティリティ関数', () => {
     describe('カテゴリに前後の空白がある時', () => {
       test('空白がトリムされた質問オブジェクトを返す', () => {
         // Given: 前後に空白があるカテゴリ
-        const input: CreateQuestionInput = {
+        const input = createCreateQuestionInputMock({
           text: 'テスト質問',
           category: '   食事   ',
-        };
-        const order = 0;
+        });
+        const orderIndex = 0;
 
         // When: 質問を作成する
-        const question = createQuestion(input, order);
+        const question = createQuestion(input, orderIndex);
 
         // Then: 空白がトリムされたカテゴリが設定される
         expect(question.category).toBe('食事');
@@ -240,17 +243,17 @@ describe('データユーティリティ関数', () => {
   });
 
   describe('answerQuestion', () => {
-    const baseQuestion: Question = {
+    const baseQuestion = createQuestionMock({
       id: 'q1',
       text: 'テスト質問',
       answer: undefined,
       isAnswered: false,
       priority: 'medium',
       category: 'テスト',
-      order: 0,
+      orderIndex: 0,
       answeredBy: undefined,
       answeredAt: undefined,
-    };
+    });
 
     describe('回答を設定する時', () => {
       test('回答が設定され、isAnsweredがtrueになる', () => {
@@ -353,7 +356,7 @@ describe('データユーティリティ関数', () => {
         answer: undefined,
         isAnswered: false,
         priority: 'medium',
-        order: 0,
+        orderIndex: 0,
       } as Question,
       {
         id: 'q2',
@@ -361,7 +364,7 @@ describe('データユーティリティ関数', () => {
         answer: undefined,
         isAnswered: false,
         priority: 'medium',
-        order: 1,
+        orderIndex: 1,
       } as Question,
       {
         id: 'q3',
@@ -369,7 +372,7 @@ describe('データユーティリティ関数', () => {
         answer: undefined,
         isAnswered: false,
         priority: 'medium',
-        order: 2,
+        orderIndex: 2,
       } as Question,
     ];
 
@@ -397,9 +400,9 @@ describe('データユーティリティ関数', () => {
         const reorderedQuestions = reorderQuestions(questions, 2, 0);
 
         // Then: 順序番号が正しく更新される
-        expect(reorderedQuestions[0].order).toBe(0);
-        expect(reorderedQuestions[1].order).toBe(1);
-        expect(reorderedQuestions[2].order).toBe(2);
+        expect(reorderedQuestions[0].orderIndex).toBe(0);
+        expect(reorderedQuestions[1].orderIndex).toBe(1);
+        expect(reorderedQuestions[2].orderIndex).toBe(2);
       });
     });
 
@@ -428,7 +431,7 @@ describe('データユーティリティ関数', () => {
 
         // Then: 処理が実行され、順序番号が更新される
         expect(reorderedQuestions).toHaveLength(1);
-        expect(reorderedQuestions[0].order).toBe(0);
+        expect(reorderedQuestions[0].orderIndex).toBe(0);
       });
     });
 
@@ -455,7 +458,7 @@ describe('データユーティリティ関数', () => {
         answer: '回答1',
         isAnswered: true,
         priority: 'medium',
-        order: 0,
+        orderIndex: 0,
       } as Question,
       {
         id: 'q2',
@@ -463,7 +466,7 @@ describe('データユーティリティ関数', () => {
         answer: undefined,
         isAnswered: false,
         priority: 'medium',
-        order: 1,
+        orderIndex: 1,
       } as Question,
       {
         id: 'q3',
@@ -471,7 +474,7 @@ describe('データユーティリティ関数', () => {
         answer: '回答3',
         isAnswered: true,
         priority: 'medium',
-        order: 2,
+        orderIndex: 2,
       } as Question,
       {
         id: 'q4',
@@ -479,7 +482,7 @@ describe('データユーティリティ関数', () => {
         answer: undefined,
         isAnswered: false,
         priority: 'medium',
-        order: 3,
+        orderIndex: 3,
       } as Question,
     ];
 
@@ -509,7 +512,7 @@ describe('データユーティリティ関数', () => {
 
         // Then: 順序番号が連続して設定される
         sortedQuestions.forEach((question, index) => {
-          expect(question.order).toBe(index);
+          expect(question.orderIndex).toBe(index);
         });
       });
     });
@@ -590,25 +593,25 @@ describe('データユーティリティ関数', () => {
         id: 'q1',
         text: '質問1',
         priority: 'low',
-        order: 0,
+        orderIndex: 0,
       } as Question,
       {
         id: 'q2',
         text: '質問2',
         priority: 'high',
-        order: 1,
+        orderIndex: 1,
       } as Question,
       {
         id: 'q3',
         text: '質問3',
         priority: 'medium',
-        order: 2,
+        orderIndex: 2,
       } as Question,
       {
         id: 'q4',
         text: '質問4',
         priority: 'high',
-        order: 3,
+        orderIndex: 3,
       } as Question,
     ];
 
@@ -655,7 +658,7 @@ describe('データユーティリティ関数', () => {
 
         // Then: 順序番号が連続して設定される
         sortedQuestions.forEach((question, index) => {
-          expect(question.order).toBe(index);
+          expect(question.orderIndex).toBe(index);
         });
       });
     });
@@ -772,7 +775,7 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          order: 0,
+          orderIndex: 0,
         } as Question,
       ],
       sharedWith: [],
@@ -784,11 +787,11 @@ describe('データユーティリティ関数', () => {
     describe('質問リストに新しい質問を追加する時', () => {
       test('新しい質問が末尾に追加される', () => {
         // Given: 既存の質問が1つある質問リストと新しい質問の入力データ
-        const questionInput: CreateQuestionInput = {
+        const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
           priority: 'high',
           category: 'テスト',
-        };
+        });
 
         // When: 質問を質問リストに追加する
         const updatedList = addQuestionToList(baseQuestionList, questionInput);
@@ -798,31 +801,31 @@ describe('データユーティリティ関数', () => {
         expect(updatedList.questions[1].text).toBe('新しい質問');
         expect(updatedList.questions[1].priority).toBe('high');
         expect(updatedList.questions[1].category).toBe('テスト');
-        expect(updatedList.questions[1].order).toBe(1);
+        expect(updatedList.questions[1].orderIndex).toBe(1);
       });
     });
 
     describe('順序番号が正しく設定されることを確認する時', () => {
       test('新しい質問の順序番号が既存の質問数と同じになる', () => {
         // Given: 既存の質問が1つある質問リスト
-        const questionInput: CreateQuestionInput = {
+        const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
-        };
+        });
 
         // When: 質問を追加する
         const updatedList = addQuestionToList(baseQuestionList, questionInput);
 
         // Then: 新しい質問の順序番号が1になる（0から開始するため）
-        expect(updatedList.questions[1].order).toBe(1);
+        expect(updatedList.questions[1].orderIndex).toBe(1);
       });
     });
 
     describe('タイムスタンプが更新されることを確認する時', () => {
       test('updatedAtが現在時刻に更新される', () => {
         // Given: 質問リストと新しい質問
-        const questionInput: CreateQuestionInput = {
+        const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
-        };
+        });
 
         // When: 質問を追加する
         const updatedList = addQuestionToList(baseQuestionList, questionInput);
@@ -836,9 +839,9 @@ describe('データユーティリティ関数', () => {
       test('最初の質問として正しく追加される', () => {
         // Given: 空の質問リスト
         const emptyList = { ...baseQuestionList, questions: [] };
-        const questionInput: CreateQuestionInput = {
+        const questionInput = createCreateQuestionInputMock({
           text: '最初の質問',
-        };
+        });
 
         // When: 質問を追加する
         const updatedList = addQuestionToList(emptyList, questionInput);
@@ -846,7 +849,7 @@ describe('データユーティリティ関数', () => {
         // Then: 最初の質問として追加される
         expect(updatedList.questions).toHaveLength(1);
         expect(updatedList.questions[0].text).toBe('最初の質問');
-        expect(updatedList.questions[0].order).toBe(0);
+        expect(updatedList.questions[0].orderIndex).toBe(0);
       });
     });
 
@@ -854,9 +857,9 @@ describe('データユーティリティ関数', () => {
       test('元の質問リストオブジェクトは変更されない', () => {
         // Given: 質問リスト
         const originalList = { ...baseQuestionList };
-        const questionInput: CreateQuestionInput = {
+        const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
-        };
+        });
 
         // When: 質問を追加する
         addQuestionToList(baseQuestionList, questionInput);
@@ -881,7 +884,7 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          order: 0,
+          orderIndex: 0,
         } as Question,
         {
           id: 'q2',
@@ -889,7 +892,7 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          order: 1,
+          orderIndex: 1,
         } as Question,
         {
           id: 'q3',
@@ -897,7 +900,7 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          order: 2,
+          orderIndex: 2,
         } as Question,
       ],
       sharedWith: [],
@@ -933,8 +936,8 @@ describe('データユーティリティ関数', () => {
         const updatedList = removeQuestionFromList(questionList, 'q1');
 
         // Then: 残った質問の順序番号が連続して設定される
-        expect(updatedList.questions[0].order).toBe(0);
-        expect(updatedList.questions[1].order).toBe(1);
+        expect(updatedList.questions[0].orderIndex).toBe(0);
+        expect(updatedList.questions[1].orderIndex).toBe(1);
       });
     });
 
@@ -1011,28 +1014,28 @@ describe('データユーティリティ関数', () => {
       nurseryName: 'テスト保育園',
       visitDate: undefined,
       questions: [
-        {
+        createQuestionMock({
           id: 'q1',
           text: '元の質問1',
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
           category: '元のカテゴリ',
-          order: 0,
+          orderIndex: 0,
           answeredBy: undefined,
           answeredAt: undefined,
-        },
-        {
+        }),
+        createQuestionMock({
           id: 'q2',
           text: '元の質問2',
           answer: undefined,
           isAnswered: false,
           priority: 'low',
           category: undefined,
-          order: 1,
+          orderIndex: 1,
           answeredBy: undefined,
           answeredAt: undefined,
-        },
+        }),
       ],
       sharedWith: [],
       createdAt: new Date('2023-01-01'),
@@ -1044,17 +1047,17 @@ describe('データユーティリティ関数', () => {
       test('指定した質問が更新される', () => {
         // Given: 質問リストと更新後の質問オブジェクト
         const questionList = createQuestionListForUpdate();
-        const updatedQuestion: Question = {
+        const updatedQuestion = createQuestionMock({
           id: 'q1',
           text: '更新された質問1',
           answer: '更新された回答',
           isAnswered: true,
           priority: 'high',
           category: '更新されたカテゴリ',
-          order: 0,
+          orderIndex: 0,
           answeredBy: 'user123',
           answeredAt: mockDate,
-        };
+        });
 
         // When: 質問を更新する
         const updatedList = updateQuestionInList(
@@ -1097,14 +1100,14 @@ describe('データユーティリティ関数', () => {
         // Given: 質問リストと更新用の質問オブジェクト
         const questionList = createQuestionListForUpdate();
         const originalQuestions = [...questionList.questions];
-        const updatedQuestion: Question = {
+        const updatedQuestion = createQuestionMock({
           id: 'non-existent-id',
           text: '存在しない質問',
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          order: 0,
-        };
+          orderIndex: 0,
+        });
 
         // When: 存在しない質問IDで更新を試行する
         const updatedList = updateQuestionInList(
@@ -1308,28 +1311,28 @@ describe('データユーティリティ関数', () => {
       title: 'テンプレート質問リスト',
       nurseryName: 'テンプレート保育園',
       questions: [
-        {
+        createQuestionMock({
           id: 'tq1',
           text: 'テンプレート質問1',
           answer: 'テンプレート回答1',
           isAnswered: true,
           priority: 'high',
           category: 'テンプレートカテゴリ1',
-          order: 0,
+          orderIndex: 0,
           answeredBy: 'template-user',
           answeredAt: new Date('2023-01-01'),
-        },
-        {
+        }),
+        createQuestionMock({
           id: 'tq2',
           text: 'テンプレート質問2',
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
           category: 'テンプレートカテゴリ2',
-          order: 1,
+          orderIndex: 1,
           answeredBy: undefined,
           answeredAt: undefined,
-        },
+        }),
       ],
       createdAt: new Date('2023-01-01'),
       updatedAt: new Date('2023-01-01'),
@@ -1469,8 +1472,8 @@ describe('データユーティリティ関数', () => {
         );
 
         // Then: 順序番号が正しく設定される
-        expect(newQuestionList.questions[0].order).toBe(0);
-        expect(newQuestionList.questions[1].order).toBe(1);
+        expect(newQuestionList.questions[0].orderIndex).toBe(0);
+        expect(newQuestionList.questions[1].orderIndex).toBe(1);
       });
     });
 
