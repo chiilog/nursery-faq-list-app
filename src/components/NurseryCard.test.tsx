@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { renderWithProviders, testUtils } from '../test/test-utils';
 import { NurseryCard } from './NurseryCard';
-// Nursery型は testUtils.createMockNursery で使用
+import type { Nursery } from '../types/data';
 
 describe('NurseryCard コンポーネント', () => {
   describe('基本表示', () => {
@@ -152,7 +152,7 @@ describe('NurseryCard コンポーネント', () => {
 
       // TypeScriptエラーを回避するためのキャスト
       const onClickUndefined = undefined as unknown as (
-        nursery: typeof nursery
+        nursery: Nursery
       ) => void;
 
       expect(() => {

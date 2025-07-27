@@ -71,10 +71,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
       // Green: 実装されたので成功することが期待される
       const newNurseryInput: CreateNurseryInput = {
         name: '新しい保育園',
-        address: '東京都新宿区2-2-2',
-        phoneNumber: '03-9876-5432',
-        website: 'https://new-nursery.jp',
-        notes: '新しく開園した保育園',
       };
 
       const mockNurseries: Nursery[] = [

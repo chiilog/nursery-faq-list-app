@@ -39,7 +39,7 @@ describe('データユーティリティ関数', () => {
     vi.setSystemTime(mockDate);
 
     // crypto.randomUUIDをモック
-    Object.defineProperty(global, 'crypto', {
+    Object.defineProperty(globalThis, 'crypto', {
       value: { randomUUID: mockGenerateId },
       writable: true,
     });
