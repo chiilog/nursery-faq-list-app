@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { NurseryCard } from './NurseryCard';
 import { useNurseryStore } from '../stores/nurseryStore';
 import type { Nursery } from '../types/data';
-// import { NurseryCreator } from './NurseryCreator'; // TODO: 実装予定
+import { NurseryCreator } from './NurseryCreator';
 
 // ホームページコンポーネント（保育園カード一覧）
 const HomePage = () => {
@@ -28,8 +28,6 @@ const HomePage = () => {
     setIsCreating(true);
   };
 
-  // TODO: 保育園作成機能は次のステップで実装
-
   const handleCreateCancel = () => {
     setIsCreating(false);
   };
@@ -44,17 +42,7 @@ const HomePage = () => {
   };
 
   if (isCreating) {
-    return (
-      <Box maxW="md" mx="auto" p={6}>
-        <Heading as="h2" size="lg" mb={4}>
-          新しい保育園を追加
-        </Heading>
-        <VStack gap={4} align="stretch">
-          <Text>保育園作成フォームは次のステップで実装予定です。</Text>
-          <Button onClick={handleCreateCancel}>戻る</Button>
-        </VStack>
-      </Box>
-    );
+    return <NurseryCreator onCancel={handleCreateCancel} />;
   }
 
   return (
