@@ -69,7 +69,7 @@ export class NurseryDataStoreError extends Error {
 const NURSERIES_STORAGE_KEY = 'nursery-app-nurseries';
 
 // ユーティリティ関数
-function generateId(prefix: string): string {
+function generatePrefixedId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
@@ -84,13 +84,13 @@ class NurseryDataStore {
   // 保育園管理
   async createNursery(input: CreateNurseryInput): Promise<string> {
     try {
-      const nurseryId = generateId('nursery');
+      const nurseryId = generatePrefixedId('nursery');
       const now = getCurrentTimestamp();
 
       // 見学日が指定されている場合は初期見学セッションを作成
       const visitSessions: VisitSession[] = [];
       if (input.visitDate) {
-        const sessionId = generateId('session');
+        const sessionId = generatePrefixedId('session');
         visitSessions.push({
           id: sessionId,
           visitDate: input.visitDate,
@@ -334,7 +334,7 @@ class NurseryDataStore {
         );
       }
 
-      const sessionId = generateId('session');
+      const sessionId = generatePrefixedId('session');
       const now = getCurrentTimestamp();
 
       const visitSession: VisitSession = {
@@ -343,7 +343,7 @@ class NurseryDataStore {
         status: input.status || 'planned',
         questions:
           input.questions?.map((q, index) => ({
-            id: generateId('question'),
+            id: generatePrefixedId('question'),
             text: q.text,
             answer: '',
             isAnswered: false,
@@ -565,7 +565,7 @@ class NurseryDataStore {
         );
       }
 
-      const questionId = generateId('question');
+      const questionId = generatePrefixedId('question');
       const now = new Date();
 
       const newQuestion: Question = {
