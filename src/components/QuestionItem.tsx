@@ -9,7 +9,7 @@ import {
   Input,
   Textarea,
 } from '@chakra-ui/react';
-import type { Question } from '../types';
+import type { Question, QuestionPriority } from '../types/data';
 
 interface QuestionItemProps {
   question: Question;
@@ -131,7 +131,7 @@ export const QuestionItem = ({
                 />
                 <select
                   value={editedPriority}
-                  onChange={(e) => setEditedPriority(e.target.value)}
+                  onChange={(e) => setEditedPriority(e.target.value as QuestionPriority)}
                   aria-label="優先度"
                   style={{
                     padding: '4px 8px',

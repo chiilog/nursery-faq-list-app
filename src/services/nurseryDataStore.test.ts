@@ -55,10 +55,6 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
       // Red: まだ実装されていない機能のテスト
       const nurseryInput: CreateNurseryInput = {
         name: 'テスト保育園',
-        address: '東京都渋谷区1-1-1',
-        phoneNumber: '03-1234-5678',
-        website: 'https://test-nursery.jp',
-        notes: 'テスト用の保育園です',
       };
 
       // Green: 実装されたので成功することが期待される

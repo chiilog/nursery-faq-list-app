@@ -602,8 +602,10 @@ describe('errorOperations', () => {
         );
         if (!result) {
           const error = new Error('Operation failed');
-          (error as AppError).code = 'OPERATION_FAILED';
-          (error as AppError).timestamp = new Date();
+          Object.assign(error, {
+            code: 'OPERATION_FAILED',
+            timestamp: new Date(),
+          } as Partial<AppError>);
           throw error;
         }
       };
