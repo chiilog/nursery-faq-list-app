@@ -15,7 +15,7 @@ import {
   Textarea,
   Badge,
 } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNurseryStore } from '../stores/nurseryStore';
 import type { Question } from '../types/data';
@@ -43,7 +43,7 @@ const getQuestionProgress = (questions: Question[]): string => {
  * 保育園詳細画面コンポーネント
  */
 export const NurseryDetailPage = () => {
-  const { nurseryId: _nurseryId } = useParams<{ nurseryId: string }>();
+  const { nurseryId } = useParams<{ nurseryId: string }>();
   const navigate = useNavigate();
   const {
     currentNursery,
@@ -52,6 +52,7 @@ export const NurseryDetailPage = () => {
     updateQuestion,
     addQuestion,
     updateNursery,
+    setCurrentNursery,
     clearError,
   } = useNurseryStore();
 
@@ -64,6 +65,13 @@ export const NurseryDetailPage = () => {
   const [newQuestionText, setNewQuestionText] = useState('');
   const [editingVisitDate, setEditingVisitDate] = useState(false);
   const [newVisitDate, setNewVisitDate] = useState('');
+
+  // URLパラメータから保育園IDを取得してロード
+  useEffect(() => {
+    if (nurseryId && (!currentNursery || currentNursery.id !== nurseryId)) {
+      void setCurrentNursery(nurseryId);
+    }
+  }, [nurseryId, currentNursery, setCurrentNursery]);
 
   const handleBack = () => {
     void navigate('/');
@@ -143,7 +151,7 @@ export const NurseryDetailPage = () => {
   };
 
   // ローディング状態
-  if (loading.isLoading) {
+  if (loading.isLoading || (nurseryId && !currentNursery && !error)) {
     return (
       <Box textAlign="center" py={8}>
         <Spinner size="lg" color="brand.500" />
@@ -155,13 +163,32 @@ export const NurseryDetailPage = () => {
   }
 
   // エラー状態
-  if (error || !currentNursery) {
+  if (error || (!currentNursery && nurseryId)) {
     return (
       <Box textAlign="center" py={8}>
         <Text color="red.500" fontSize="lg" mb={4}>
           {error?.message || '保育園が見つかりません'}
         </Text>
-        <Button onClick={clearError}>戻る</Button>
+        <Button
+          onClick={() => {
+            clearError();
+            void navigate('/');
+          }}
+        >
+          ホームに戻る
+        </Button>
+      </Box>
+    );
+  }
+
+  // nurseryIdがないか、currentNurseryがない場合は404扱い
+  if (!nurseryId || !currentNursery) {
+    return (
+      <Box textAlign="center" py={8}>
+        <Text color="red.500" fontSize="lg" mb={4}>
+          保育園が見つかりません
+        </Text>
+        <Button onClick={() => void navigate('/')}>ホームに戻る</Button>
       </Box>
     );
   }
