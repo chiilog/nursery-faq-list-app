@@ -136,7 +136,6 @@ export const NurseryDetailPage = () => {
     };
 
     await updateNursery(currentNursery.id, {
-      ...currentNursery,
       visitSessions: updatedSessions,
     });
 
