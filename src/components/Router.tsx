@@ -138,9 +138,10 @@ export const AppRouter = () => {
           path="/nursery"
           element={<Text>保育園管理ページ（実装中）</Text>}
         />
-        <Route path="/nursery/:nurseryId" element={<NurseryDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
+      {/* NurseryDetailPageは独自のLayoutを使用するため、別ルートに */}
+      <Route path="/nursery/:nurseryId" element={<NurseryDetailPage />} />
     </Routes>
   );
 };
