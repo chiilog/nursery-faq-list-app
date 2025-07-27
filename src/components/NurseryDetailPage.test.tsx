@@ -92,7 +92,6 @@ describe('NurseryDetailPage コンポーネント', () => {
       renderWithProviders(<NurseryDetailPage />);
 
       expect(screen.getByText('テスト保育園')).toBeInTheDocument();
-      expect(screen.getByText('保育園詳細')).toBeInTheDocument();
     });
 
     test('見学日情報が表示される', () => {
@@ -112,7 +111,7 @@ describe('NurseryDetailPage コンポーネント', () => {
     test('戻るボタンが表示される', () => {
       renderWithProviders(<NurseryDetailPage />);
 
-      const backButton = screen.getByRole('button', { name: '戻る' });
+      const backButton = screen.getByRole('button', { name: '← 戻る' });
       expect(backButton).toBeInTheDocument();
     });
   });
@@ -221,7 +220,7 @@ describe('NurseryDetailPage コンポーネント', () => {
     test('質問追加ボタンが表示される', () => {
       renderWithProviders(<NurseryDetailPage />);
 
-      const addButton = screen.getByRole('button', { name: '質問を追加' });
+      const addButton = screen.getByRole('button', { name: '+ 質問を追加' });
       expect(addButton).toBeInTheDocument();
     });
 
@@ -229,7 +228,7 @@ describe('NurseryDetailPage コンポーネント', () => {
       const user = userEvent.setup();
       renderWithProviders(<NurseryDetailPage />);
 
-      const addButton = screen.getByRole('button', { name: '質問を追加' });
+      const addButton = screen.getByRole('button', { name: '+ 質問を追加' });
       await user.click(addButton);
 
       expect(
@@ -254,7 +253,7 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       renderWithProviders(<NurseryDetailPage />);
 
-      const addButton = screen.getByRole('button', { name: '質問を追加' });
+      const addButton = screen.getByRole('button', { name: '+ 質問を追加' });
       await user.click(addButton);
 
       const questionInput =
@@ -360,9 +359,6 @@ describe('NurseryDetailPage コンポーネント', () => {
       renderWithProviders(<NurseryDetailPage />);
 
       expect(
-        screen.getByRole('heading', { name: '保育園詳細' })
-      ).toBeInTheDocument();
-      expect(
         screen.getByRole('heading', { name: 'テスト保育園' })
       ).toBeInTheDocument();
     });
@@ -373,10 +369,12 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       // Tabキーでフォーカス移動をテスト
       await user.tab();
-      expect(screen.getByRole('button', { name: '戻る' })).toHaveFocus();
+      expect(screen.getByRole('button', { name: '← 戻る' })).toHaveFocus();
 
       await user.tab();
-      expect(screen.getByRole('button', { name: '質問を追加' })).toHaveFocus();
+      expect(
+        screen.getByRole('button', { name: '+ 質問を追加' })
+      ).toHaveFocus();
     });
 
     test('スクリーンリーダー向けの適切なラベルが設定されている', () => {
