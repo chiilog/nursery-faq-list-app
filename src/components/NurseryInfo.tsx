@@ -62,12 +62,12 @@ export const NurseryInfo = ({
   return (
     <Box
       bg="gray.50"
-      p={{ base: 4, md: 6 }}
+      p={0}
       borderRadius="lg"
       border="1px"
       borderColor="gray.200"
     >
-      <VStack align="stretch" gap={{ base: 3, md: 4 }}>
+      <VStack align="stretch" gap={{ base: 2, md: 3 }}>
         {/* 見学予定日 */}
         <Box flex={1}>
           <Text

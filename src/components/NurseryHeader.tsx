@@ -5,11 +5,20 @@
 import { Button, Heading, Box } from '@chakra-ui/react';
 
 interface NurseryHeaderProps {
-  nurseryName: string;
   onBack: () => void;
+  isEditing: boolean;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
 }
 
-export const NurseryHeader = ({ nurseryName, onBack }: NurseryHeaderProps) => {
+export const NurseryHeader = ({
+  onBack,
+  isEditing,
+  onEdit,
+  onSave,
+  onCancel,
+}: NurseryHeaderProps) => {
   return (
     <>
       <Button
@@ -27,9 +36,34 @@ export const NurseryHeader = ({ nurseryName, onBack }: NurseryHeaderProps) => {
         flex={1}
         textAlign="center"
       >
-        {nurseryName}
+        保育園詳細
       </Heading>
-      <Box minW={{ base: '60px', md: '80px' }} /> {/* スペーサー */}
+      {isEditing ? (
+        <Box display="flex" gap={2}>
+          <Button
+            size={{ base: 'sm', md: 'md' }}
+            colorScheme="brand"
+            onClick={onSave}
+          >
+            保存
+          </Button>
+          <Button
+            size={{ base: 'sm', md: 'md' }}
+            variant="ghost"
+            onClick={onCancel}
+          >
+            キャンセル
+          </Button>
+        </Box>
+      ) : (
+        <Button
+          size={{ base: 'sm', md: 'md' }}
+          variant="ghost"
+          onClick={onEdit}
+        >
+          編集
+        </Button>
+      )}
     </>
   );
 };

@@ -354,12 +354,92 @@ describe('NurseryDetailPage コンポーネント', () => {
     });
   });
 
+  describe('保育園編集機能', () => {
+    test('編集ボタンが表示される', () => {
+      renderWithProviders(<NurseryDetailPage />);
+
+      const editButton = screen.getByRole('button', { name: '編集' });
+      expect(editButton).toBeInTheDocument();
+    });
+
+    test('編集ボタンをクリックすると編集モードになる', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryDetailPage />);
+
+      const editButton = screen.getByRole('button', { name: '編集' });
+      await user.click(editButton);
+
+      expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'キャンセル' })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('保育園名を入力してください')
+      ).toBeInTheDocument();
+    });
+
+    test('保育園名を編集して保存できる', async () => {
+      const user = userEvent.setup();
+      const mockUpdateNursery = vi.fn();
+
+      vi.mocked(useNurseryStore).mockReturnValue({
+        currentNursery: mockCurrentNursery,
+        loading: { isLoading: false },
+        error: null,
+        updateNursery: mockUpdateNursery,
+        addQuestion: vi.fn(),
+        updateQuestion: vi.fn(),
+        setCurrentNursery: vi.fn(),
+        clearError: vi.fn(),
+      });
+
+      renderWithProviders(<NurseryDetailPage />);
+
+      // 編集モードに切り替え
+      const editButton = screen.getByRole('button', { name: '編集' });
+      await user.click(editButton);
+
+      // 保育園名を変更
+      const nameInput =
+        screen.getByPlaceholderText('保育園名を入力してください');
+      await user.clear(nameInput);
+      await user.type(nameInput, '新しい保育園名');
+
+      // 保存
+      const saveButton = screen.getByRole('button', { name: '保存' });
+      await user.click(saveButton);
+
+      expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+        name: '新しい保育園名',
+        visitSessions: expect.any(Array),
+      });
+    });
+
+    test('キャンセルボタンで編集モードを終了できる', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryDetailPage />);
+
+      // 編集モードに切り替え
+      const editButton = screen.getByRole('button', { name: '編集' });
+      await user.click(editButton);
+
+      // キャンセル
+      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      await user.click(cancelButton);
+
+      expect(screen.getByRole('button', { name: '編集' })).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: '保存' })
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe('アクセシビリティ', () => {
     test('見出しが適切に設定されている', () => {
       renderWithProviders(<NurseryDetailPage />);
 
       expect(
-        screen.getByRole('heading', { name: 'テスト保育園' })
+        screen.getByRole('heading', { name: '保育園詳細' })
       ).toBeInTheDocument();
     });
 
