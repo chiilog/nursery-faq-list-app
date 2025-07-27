@@ -75,6 +75,18 @@
   - **ファイル**: `src/components/Router.test.tsx:71-75`
   - **優先度**: 中（ナビゲーション機能の実装方針決定後に修正）
 
+### UX改善項目
+
+- [ ] **NurseryCreatorのキャンセルボタンUX改善**
+  - **問題**: 保存処理中にキャンセルボタンも無効化されている
+  - **改善**: 保存中でもキャンセルボタンは有効にする（UXベストプラクティス）
+  - **対象ファイル**:
+    - `src/components/NurseryCreator/FormActions.tsx` - `isDisabled`を`isSaveDisabled`/`isCancelDisabled`に分割
+    - `src/components/NurseryCreator/NurseryCreator.tsx` - プロパティ渡し方変更
+    - `src/components/NurseryCreator.test.tsx` - テスト更新
+  - **実装時期**: Phase 2またはUX改善フェーズ
+  - **関連**: PR#27 CodeRabbit AIレビューコメント
+
 ## 注意事項
 
 - このTODOリストは品質向上のための改善項目です

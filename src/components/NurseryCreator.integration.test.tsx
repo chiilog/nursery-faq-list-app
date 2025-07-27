@@ -34,15 +34,17 @@ describe('NurseryCreator 統合テスト', () => {
     // 保存ボタンをクリック
     await user.click(saveButton);
 
-    // ストアの状態変化をテストする場合は、ここでストアの状態を確認
-    // 実際のAPI呼び出しはモックされているはずなので、
-    // ローディング状態やエラーハンドリングの動作を確認
+    // 保存が成功したことを確認するアサーションを追加
+    await waitFor(() => {
+      expect(mockOnCancel).toHaveBeenCalled();
+    });
   });
 
   test('フォームのリセット機能', async () => {
     const user = userEvent.setup();
+    const mockOnCancel = vi.fn();
 
-    renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+    renderWithProviders(<NurseryCreator onCancel={mockOnCancel} />);
 
     const nameInput = screen.getByLabelText('保育園名');
     const visitDateInput = screen.getByLabelText('見学日');
@@ -60,6 +62,9 @@ describe('NurseryCreator 統合テスト', () => {
     await user.click(cancelButton);
 
     // onCancelが呼ばれることを確認（実際のアプリではフォームがクローズされる）
+    await waitFor(() => {
+      expect(mockOnCancel).toHaveBeenCalled();
+    });
   });
 
   test('エラーハンドリングの統合テスト', async () => {
