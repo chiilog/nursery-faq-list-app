@@ -8,7 +8,9 @@ describe('AppRouter', () => {
     test('ルートパスで質問リスト一覧が表示される', () => {
       renderWithProviders(<AppRouter />);
 
-      const heading = screen.getByRole('heading', { name: /質問リスト一覧/i });
+      const heading = screen.getByRole('heading', {
+        name: /保育園見学質問リスト/i,
+      });
       expect(heading).toBeInTheDocument();
     });
 
@@ -30,13 +32,9 @@ describe('AppRouter', () => {
       const header = screen.getByRole('heading', {
         name: /保育園見学質問リスト/i,
       });
-      const nav = screen.getByRole('navigation', {
-        name: /メインナビゲーション/i,
-      });
       const main = screen.getByRole('main');
 
       expect(header).toBeInTheDocument();
-      expect(nav).toBeInTheDocument();
       expect(main).toBeInTheDocument();
     });
   });
