@@ -8,17 +8,15 @@ describe('App', () => {
     expect(screen.getByText('保育園見学質問リスト')).toBeInTheDocument();
   });
 
-  test('メインナビゲーションが表示される', () => {
+  test('ヘッダーが表示される', () => {
     renderWithChakra(<App />);
-    expect(
-      screen.getByRole('navigation', { name: /メインナビゲーション/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
   });
 
-  test('質問リスト一覧ページがデフォルトで表示される', () => {
+  test('保育園を追加するボタンが表示される', () => {
     renderWithChakra(<App />);
     expect(
-      screen.getByRole('heading', { name: /質問リスト一覧/i })
+      screen.getByRole('button', { name: /保育園を追加する/i })
     ).toBeInTheDocument();
   });
 });
