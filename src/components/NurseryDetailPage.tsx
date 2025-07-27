@@ -110,7 +110,7 @@ export const NurseryDetailPage = () => {
 
     const nextOrderIndex =
       session.questions.length > 0
-        ? Math.max(...session.questions.map((q) => q.orderIndex), -1) + 1
+        ? Math.max(...session.questions.map((q) => q.orderIndex)) + 1
         : 0;
 
     await addQuestion(currentNursery.id, session.id, {
