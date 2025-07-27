@@ -6,12 +6,18 @@
 import type { ReactElement } from 'react';
 import { render as rtlRender } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
+import { MemoryRouter } from 'react-router-dom';
 import system from '../theme';
 
 // プロバイダー付きでコンポーネントをレンダリング
-export const renderWithProviders = (ui: ReactElement) => {
+export const renderWithProviders = (
+  ui: ReactElement,
+  { initialEntries = ['/'] } = {}
+) => {
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <ChakraProvider value={system}>{children}</ChakraProvider>
+    <MemoryRouter initialEntries={initialEntries}>
+      <ChakraProvider value={system}>{children}</ChakraProvider>
+    </MemoryRouter>
   );
 
   return rtlRender(ui, { wrapper: Wrapper });
@@ -48,12 +54,30 @@ export const testUtils = {
   createMockQuestion: (overrides = {}) => ({
     id: 'question-1',
     text: 'テスト質問',
+    answer: '',
     isAnswered: false,
     priority: 'medium' as const,
-    order: 1,
+    category: '基本情報',
+    orderIndex: 0,
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
+    ...overrides,
+  }),
+
+  // CreateQuestionInputのモック作成
+  createMockCreateQuestionInput: (overrides = {}) => ({
+    text: 'テスト質問',
+    priority: 'medium' as const,
+    category: '基本情報',
+    orderIndex: 0,
     ...overrides,
   }),
 };
+
+// より簡潔な関数名のエクスポート
+export const createQuestionMock = testUtils.createMockQuestion;
+export const createCreateQuestionInputMock =
+  testUtils.createMockCreateQuestionInput;
 
 // re-export everything
 export * from '@testing-library/react';

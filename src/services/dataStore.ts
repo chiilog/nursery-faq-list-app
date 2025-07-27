@@ -841,6 +841,7 @@ export class DataStore {
             text: question.text,
             priority: question.priority,
             category: question.category,
+            orderIndex: index,
           },
           index
         )

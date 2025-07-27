@@ -12,10 +12,15 @@ import type {
   VisitSession,
   CreateVisitSessionInput,
   UpdateVisitSessionInput,
+  CreateQuestionInput,
+  UpdateQuestionInput,
   SyncState,
   NurseryStats,
 } from '../types/data';
-import { nurseryDataStore, NurseryDataStoreError } from '../services/nurseryDataStore';
+import {
+  nurseryDataStore,
+  NurseryDataStoreError,
+} from '../services/nurseryDataStore';
 
 // エラー情報の型定義
 export interface AppError {
@@ -50,10 +55,34 @@ interface NurseryState {
   setCurrentNursery: (id: string | null) => Promise<void>;
 
   // アクション: 見学セッション管理
-  createVisitSession: (nurseryId: string, input: CreateVisitSessionInput) => Promise<string>;
-  updateVisitSession: (sessionId: string, updates: UpdateVisitSessionInput) => Promise<void>;
+  createVisitSession: (
+    nurseryId: string,
+    input: CreateVisitSessionInput
+  ) => Promise<string>;
+  updateVisitSession: (
+    sessionId: string,
+    updates: UpdateVisitSessionInput
+  ) => Promise<void>;
   deleteVisitSession: (sessionId: string) => Promise<void>;
   setCurrentVisitSession: (sessionId: string | null) => Promise<void>;
+
+  // アクション: 質問管理
+  addQuestion: (
+    nurseryId: string,
+    sessionId: string,
+    input: CreateQuestionInput
+  ) => Promise<string>;
+  updateQuestion: (
+    nurseryId: string,
+    sessionId: string,
+    questionId: string,
+    updates: UpdateQuestionInput
+  ) => Promise<void>;
+  deleteQuestion: (
+    nurseryId: string,
+    sessionId: string,
+    questionId: string
+  ) => Promise<void>;
 
   // アクション: エラー・状態管理
   clearError: () => void;
@@ -110,7 +139,10 @@ export const useNurseryStore = create<NurseryState>()(
               error instanceof NurseryDataStoreError
                 ? error.message
                 : '保育園リストの読み込みに失敗しました',
-            code: error instanceof NurseryDataStoreError ? error.code : 'LOAD_NURSERIES_FAILED',
+            code:
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'LOAD_NURSERIES_FAILED',
             timestamp: new Date(),
           };
           set({ error: appError });
@@ -139,7 +171,9 @@ export const useNurseryStore = create<NurseryState>()(
                 ? error.message
                 : '保育園の作成に失敗しました',
             code:
-              error instanceof NurseryDataStoreError ? error.code : 'CREATE_NURSERY_FAILED',
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'CREATE_NURSERY_FAILED',
             timestamp: new Date(),
           };
           set({ error: appError });
@@ -167,7 +201,9 @@ export const useNurseryStore = create<NurseryState>()(
                 ? error.message
                 : '保育園の更新に失敗しました',
             code:
-              error instanceof NurseryDataStoreError ? error.code : 'UPDATE_NURSERY_FAILED',
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'UPDATE_NURSERY_FAILED',
             timestamp: new Date(),
           };
           set({ error: appError });
@@ -202,7 +238,9 @@ export const useNurseryStore = create<NurseryState>()(
                 ? error.message
                 : '保育園の削除に失敗しました',
             code:
-              error instanceof NurseryDataStoreError ? error.code : 'DELETE_NURSERY_FAILED',
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'DELETE_NURSERY_FAILED',
             timestamp: new Date(),
           };
           set({ error: appError });
@@ -228,7 +266,7 @@ export const useNurseryStore = create<NurseryState>()(
           clearError();
 
           const nursery = await nurseryDataStore.getNursery(id);
-          set({ 
+          set({
             currentNursery: nursery,
             currentVisitSession: null, // 保育園変更時は見学セッションもクリア
           });
@@ -251,14 +289,23 @@ export const useNurseryStore = create<NurseryState>()(
       },
 
       // 見学セッション管理アクション
-      async createVisitSession(nurseryId: string, input: CreateVisitSessionInput) {
+      async createVisitSession(
+        nurseryId: string,
+        input: CreateVisitSessionInput
+      ) {
         const { setLoading, clearError, setCurrentNursery } = get();
 
         try {
-          setLoading({ isLoading: true, operation: '見学セッションを作成中...' });
+          setLoading({
+            isLoading: true,
+            operation: '見学セッションを作成中...',
+          });
           clearError();
 
-          const sessionId = await nurseryDataStore.createVisitSession(nurseryId, input);
+          const sessionId = await nurseryDataStore.createVisitSession(
+            nurseryId,
+            input
+          );
 
           // 現在の保育園を更新
           await setCurrentNursery(nurseryId);
@@ -283,11 +330,18 @@ export const useNurseryStore = create<NurseryState>()(
         }
       },
 
-      async updateVisitSession(sessionId: string, updates: UpdateVisitSessionInput) {
-        const { setLoading, clearError, currentNursery, setCurrentNursery } = get();
+      async updateVisitSession(
+        sessionId: string,
+        updates: UpdateVisitSessionInput
+      ) {
+        const { setLoading, clearError, currentNursery, setCurrentNursery } =
+          get();
 
         try {
-          setLoading({ isLoading: true, operation: '見学セッション情報を更新中...' });
+          setLoading({
+            isLoading: true,
+            operation: '見学セッション情報を更新中...',
+          });
           clearError();
 
           await nurseryDataStore.updateVisitSession(sessionId, updates);
@@ -316,10 +370,14 @@ export const useNurseryStore = create<NurseryState>()(
       },
 
       async deleteVisitSession(sessionId: string) {
-        const { setLoading, clearError, currentNursery, setCurrentNursery } = get();
+        const { setLoading, clearError, currentNursery, setCurrentNursery } =
+          get();
 
         try {
-          setLoading({ isLoading: true, operation: '見学セッションを削除中...' });
+          setLoading({
+            isLoading: true,
+            operation: '見学セッションを削除中...',
+          });
           clearError();
 
           await nurseryDataStore.deleteVisitSession(sessionId);
@@ -327,8 +385,8 @@ export const useNurseryStore = create<NurseryState>()(
           // 削除されたセッションが現在のセッションの場合はクリア
           set((state) => ({
             currentVisitSession:
-              state.currentVisitSession?.id === sessionId 
-                ? null 
+              state.currentVisitSession?.id === sessionId
+                ? null
                 : state.currentVisitSession,
           }));
 
@@ -371,7 +429,7 @@ export const useNurseryStore = create<NurseryState>()(
           clearError();
 
           const session = await nurseryDataStore.getVisitSession(sessionId);
-          
+
           if (session) {
             set({ currentVisitSession: session });
           } else {
@@ -390,6 +448,134 @@ export const useNurseryStore = create<NurseryState>()(
             timestamp: new Date(),
           };
           set({ error: appError });
+        } finally {
+          setLoading({ isLoading: false });
+        }
+      },
+
+      // 質問管理
+      async addQuestion(
+        nurseryId: string,
+        sessionId: string,
+        input: CreateQuestionInput
+      ) {
+        const { setLoading, clearError, setCurrentNursery } = get();
+
+        try {
+          setLoading({
+            isLoading: true,
+            operation: '質問を追加中...',
+          });
+          clearError();
+
+          const questionId = await nurseryDataStore.addQuestion(
+            nurseryId,
+            sessionId,
+            input
+          );
+
+          // 現在の保育園情報を更新
+          await setCurrentNursery(nurseryId);
+
+          return questionId;
+        } catch (error) {
+          const appError: AppError = {
+            message:
+              error instanceof NurseryDataStoreError
+                ? error.message
+                : '質問の追加に失敗しました',
+            code:
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'ADD_QUESTION_FAILED',
+            timestamp: new Date(),
+          };
+          set({ error: appError });
+          throw error;
+        } finally {
+          setLoading({ isLoading: false });
+        }
+      },
+
+      async updateQuestion(
+        nurseryId: string,
+        sessionId: string,
+        questionId: string,
+        updates: UpdateQuestionInput
+      ) {
+        const { setLoading, clearError, setCurrentNursery } = get();
+
+        try {
+          setLoading({
+            isLoading: true,
+            operation: '質問を更新中...',
+          });
+          clearError();
+
+          await nurseryDataStore.updateQuestion(
+            nurseryId,
+            sessionId,
+            questionId,
+            updates
+          );
+
+          // 現在の保育園情報を更新
+          await setCurrentNursery(nurseryId);
+        } catch (error) {
+          const appError: AppError = {
+            message:
+              error instanceof NurseryDataStoreError
+                ? error.message
+                : '質問の更新に失敗しました',
+            code:
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'UPDATE_QUESTION_FAILED',
+            timestamp: new Date(),
+          };
+          set({ error: appError });
+          throw error;
+        } finally {
+          setLoading({ isLoading: false });
+        }
+      },
+
+      async deleteQuestion(
+        nurseryId: string,
+        sessionId: string,
+        questionId: string
+      ) {
+        const { setLoading, clearError, setCurrentNursery } = get();
+
+        try {
+          setLoading({
+            isLoading: true,
+            operation: '質問を削除中...',
+          });
+          clearError();
+
+          await nurseryDataStore.deleteQuestion(
+            nurseryId,
+            sessionId,
+            questionId
+          );
+
+          // 現在の保育園情報を更新
+          await setCurrentNursery(nurseryId);
+        } catch (error) {
+          const appError: AppError = {
+            message:
+              error instanceof NurseryDataStoreError
+                ? error.message
+                : '質問の削除に失敗しました',
+            code:
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'DELETE_QUESTION_FAILED',
+            timestamp: new Date(),
+          };
+          set({ error: appError });
+          throw error;
         } finally {
           setLoading({ isLoading: false });
         }
@@ -436,14 +622,17 @@ export const useNurseryStore = create<NurseryState>()(
           0
         );
         const totalAnsweredQuestions = targetNursery.visitSessions.reduce(
-          (total, session) => 
+          (total, session) =>
             total + session.questions.filter((q) => q.isAnswered).length,
           0
         );
 
-        const overallProgress = totalQuestions > 0 
-          ? Math.round((totalAnsweredQuestions / totalQuestions) * 100 * 100) / 100
-          : 0;
+        const overallProgress =
+          totalQuestions > 0
+            ? Math.round(
+                (totalAnsweredQuestions / totalQuestions) * 100 * 100
+              ) / 100
+            : 0;
 
         return {
           totalSessions,

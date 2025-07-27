@@ -85,6 +85,7 @@ describe('保育園見学の質問を管理する時', () => {
         await result.current.addQuestionToList('list-id', {
           text: '園庭の広さはどれくらいですか？',
           category: '環境',
+          orderIndex: 0,
         });
       });
 

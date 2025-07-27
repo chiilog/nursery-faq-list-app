@@ -10,6 +10,9 @@ import type {
   VisitSession,
   CreateVisitSessionInput,
   UpdateVisitSessionInput,
+  Question,
+  CreateQuestionInput,
+  UpdateQuestionInput,
 } from '../types/data';
 
 // シリアライズされたデータの型定義（JSON形式）
@@ -43,9 +46,11 @@ interface SerializedQuestion {
   isAnswered: boolean;
   priority: 'high' | 'medium' | 'low';
   category?: string;
-  order: number;
+  orderIndex: number;
   answeredBy?: string;
   answeredAt?: string; // ISO date string
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
 }
 
 // データストアエラークラス
@@ -64,7 +69,7 @@ export class NurseryDataStoreError extends Error {
 const NURSERIES_STORAGE_KEY = 'nursery-app-nurseries';
 
 // ユーティリティ関数
-function generateId(prefix: string): string {
+function generatePrefixedId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
@@ -79,13 +84,13 @@ class NurseryDataStore {
   // 保育園管理
   async createNursery(input: CreateNurseryInput): Promise<string> {
     try {
-      const nurseryId = generateId('nursery');
+      const nurseryId = generatePrefixedId('nursery');
       const now = getCurrentTimestamp();
 
       // 見学日が指定されている場合は初期見学セッションを作成
       const visitSessions: VisitSession[] = [];
       if (input.visitDate) {
-        const sessionId = generateId('session');
+        const sessionId = generatePrefixedId('session');
         visitSessions.push({
           id: sessionId,
           visitDate: input.visitDate,
@@ -166,6 +171,8 @@ class NurseryDataStore {
                   answeredAt: question.answeredAt
                     ? new Date(question.answeredAt)
                     : undefined,
+                  createdAt: new Date(question.createdAt),
+                  updatedAt: new Date(question.updatedAt),
                 })
               ),
             })
@@ -220,6 +227,8 @@ class NurseryDataStore {
                     answeredAt: question.answeredAt
                       ? new Date(question.answeredAt)
                       : undefined,
+                    createdAt: new Date(question.createdAt),
+                    updatedAt: new Date(question.updatedAt),
                   })
                 ),
               })
@@ -325,7 +334,7 @@ class NurseryDataStore {
         );
       }
 
-      const sessionId = generateId('session');
+      const sessionId = generatePrefixedId('session');
       const now = getCurrentTimestamp();
 
       const visitSession: VisitSession = {
@@ -334,13 +343,15 @@ class NurseryDataStore {
         status: input.status || 'planned',
         questions:
           input.questions?.map((q, index) => ({
-            id: generateId('question'),
+            id: generatePrefixedId('question'),
             text: q.text,
             answer: '',
             isAnswered: false,
             priority: q.priority || 'medium',
             category: q.category,
-            order: index,
+            orderIndex: index,
+            createdAt: now,
+            updatedAt: now,
           })) || [],
         notes: input.notes,
         sharedWith: [],
@@ -502,6 +513,191 @@ class NurseryDataStore {
         );
       }
       throw error;
+    }
+  }
+
+  // 保育園データを保存するヘルパーメソッド
+  private saveNurseries(nurseries: Nursery[]): void {
+    try {
+      const nurseriesMap = nurseries.reduce(
+        (acc, n) => {
+          acc[n.id] = n;
+          return acc;
+        },
+        {} as Record<string, Nursery>
+      );
+
+      localStorage.setItem(NURSERIES_STORAGE_KEY, JSON.stringify(nurseriesMap));
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new NurseryDataStoreError(
+          'データの保存に失敗しました',
+          'SAVE_FAILED',
+          error
+        );
+      }
+      throw error;
+    }
+  }
+
+  // 質問管理
+  async addQuestion(
+    nurseryId: string,
+    sessionId: string,
+    input: CreateQuestionInput
+  ): Promise<string> {
+    try {
+      const nurseries = await this.getAllNurseries();
+      const nursery = nurseries.find((n) => n.id === nurseryId);
+
+      if (!nursery) {
+        throw new NurseryDataStoreError(
+          '指定された保育園が見つかりません',
+          'NURSERY_NOT_FOUND'
+        );
+      }
+
+      const session = nursery.visitSessions.find((s) => s.id === sessionId);
+      if (!session) {
+        throw new NurseryDataStoreError(
+          '指定された見学セッションが見つかりません',
+          'SESSION_NOT_FOUND'
+        );
+      }
+
+      const questionId = generatePrefixedId('question');
+      const now = new Date();
+
+      const newQuestion: Question = {
+        id: questionId,
+        text: input.text,
+        answer: input.answer || '',
+        isAnswered: input.isAnswered || false,
+        priority: input.priority || 'medium',
+        category: input.category || '基本情報',
+        orderIndex: input.orderIndex,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      session.questions.push(newQuestion);
+      this.saveNurseries(nurseries);
+
+      return questionId;
+    } catch (error) {
+      if (error instanceof NurseryDataStoreError) {
+        throw error;
+      }
+      throw new NurseryDataStoreError(
+        '質問の追加に失敗しました',
+        'ADD_QUESTION_FAILED',
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  async updateQuestion(
+    nurseryId: string,
+    sessionId: string,
+    questionId: string,
+    updates: UpdateQuestionInput
+  ): Promise<void> {
+    try {
+      const nurseries = await this.getAllNurseries();
+      const nursery = nurseries.find((n) => n.id === nurseryId);
+
+      if (!nursery) {
+        throw new NurseryDataStoreError(
+          '指定された保育園が見つかりません',
+          'NURSERY_NOT_FOUND'
+        );
+      }
+
+      const session = nursery.visitSessions.find((s) => s.id === sessionId);
+      if (!session) {
+        throw new NurseryDataStoreError(
+          '指定された見学セッションが見つかりません',
+          'SESSION_NOT_FOUND'
+        );
+      }
+
+      const question = session.questions.find((q) => q.id === questionId);
+      if (!question) {
+        throw new NurseryDataStoreError(
+          '指定された質問が見つかりません',
+          'QUESTION_NOT_FOUND'
+        );
+      }
+
+      // 質問を更新
+      if (updates.text !== undefined) question.text = updates.text;
+      if (updates.answer !== undefined) question.answer = updates.answer;
+      if (updates.isAnswered !== undefined)
+        question.isAnswered = updates.isAnswered;
+      if (updates.priority !== undefined) question.priority = updates.priority;
+      if (updates.category !== undefined) question.category = updates.category;
+      if (updates.orderIndex !== undefined)
+        question.orderIndex = updates.orderIndex;
+      question.updatedAt = new Date();
+
+      this.saveNurseries(nurseries);
+    } catch (error) {
+      if (error instanceof NurseryDataStoreError) {
+        throw error;
+      }
+      throw new NurseryDataStoreError(
+        '質問の更新に失敗しました',
+        'UPDATE_QUESTION_FAILED',
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  async deleteQuestion(
+    nurseryId: string,
+    sessionId: string,
+    questionId: string
+  ): Promise<void> {
+    try {
+      const nurseries = await this.getAllNurseries();
+      const nursery = nurseries.find((n) => n.id === nurseryId);
+
+      if (!nursery) {
+        throw new NurseryDataStoreError(
+          '指定された保育園が見つかりません',
+          'NURSERY_NOT_FOUND'
+        );
+      }
+
+      const session = nursery.visitSessions.find((s) => s.id === sessionId);
+      if (!session) {
+        throw new NurseryDataStoreError(
+          '指定された見学セッションが見つかりません',
+          'SESSION_NOT_FOUND'
+        );
+      }
+
+      const questionIndex = session.questions.findIndex(
+        (q) => q.id === questionId
+      );
+      if (questionIndex === -1) {
+        throw new NurseryDataStoreError(
+          '指定された質問が見つかりません',
+          'QUESTION_NOT_FOUND'
+        );
+      }
+
+      session.questions.splice(questionIndex, 1);
+      this.saveNurseries(nurseries);
+    } catch (error) {
+      if (error instanceof NurseryDataStoreError) {
+        throw error;
+      }
+      throw new NurseryDataStoreError(
+        '質問の削除に失敗しました',
+        'DELETE_QUESTION_FAILED',
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
