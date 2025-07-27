@@ -83,6 +83,7 @@ describe('NurseryDetailPage コンポーネント', () => {
       addQuestion: vi.fn(),
       updateQuestion: vi.fn(),
       deleteQuestion: vi.fn(),
+      setCurrentNursery: vi.fn(),
       clearError: vi.fn(),
     });
   });
@@ -190,6 +191,7 @@ describe('NurseryDetailPage コンポーネント', () => {
         addQuestion: vi.fn(),
         updateQuestion: mockUpdateQuestion,
         deleteQuestion: vi.fn(),
+        setCurrentNursery: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -248,6 +250,7 @@ describe('NurseryDetailPage コンポーネント', () => {
         addQuestion: mockAddQuestion,
         updateQuestion: vi.fn(),
         deleteQuestion: vi.fn(),
+        setCurrentNursery: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -326,6 +329,7 @@ describe('NurseryDetailPage コンポーネント', () => {
         addQuestion: vi.fn(),
         updateQuestion: vi.fn(),
         deleteQuestion: vi.fn(),
+        setCurrentNursery: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -343,6 +347,7 @@ describe('NurseryDetailPage コンポーネント', () => {
         addQuestion: vi.fn(),
         updateQuestion: vi.fn(),
         deleteQuestion: vi.fn(),
+        setCurrentNursery: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -389,6 +394,7 @@ describe('NurseryDetailPage コンポーネント', () => {
         updateNursery: mockUpdateNursery,
         addQuestion: vi.fn(),
         updateQuestion: vi.fn(),
+        deleteQuestion: vi.fn(),
         setCurrentNursery: vi.fn(),
         clearError: vi.fn(),
       });

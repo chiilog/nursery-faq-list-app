@@ -23,7 +23,7 @@ export const QuestionAddForm = ({
     return (
       <VStack
         align="stretch"
-        p={0}
+        p={4}
         border="2px"
         borderColor="brand.200"
         borderRadius="lg"
