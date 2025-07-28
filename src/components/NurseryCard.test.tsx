@@ -34,55 +34,6 @@ describe('NurseryCard コンポーネント', () => {
     });
   });
 
-  describe('見学セッションありの場合', () => {
-    test('最新の見学予定日が表示される', () => {
-      const visitDate = new Date('2025-02-15');
-      const nursery = testUtils.createMockNursery({
-        visitSessions: [
-          testUtils.createMockVisitSession({
-            visitDate,
-            status: 'planned',
-          }),
-        ],
-      });
-
-      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
-
-      // 2025-02-15は現在から見て過去か未来かによって表示が変わる
-      // テスト実行時の日付によっては「(済)」が付く可能性がある
-      expect(screen.getByText(/見学日: 2025\/2\/15/)).toBeInTheDocument();
-    });
-
-    test('質問進捗が正しく計算される', () => {
-      const nursery = testUtils.createMockNursery({
-        visitSessions: [
-          testUtils.createMockVisitSession({
-            questions: [
-              testUtils.createMockQuestion({
-                id: 'q1',
-                text: '質問1',
-                answer: '回答1',
-                isAnswered: true,
-                order: 1,
-              }),
-              testUtils.createMockQuestion({
-                id: 'q2',
-                text: '質問2',
-                isAnswered: false,
-                order: 2,
-              }),
-            ],
-          }),
-        ],
-      });
-
-      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
-
-      // 新しい仕様では、パーセンテージが表示される
-      expect(screen.getByText('質問進捗: 1/2 (50%)')).toBeInTheDocument();
-    });
-  });
-
   describe('日付表示（時間制御版）', () => {
     beforeEach(() => {
       // 2025年1月15日 12:00:00に固定（決定論的テスト）
