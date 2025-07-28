@@ -14,6 +14,7 @@ interface NurseryInfoCardProps {
   isEditing?: boolean;
   editingName?: string;
   newVisitDate?: string;
+  hasNameError?: boolean;
   onNameChange?: (value: string) => void;
   onVisitDateChange?: (value: string) => void;
 }
@@ -47,6 +48,7 @@ export const NurseryInfoCard = ({
   isEditing = false,
   editingName = '',
   newVisitDate = '',
+  hasNameError = false,
   onNameChange,
   onVisitDateChange,
 }: NurseryInfoCardProps) => {
@@ -71,16 +73,27 @@ export const NurseryInfoCard = ({
       <VStack align="stretch" gap={3}>
         {/* 保育園名 */}
         {isEditing ? (
-          <Input
-            value={editingName}
-            onChange={(e) => onNameChange?.(e.target.value)}
-            placeholder="保育園名を入力してください"
-            fontSize="lg"
-            fontWeight="bold"
-            bg="white"
-            borderColor="brand.300"
-            _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
-          />
+          <VStack align="stretch" gap={1}>
+            <Input
+              value={editingName}
+              onChange={(e) => onNameChange?.(e.target.value)}
+              placeholder="保育園名を入力してください"
+              fontSize="lg"
+              fontWeight="bold"
+              bg="white"
+              borderColor={hasNameError ? 'red.500' : 'brand.300'}
+              _focus={{
+                borderColor: hasNameError ? 'red.500' : 'brand.500',
+                shadow: hasNameError ? '0 0 0 1px red.500' : 'outline',
+              }}
+              data-error={hasNameError}
+            />
+            {hasNameError && (
+              <Text color="red.500" fontSize="sm">
+                保育園名を入力してください
+              </Text>
+            )}
+          </VStack>
         ) : (
           <Text
             fontWeight="bold"

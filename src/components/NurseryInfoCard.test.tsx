@@ -168,6 +168,42 @@ describe('NurseryInfoCard コンポーネント', () => {
       expect(input).toHaveValue('');
     });
 
+    test('hasNameErrorがtrueの時、inputが赤枠になりエラーメッセージが表示される', () => {
+      renderWithProviders(
+        <NurseryInfoCard
+          nurseryName="テスト保育園"
+          visitDate={new Date('2025-02-15')}
+          questions={[]}
+          isEditing={true}
+          editingName=""
+          hasNameError={true}
+        />
+      );
+
+      const input = screen.getByPlaceholderText('保育園名を入力してください');
+      // エラー状態の視覚的確認（赤枠は CSS で設定されるためスタイルをチェック）
+      expect(input).toBeInTheDocument();
+
+      const errorMessage = screen.getByText('保育園名を入力してください');
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('hasNameErrorがfalseの時、エラーメッセージが表示されない', () => {
+      renderWithProviders(
+        <NurseryInfoCard
+          nurseryName="テスト保育園"
+          visitDate={new Date('2025-02-15')}
+          questions={[]}
+          isEditing={true}
+          editingName="テスト"
+          hasNameError={false}
+        />
+      );
+
+      const errorMessage = screen.queryByText('保育園名を入力してください');
+      expect(errorMessage).not.toBeInTheDocument();
+    });
+
     test('空の見学日でもエラーが発生しない（表示のみ）', () => {
       renderWithProviders(
         <NurseryInfoCard

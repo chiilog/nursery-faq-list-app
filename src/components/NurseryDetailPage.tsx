@@ -12,7 +12,7 @@ import {
   HStack,
   Separator,
 } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { Layout } from './Layout';
@@ -52,6 +52,7 @@ export const NurseryDetailPage = () => {
   // 保育園編集関連の状態
   const [isEditingNursery, setIsEditingNursery] = useState(false);
   const [editingNurseryName, setEditingNurseryName] = useState('');
+  const [hasNameError, setHasNameError] = useState(false);
 
   // URLパラメータから保育園IDを取得してロード
   useEffect(() => {
@@ -119,6 +120,7 @@ export const NurseryDetailPage = () => {
 
     setEditingNurseryName(currentNursery.name);
     setIsEditingNursery(true);
+    setHasNameError(false); // エラー状態をリセット
 
     // 見学日も編集可能にする
     const session = currentNursery.visitSessions[0];
@@ -194,7 +196,32 @@ export const NurseryDetailPage = () => {
     setIsEditingNursery(false);
     setEditingNurseryName('');
     setNewVisitDate('');
+    setHasNameError(false); // エラー状態をリセット
   };
+
+  // 保育園名の変更ハンドラー
+  const handleNurseryNameChange = (value: string) => {
+    setEditingNurseryName(value);
+    // 空文字の場合はエラー表示
+    setHasNameError(!value.trim());
+  };
+
+  // 変更があるかどうかを判定
+  const hasChanges = useMemo(() => {
+    if (!currentNursery) return false;
+
+    const nameChanged = editingNurseryName.trim() !== currentNursery.name;
+    const session = currentNursery.visitSessions[0];
+    const currentDateString = session?.visitDate
+      ? session.visitDate.toISOString().split('T')[0]
+      : '';
+    const dateChanged = newVisitDate !== currentDateString;
+
+    return nameChanged || dateChanged;
+  }, [currentNursery, editingNurseryName, newVisitDate]);
+
+  // 保存ボタンの無効化状態
+  const isSaveDisabled = !editingNurseryName.trim() || !hasChanges;
 
   // ローディング状態
   if (loading.isLoading || (nurseryId && !currentNursery && !error)) {
@@ -264,6 +291,9 @@ export const NurseryDetailPage = () => {
                   size="sm"
                   colorScheme="brand"
                   onClick={() => void handleSaveNursery()}
+                  disabled={isSaveDisabled}
+                  opacity={isSaveDisabled ? 0.4 : 1}
+                  cursor={isSaveDisabled ? 'not-allowed' : 'pointer'}
                 >
                   保存
                 </Button>
@@ -295,7 +325,8 @@ export const NurseryDetailPage = () => {
             isEditing={isEditingNursery}
             editingName={editingNurseryName}
             newVisitDate={newVisitDate}
-            onNameChange={setEditingNurseryName}
+            hasNameError={hasNameError}
+            onNameChange={handleNurseryNameChange}
             onVisitDateChange={setNewVisitDate}
           />
 
