@@ -20,6 +20,8 @@ import { NurseryHeader } from './NurseryHeader';
 import { NurseryInfoCard } from './NurseryInfoCard';
 import { QuestionAddForm } from './QuestionAddForm';
 import { QuestionListSection } from './QuestionListSection';
+import { showToast } from '../utils/toaster';
+import { generateId } from '../utils/id';
 
 /**
  * 保育園詳細画面コンポーネント
@@ -134,34 +136,48 @@ export const NurseryDetailPage = () => {
     // バリデーション
     const trimmedName = editingNurseryName.trim();
     if (!trimmedName) {
-      alert('保育園名を入力してください');
+      showToast.error('入力エラー', '保育園名を入力してください');
       return;
     }
     if (trimmedName.length > 100) {
-      alert('保育園名は100文字以内で入力してください');
+      showToast.error('入力エラー', '保育園名は100文字以内で入力してください');
       return;
     }
+
     // 見学日が入力されている場合のみ見学セッションを更新/作成
     let updatedSessions = [...currentNursery.visitSessions];
     if (newVisitDate) {
-      if (updatedSessions[0]) {
-        // 既存の見学セッションを更新
-        updatedSessions[0] = {
-          ...updatedSessions[0],
-          visitDate: new Date(newVisitDate),
-        };
-      } else {
-        // 見学セッションが存在しない場合は新しく作成
-        updatedSessions = [
-          {
-            id: `session-${crypto.randomUUID()}`,
-            visitDate: new Date(newVisitDate),
-            status: 'planned' as const,
-            questions: [],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ];
+      try {
+        const visitDate = new Date(newVisitDate);
+        // 無効な日付をチェック
+        if (isNaN(visitDate.getTime())) {
+          showToast.error('入力エラー', '有効な日付を入力してください');
+          return;
+        }
+
+        if (updatedSessions[0]) {
+          // 既存の見学セッションを更新
+          updatedSessions[0] = {
+            ...updatedSessions[0],
+            visitDate,
+          };
+        } else {
+          // 見学セッションが存在しない場合は新しく作成
+          updatedSessions = [
+            {
+              id: `session-${generateId()}`,
+              visitDate,
+              status: 'planned' as const,
+              questions: [],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ];
+        }
+      } catch (error) {
+        showToast.error('エラー', '日付の処理中にエラーが発生しました');
+        console.error('Date parsing error:', error);
+        return;
       }
     }
 
@@ -170,6 +186,7 @@ export const NurseryDetailPage = () => {
       visitSessions: updatedSessions,
     });
 
+    showToast.success('保存完了', '保育園情報を更新しました');
     setIsEditingNursery(false);
   };
 

@@ -108,6 +108,7 @@ export const NurseryInfoCard = ({
                 bg="white"
                 borderColor="brand.300"
                 _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
+                aria-label="見学日を選択してください"
               />
             </VStack>
           ) : (
