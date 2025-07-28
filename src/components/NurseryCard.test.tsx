@@ -34,13 +34,38 @@ describe('NurseryCard コンポーネント', () => {
     });
   });
 
-  describe('見学セッションありの場合', () => {
-    test('最新の見学予定日が表示される', () => {
-      const visitDate = new Date('2025-02-15');
+  describe('日付表示（時間制御版）', () => {
+    beforeEach(() => {
+      // 2025年1月15日 12:00:00に固定（決定論的テスト）
+      vi.setSystemTime(new Date('2025-01-15T12:00:00Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    test('過去の見学日には済マークが付く', () => {
+      const pastDate = new Date('2025-01-10'); // 5日前
       const nursery = testUtils.createMockNursery({
         visitSessions: [
           testUtils.createMockVisitSession({
-            visitDate,
+            visitDate: pastDate,
+            status: 'completed',
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('見学日: 2025/1/10 (済)')).toBeInTheDocument();
+    });
+
+    test('未来の見学日には済マークが付かない', () => {
+      const futureDate = new Date('2025-01-20'); // 5日後
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            visitDate: futureDate,
             status: 'planned',
           }),
         ],
@@ -48,27 +73,59 @@ describe('NurseryCard コンポーネント', () => {
 
       renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
 
-      expect(screen.getByText('見学日: 2025/2/15')).toBeInTheDocument();
+      expect(screen.getByText('見学日: 2025/1/20')).toBeInTheDocument();
     });
 
-    test('質問進捗が正しく計算される', () => {
+    test('複数セッションがある場合、未来の予定日を優先表示する', () => {
+      const pastDate = new Date('2025-01-10'); // 5日前
+      const futureDate = new Date('2025-01-20'); // 5日後
       const nursery = testUtils.createMockNursery({
         visitSessions: [
           testUtils.createMockVisitSession({
+            visitDate: pastDate,
+            status: 'completed',
+          }),
+          testUtils.createMockVisitSession({
+            visitDate: futureDate,
+            status: 'planned',
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      // 未来の日付が優先され、済マークは付かない
+      expect(screen.getByText('見学日: 2025/1/20')).toBeInTheDocument();
+    });
+
+    test('今日の日付は済マークが付かない', () => {
+      const today = new Date('2025-01-15'); // テスト固定日と同じ
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            visitDate: today,
+            status: 'planned',
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('見学日: 2025/1/15')).toBeInTheDocument();
+    });
+  });
+
+  describe('質問進捗表示', () => {
+    test('複数セッションの質問進捗が正しく合計される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            questions: [testUtils.createMockQuestion({ isAnswered: true })],
+          }),
+          testUtils.createMockVisitSession({
             questions: [
-              testUtils.createMockQuestion({
-                id: 'q1',
-                text: '質問1',
-                answer: '回答1',
-                isAnswered: true,
-                order: 1,
-              }),
-              testUtils.createMockQuestion({
-                id: 'q2',
-                text: '質問2',
-                isAnswered: false,
-                order: 2,
-              }),
+              testUtils.createMockQuestion({ isAnswered: false }),
+              testUtils.createMockQuestion({ isAnswered: true }),
             ],
           }),
         ],
@@ -76,7 +133,73 @@ describe('NurseryCard コンポーネント', () => {
 
       renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
 
-      expect(screen.getByText('質問進捗: 1/2')).toBeInTheDocument();
+      // 2/3 = 67%
+      expect(screen.getByText('質問進捗: 2/3 (67%)')).toBeInTheDocument();
+    });
+
+    test('未回答質問がある場合、進捗がパーセンテージ付きで表示される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            questions: [
+              testUtils.createMockQuestion({ isAnswered: true }),
+              testUtils.createMockQuestion({ isAnswered: false }),
+            ],
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('質問進捗: 1/2 (50%)')).toBeInTheDocument();
+    });
+
+    test('全質問完了の場合、完了マークが表示される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            questions: [
+              testUtils.createMockQuestion({ isAnswered: true }),
+              testUtils.createMockQuestion({ isAnswered: true }),
+            ],
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('質問進捗: 2/2 ✓完了')).toBeInTheDocument();
+    });
+
+    test('質問が0個の場合、0/0と表示される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            questions: [],
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('質問進捗: 0/0')).toBeInTheDocument();
+    });
+
+    test('全質問が未回答の場合、0%で表示される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            questions: [
+              testUtils.createMockQuestion({ isAnswered: false }),
+              testUtils.createMockQuestion({ isAnswered: false }),
+            ],
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('質問進捗: 0/2 (0%)')).toBeInTheDocument();
     });
   });
 
