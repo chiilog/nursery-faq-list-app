@@ -30,35 +30,62 @@ const getLatestVisitDate = (visitSessions: VisitSession[]): string => {
   }
 
   const now = new Date();
+  now.setHours(0, 0, 0, 0); // 日付のみで比較
 
   // 未来の予定日を優先（最も近い日付）
   const futureSessions = visitSessions
-    .filter(
-      (session) => session.visitDate > now && session.status === 'planned'
-    )
+    .filter((session) => {
+      const sessionDate = new Date(session.visitDate);
+      sessionDate.setHours(0, 0, 0, 0);
+      return sessionDate >= now && session.status === 'planned';
+    })
     .sort((a, b) => a.visitDate.getTime() - b.visitDate.getTime());
 
   if (futureSessions.length > 0) {
     return formatDate(futureSessions[0].visitDate);
   }
 
-  // 未来の予定がない場合は最新の日付
+  // 未来の予定がない場合は最新の日付（過去の場合は「(済)」を追加）
   const latestSession = visitSessions.sort(
     (a, b) => b.visitDate.getTime() - a.visitDate.getTime()
   )[0];
+
+  const latestDate = new Date(latestSession.visitDate);
+  latestDate.setHours(0, 0, 0, 0);
+
+  if (latestDate < now) {
+    return `${formatDate(latestSession.visitDate)} (済)`;
+  }
 
   return formatDate(latestSession.visitDate);
 };
 
 /**
  * 全見学セッションの質問進捗を計算
+ * 改善: パーセンテージと完了状態を表示
  */
 const getQuestionProgress = (visitSessions: VisitSession[]): string => {
   const allQuestions = visitSessions.flatMap((session) => session.questions);
   const answeredQuestions = allQuestions.filter(
     (question) => question.isAnswered
   );
-  return `${answeredQuestions.length}/${allQuestions.length}`;
+
+  const answered = answeredQuestions.length;
+  const total = allQuestions.length;
+
+  if (total === 0) {
+    return '0/0';
+  }
+
+  const percentage = Math.round((answered / total) * 100);
+
+  // 全て完了している場合
+  if (answered === total) {
+    return `${answered}/${total} ✓完了`;
+  }
+
+  // 部分的に完了している場合、パーセンテージを表示
+  return `${answered}/${total} (${percentage}%)`;
 };
 
 /**

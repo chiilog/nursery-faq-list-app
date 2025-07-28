@@ -80,6 +80,167 @@ describe('NurseryCard コンポーネント', () => {
     });
   });
 
+  describe('日付フォーマットの改善テスト（Red Phase）', () => {
+    test('過去の見学日がある場合、適切にフォーマットされる', () => {
+      const pastDate = new Date('2024-12-20');
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            visitDate: pastDate,
+            status: 'completed',
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      // 期待される改善: 過去の日付には「（済）」などの表示を追加
+      expect(screen.getByText('見学日: 2024/12/20 (済)')).toBeInTheDocument();
+    });
+
+    test('複数の見学セッションで未来の日付を優先表示する', () => {
+      const pastDate = new Date('2024-12-20');
+      const futureDate = new Date('2025-03-15');
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            visitDate: pastDate,
+            status: 'completed',
+          }),
+          testUtils.createMockVisitSession({
+            visitDate: futureDate,
+            status: 'planned',
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('見学日: 2025/3/15')).toBeInTheDocument();
+    });
+
+    test('今日の日付が適切にフォーマットされる', () => {
+      const today = new Date();
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            visitDate: today,
+            status: 'planned',
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+      expect(
+        screen.getByText(`見学日: ${year}/${month}/${day}`)
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('質問進捗計算の改善テスト（Red Phase）', () => {
+    test('複数セッションの質問進捗が正しく合計される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            questions: [
+              testUtils.createMockQuestion({
+                id: 'q1',
+                text: '質問1',
+                answer: '回答1',
+                isAnswered: true,
+                order: 1,
+              }),
+            ],
+          }),
+          testUtils.createMockVisitSession({
+            questions: [
+              testUtils.createMockQuestion({
+                id: 'q2',
+                text: '質問2',
+                isAnswered: false,
+                order: 1,
+              }),
+              testUtils.createMockQuestion({
+                id: 'q3',
+                text: '質問3',
+                answer: '回答3',
+                isAnswered: true,
+                order: 2,
+              }),
+            ],
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('質問進捗: 2/3')).toBeInTheDocument();
+    });
+
+    test('進捗がパーセンテージでも表示される（改善案）', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            questions: [
+              testUtils.createMockQuestion({
+                id: 'q1',
+                text: '質問1',
+                answer: '回答1',
+                isAnswered: true,
+                order: 1,
+              }),
+              testUtils.createMockQuestion({
+                id: 'q2',
+                text: '質問2',
+                isAnswered: false,
+                order: 2,
+              }),
+            ],
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      // 期待される改善: 「1/2 (50%)」のような表示
+      expect(screen.getByText('質問進捗: 1/2 (50%)')).toBeInTheDocument();
+    });
+
+    test('全ての質問が回答済みの場合、完了状態を示す', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          testUtils.createMockVisitSession({
+            questions: [
+              testUtils.createMockQuestion({
+                id: 'q1',
+                text: '質問1',
+                answer: '回答1',
+                isAnswered: true,
+                order: 1,
+              }),
+              testUtils.createMockQuestion({
+                id: 'q2',
+                text: '質問2',
+                answer: '回答2',
+                isAnswered: true,
+                order: 2,
+              }),
+            ],
+          }),
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      // 期待される改善: 「2/2 ✓完了」のような表示
+      expect(screen.getByText('質問進捗: 2/2 ✓完了')).toBeInTheDocument();
+    });
+  });
+
   describe('インタラクション', () => {
     test('カードクリックでonClickコールバックが呼ばれる', async () => {
       const user = userEvent.setup();
