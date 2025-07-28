@@ -2,14 +2,13 @@
  * 保育園詳細ページヘッダーコンポーネント
  */
 
-import { Button, Heading, Box } from '@chakra-ui/react';
+import { Button, Heading, Spacer } from '@chakra-ui/react';
 
 interface NurseryHeaderProps {
-  nurseryName: string;
   onBack: () => void;
 }
 
-export const NurseryHeader = ({ nurseryName, onBack }: NurseryHeaderProps) => {
+export const NurseryHeader = ({ onBack }: NurseryHeaderProps) => {
   return (
     <>
       <Button
@@ -27,9 +26,9 @@ export const NurseryHeader = ({ nurseryName, onBack }: NurseryHeaderProps) => {
         flex={1}
         textAlign="center"
       >
-        {nurseryName}
+        保育園詳細
       </Heading>
-      <Box minW={{ base: '60px', md: '80px' }} /> {/* スペーサー */}
+      <Spacer />
     </>
   );
 };

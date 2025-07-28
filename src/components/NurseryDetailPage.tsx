@@ -3,15 +3,25 @@
  * リファクタリング: 責務別にコンポーネントを分割
  */
 
-import { Box, VStack, Spinner, Text, Button } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import {
+  Box,
+  VStack,
+  Spinner,
+  Text,
+  Button,
+  HStack,
+  Separator,
+} from '@chakra-ui/react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { Layout } from './Layout';
 import { NurseryHeader } from './NurseryHeader';
-import { NurseryInfo } from './NurseryInfo';
+import { NurseryInfoCard } from './NurseryInfoCard';
 import { QuestionAddForm } from './QuestionAddForm';
 import { QuestionListSection } from './QuestionListSection';
+import { showToast } from '../utils/toaster';
+import { generateId } from '../utils/id';
 
 /**
  * 保育園詳細画面コンポーネント
@@ -37,8 +47,12 @@ export const NurseryDetailPage = () => {
   const [editingQuestionText, setEditingQuestionText] = useState('');
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState('');
-  const [editingVisitDate, setEditingVisitDate] = useState(false);
   const [newVisitDate, setNewVisitDate] = useState('');
+
+  // 保育園編集関連の状態
+  const [isEditingNursery, setIsEditingNursery] = useState(false);
+  const [editingNurseryName, setEditingNurseryName] = useState('');
+  const [hasNameError, setHasNameError] = useState(false);
 
   // URLパラメータから保育園IDを取得してロード
   useEffect(() => {
@@ -100,29 +114,120 @@ export const NurseryDetailPage = () => {
     setNewQuestionText('');
   };
 
-  const handleVisitDateClick = () => {
-    if (!currentNursery?.visitSessions[0]) return;
+  // 保育園編集関連の処理
+  const handleEditNursery = () => {
+    if (!currentNursery) return;
 
-    setEditingVisitDate(true);
-    const date = currentNursery.visitSessions[0].visitDate;
-    setNewVisitDate(date.toISOString().split('T')[0]);
+    setEditingNurseryName(currentNursery.name);
+    setIsEditingNursery(true);
+    setHasNameError(false); // エラー状態をリセット
+
+    // 見学日も編集可能にする
+    const session = currentNursery.visitSessions[0];
+    if (session) {
+      try {
+        const dateStr = session.visitDate.toISOString().split('T')[0];
+        setNewVisitDate(dateStr);
+      } catch {
+        console.warn('Invalid visit date:', session.visitDate);
+        setNewVisitDate('');
+      }
+    } else {
+      // 見学セッションが存在しない場合は空文字列で初期化
+      setNewVisitDate('');
+    }
   };
 
-  const handleSaveVisitDate = async () => {
-    if (!currentNursery || !newVisitDate) return;
+  const handleSaveNursery = async () => {
+    if (!currentNursery) return;
 
-    const updatedSessions = [...currentNursery.visitSessions];
-    updatedSessions[0] = {
-      ...updatedSessions[0],
-      visitDate: new Date(newVisitDate),
-    };
+    // バリデーション
+    const trimmedName = editingNurseryName.trim();
+    if (!trimmedName) {
+      showToast.error('入力エラー', '保育園名を入力してください');
+      return;
+    }
+    if (trimmedName.length > 100) {
+      showToast.error('入力エラー', '保育園名は100文字以内で入力してください');
+      return;
+    }
+
+    // 見学日が入力されている場合のみ見学セッションを更新/作成
+    let updatedSessions = [...currentNursery.visitSessions];
+    if (newVisitDate) {
+      try {
+        const visitDate = new Date(newVisitDate);
+        // 無効な日付をチェック
+        if (isNaN(visitDate.getTime())) {
+          showToast.error('入力エラー', '有効な日付を入力してください');
+          return;
+        }
+
+        if (updatedSessions[0]) {
+          // 既存の見学セッションを更新
+          updatedSessions[0] = {
+            ...updatedSessions[0],
+            visitDate,
+          };
+        } else {
+          // 見学セッションが存在しない場合は新しく作成
+          updatedSessions = [
+            {
+              id: `session-${generateId()}`,
+              visitDate,
+              status: 'planned' as const,
+              questions: [],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ];
+        }
+      } catch (error) {
+        showToast.error('エラー', '日付の処理中にエラーが発生しました');
+        console.error('Date parsing error:', error);
+        return;
+      }
+    }
 
     await updateNursery(currentNursery.id, {
+      name: trimmedName,
       visitSessions: updatedSessions,
     });
 
-    setEditingVisitDate(false);
+    showToast.success('保存完了', '保育園情報を更新しました');
+    setIsEditingNursery(false);
   };
+
+  const handleCancelEditNursery = () => {
+    setIsEditingNursery(false);
+    setEditingNurseryName('');
+    setNewVisitDate('');
+    setHasNameError(false); // エラー状態をリセット
+  };
+
+  // 保育園名の変更ハンドラー
+  const handleNurseryNameChange = (value: string) => {
+    setEditingNurseryName(value);
+    // 空文字の場合はエラー表示
+    setHasNameError(!value.trim());
+  };
+
+  // 変更があるかどうかを判定
+  const hasChanges = useMemo(() => {
+    if (!currentNursery) return false;
+
+    const nameChanged = editingNurseryName.trim() !== currentNursery.name;
+    const session = currentNursery.visitSessions[0];
+    const currentDateString = session?.visitDate
+      ? session.visitDate.toISOString().split('T')[0]
+      : '';
+    const dateChanged = newVisitDate !== currentDateString;
+
+    return nameChanged || dateChanged;
+  }, [currentNursery, editingNurseryName, newVisitDate]);
+
+  // 保存ボタンの無効化状態
+  const isSaveDisabled = !editingNurseryName.trim() || !hasChanges;
 
   // ローディング状態
   if (loading.isLoading || (nurseryId && !currentNursery && !error)) {
@@ -178,33 +283,72 @@ export const NurseryDetailPage = () => {
 
   return (
     <Layout
-      headerContent={
-        <NurseryHeader nurseryName={currentNursery.name} onBack={handleBack} />
-      }
+      headerContent={<NurseryHeader onBack={handleBack} />}
       showDefaultTitle={false}
     >
-      <Box p={{ base: 4, md: 6 }} maxW="4xl" mx="auto">
-        <VStack align="stretch" gap={{ base: 4, md: 6 }}>
-          {/* 保育園情報 */}
-          <NurseryInfo
+      <Box p={0} maxW="4xl" mx="auto">
+        <VStack align="stretch" gap={{ base: 3, md: 4 }}>
+          {/* 編集・保存・キャンセルボタン */}
+          <HStack justify="space-between" align="center">
+            <Box /> {/* 左側のスペーサー */}
+            {isEditingNursery ? (
+              <HStack gap={2}>
+                <Button
+                  size="sm"
+                  colorScheme="brand"
+                  onClick={() => void handleSaveNursery()}
+                  disabled={isSaveDisabled}
+                  opacity={isSaveDisabled ? 0.4 : 1}
+                  cursor={isSaveDisabled ? 'not-allowed' : 'pointer'}
+                >
+                  保存
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCancelEditNursery}
+                >
+                  キャンセル
+                </Button>
+              </HStack>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                colorScheme="brand"
+                onClick={handleEditNursery}
+              >
+                編集
+              </Button>
+            )}
+          </HStack>
+
+          {/* 保育園情報カード */}
+          <NurseryInfoCard
+            nurseryName={currentNursery.name}
             visitDate={session?.visitDate || null}
             questions={questions}
-            isEditingVisitDate={editingVisitDate}
+            isEditing={isEditingNursery}
+            editingName={editingNurseryName}
             newVisitDate={newVisitDate}
-            onVisitDateClick={handleVisitDateClick}
+            hasNameError={hasNameError}
+            onNameChange={handleNurseryNameChange}
             onVisitDateChange={setNewVisitDate}
-            onSaveVisitDate={() => void handleSaveVisitDate()}
-            onCancelVisitDate={() => setEditingVisitDate(false)}
           />
 
+          {/* 保育園情報と質問エリアの区切り */}
+          <Separator my={4} />
+
           {/* 質問追加フォーム */}
-          <QuestionAddForm
-            isAddingQuestion={isAddingQuestion}
-            newQuestionText={newQuestionText}
-            onNewQuestionTextChange={setNewQuestionText}
-            onToggleAddForm={setIsAddingQuestion}
-            onAddQuestion={() => void handleAddQuestion()}
-          />
+          <Box mb={2}>
+            <QuestionAddForm
+              isAddingQuestion={isAddingQuestion}
+              newQuestionText={newQuestionText}
+              onNewQuestionTextChange={setNewQuestionText}
+              onToggleAddForm={setIsAddingQuestion}
+              onAddQuestion={() => void handleAddQuestion()}
+            />
+          </Box>
 
           {/* 質問リスト */}
           <QuestionListSection

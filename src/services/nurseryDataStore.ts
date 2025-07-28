@@ -14,6 +14,7 @@ import type {
   CreateQuestionInput,
   UpdateQuestionInput,
 } from '../types/data';
+import { generatePrefixedId } from '../utils/id';
 
 // シリアライズされたデータの型定義（JSON形式）
 interface SerializedNursery {
@@ -69,9 +70,6 @@ export class NurseryDataStoreError extends Error {
 const NURSERIES_STORAGE_KEY = 'nursery-app-nurseries';
 
 // ユーティリティ関数
-function generatePrefixedId(prefix: string): string {
-  return `${prefix}-${crypto.randomUUID()}`;
-}
 
 function getCurrentTimestamp(): Date {
   return new Date();

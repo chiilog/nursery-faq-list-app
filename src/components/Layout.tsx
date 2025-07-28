@@ -29,7 +29,7 @@ export const Layout = ({
         </Container>
       </Box>
 
-      <Container as="main" maxW="container.xl" py={8}>
+      <Container as="main" maxW="container.xl" py={4}>
         {children || <Outlet />}
       </Container>
     </Box>
