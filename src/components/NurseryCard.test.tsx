@@ -48,7 +48,9 @@ describe('NurseryCard コンポーネント', () => {
 
       renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
 
-      expect(screen.getByText('見学日: 2025/2/15')).toBeInTheDocument();
+      // 2025-02-15は現在から見て過去か未来かによって表示が変わる
+      // テスト実行時の日付によっては「(済)」が付く可能性がある
+      expect(screen.getByText(/見学日: 2025\/2\/15/)).toBeInTheDocument();
     });
 
     test('質問進捗が正しく計算される', () => {
@@ -76,7 +78,8 @@ describe('NurseryCard コンポーネント', () => {
 
       renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
 
-      expect(screen.getByText('質問進捗: 1/2')).toBeInTheDocument();
+      // 新しい仕様では、パーセンテージが表示される
+      expect(screen.getByText('質問進捗: 1/2 (50%)')).toBeInTheDocument();
     });
   });
 
@@ -100,7 +103,8 @@ describe('NurseryCard コンポーネント', () => {
 
     test('複数の見学セッションで未来の日付を優先表示する', () => {
       const pastDate = new Date('2024-12-20');
-      const futureDate = new Date('2025-03-15');
+      // 確実に未来の日付を使用
+      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000 * 30); // 30日後
       const nursery = testUtils.createMockNursery({
         visitSessions: [
           testUtils.createMockVisitSession({
@@ -116,7 +120,13 @@ describe('NurseryCard コンポーネント', () => {
 
       renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
 
-      expect(screen.getByText('見学日: 2025/3/15')).toBeInTheDocument();
+      // 未来の日付が優先され、(済)は付かない
+      const year = futureDate.getFullYear();
+      const month = futureDate.getMonth() + 1;
+      const day = futureDate.getDate();
+      expect(
+        screen.getByText(`見学日: ${year}/${month}/${day}`)
+      ).toBeInTheDocument();
     });
 
     test('今日の日付が適切にフォーマットされる', () => {
@@ -178,7 +188,8 @@ describe('NurseryCard コンポーネント', () => {
 
       renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
 
-      expect(screen.getByText('質問進捗: 2/3')).toBeInTheDocument();
+      // 新しい仕様では、パーセンテージが表示される（2/3 = 67%）
+      expect(screen.getByText('質問進捗: 2/3 (67%)')).toBeInTheDocument();
     });
 
     test('進捗がパーセンテージでも表示される（改善案）', () => {
