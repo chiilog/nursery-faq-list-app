@@ -125,7 +125,13 @@ export const NurseryDetailPage = () => {
     // 見学日も編集可能にする
     const session = currentNursery.visitSessions[0];
     if (session) {
-      setNewVisitDate(session.visitDate.toISOString().split('T')[0]);
+      try {
+        const dateStr = session.visitDate.toISOString().split('T')[0];
+        setNewVisitDate(dateStr);
+      } catch {
+        console.warn('Invalid visit date:', session.visitDate);
+        setNewVisitDate('');
+      }
     } else {
       // 見学セッションが存在しない場合は空文字列で初期化
       setNewVisitDate('');
