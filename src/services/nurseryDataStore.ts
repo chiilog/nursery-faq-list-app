@@ -85,19 +85,18 @@ class NurseryDataStore {
       const nurseryId = generatePrefixedId('nursery');
       const now = getCurrentTimestamp();
 
-      // 見学日が指定されている場合は初期見学セッションを作成
-      const visitSessions: VisitSession[] = [];
-      if (input.visitDate) {
-        const sessionId = generatePrefixedId('session');
-        visitSessions.push({
+      // デフォルトの見学セッションを作成（見学日は未指定でも可）
+      const sessionId = generatePrefixedId('session');
+      const visitSessions: VisitSession[] = [
+        {
           id: sessionId,
-          visitDate: input.visitDate,
+          visitDate: input.visitDate || new Date(), // 見学日未指定の場合は今日の日付をデフォルトに
           status: 'planned',
           questions: [],
           createdAt: now,
           updatedAt: now,
-        });
-      }
+        },
+      ];
 
       const nursery: Nursery = {
         id: nurseryId,
