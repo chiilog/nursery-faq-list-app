@@ -3,7 +3,7 @@
  * TDD Refactor Phase: コードの改善とドキュメント充実化
  */
 
-import { Box, Text, Badge, VStack, HStack } from '@chakra-ui/react';
+import { Box, Text, VStack, HStack } from '@chakra-ui/react';
 import type { Nursery, VisitSession } from '../types/data';
 
 interface NurseryCardProps {
@@ -32,32 +32,41 @@ const getLatestVisitDate = (visitSessions: VisitSession[]): string => {
   const now = new Date();
   now.setHours(0, 0, 0, 0); // 日付のみで比較
 
+  // visitDateがnullまたは未設定のセッションは「未定」として扱う
+  const realSessions = visitSessions.filter(
+    (session) => session.visitDate !== null
+  );
+
+  if (realSessions.length === 0) {
+    return '未定';
+  }
+
   // 未来の予定日を優先（最も近い日付）
-  const futureSessions = visitSessions
+  const futureSessions = realSessions
     .filter((session) => {
-      const sessionDate = new Date(session.visitDate);
+      const sessionDate = new Date(session.visitDate!);
       sessionDate.setHours(0, 0, 0, 0);
       return sessionDate >= now && session.status === 'planned';
     })
-    .sort((a, b) => a.visitDate.getTime() - b.visitDate.getTime());
+    .sort((a, b) => a.visitDate!.getTime() - b.visitDate!.getTime());
 
   if (futureSessions.length > 0) {
-    return formatDate(futureSessions[0].visitDate);
+    return formatDate(futureSessions[0].visitDate!);
   }
 
   // 未来の予定がない場合は最新の日付（過去の場合は「(済)」を追加）
-  const latestSession = visitSessions.sort(
-    (a, b) => b.visitDate.getTime() - a.visitDate.getTime()
+  const latestSession = realSessions.sort(
+    (a, b) => b.visitDate!.getTime() - a.visitDate!.getTime()
   )[0];
 
-  const latestDate = new Date(latestSession.visitDate);
+  const latestDate = new Date(latestSession.visitDate!);
   latestDate.setHours(0, 0, 0, 0);
 
   if (latestDate < now) {
-    return `${formatDate(latestSession.visitDate)} (済)`;
+    return `${formatDate(latestSession.visitDate!)} (済)`;
   }
 
-  return formatDate(latestSession.visitDate);
+  return formatDate(latestSession.visitDate!);
 };
 
 /**
@@ -164,9 +173,6 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
           >
             {nursery.name}
           </Text>
-          <Badge colorScheme="brand" fontSize="xs" flexShrink={0}>
-            保育園
-          </Badge>
         </HStack>
 
         {/* 詳細情報部分: 見学日と質問進捗 */}

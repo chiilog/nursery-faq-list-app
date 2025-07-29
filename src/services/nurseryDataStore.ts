@@ -31,7 +31,7 @@ interface SerializedNursery {
 
 interface SerializedVisitSession {
   id: string;
-  visitDate: string; // ISO date string
+  visitDate: string | null; // ISO date string or null for 未定
   status: 'planned' | 'completed' | 'cancelled';
   questions: SerializedQuestion[];
   notes?: string;
@@ -90,7 +90,7 @@ class NurseryDataStore {
       const visitSessions: VisitSession[] = [
         {
           id: sessionId,
-          visitDate: input.visitDate || new Date(), // 見学日未指定の場合は今日の日付をデフォルトに
+          visitDate: input.visitDate || null, // 見学日未指定の場合はnullで「未定」を表現
           status: 'planned',
           questions: [],
           createdAt: now,
@@ -159,7 +159,7 @@ class NurseryDataStore {
           visitSessions: nurseryData.visitSessions.map(
             (session: SerializedVisitSession): VisitSession => ({
               ...session,
-              visitDate: new Date(session.visitDate),
+              visitDate: session.visitDate ? new Date(session.visitDate) : null,
               createdAt: new Date(session.createdAt),
               updatedAt: new Date(session.updatedAt),
               questions: session.questions.map(
@@ -208,29 +208,49 @@ class NurseryDataStore {
         >;
 
         const nurseries = Object.values(serializedNurseries).map(
-          (nurseryData: SerializedNursery): Nursery => ({
-            ...nurseryData,
-            createdAt: new Date(nurseryData.createdAt),
-            updatedAt: new Date(nurseryData.updatedAt),
-            visitSessions: nurseryData.visitSessions.map(
-              (session: SerializedVisitSession): VisitSession => ({
-                ...session,
-                visitDate: new Date(session.visitDate),
-                createdAt: new Date(session.createdAt),
-                updatedAt: new Date(session.updatedAt),
-                questions: session.questions.map(
-                  (question: SerializedQuestion) => ({
-                    ...question,
-                    answeredAt: question.answeredAt
-                      ? new Date(question.answeredAt)
-                      : undefined,
-                    createdAt: new Date(question.createdAt),
-                    updatedAt: new Date(question.updatedAt),
-                  })
-                ),
-              })
-            ),
-          })
+          (nurseryData: SerializedNursery): Nursery => {
+            // visitSessionsが空の場合はデフォルトセッションを作成（既存データのマイグレーション）
+            let visitSessions = nurseryData.visitSessions;
+            if (!visitSessions || visitSessions.length === 0) {
+              const now = new Date();
+              visitSessions = [
+                {
+                  id: generatePrefixedId('session'),
+                  visitDate: null, // 見学日未定
+                  status: 'planned',
+                  questions: [],
+                  createdAt: now.toISOString(),
+                  updatedAt: now.toISOString(),
+                },
+              ];
+            }
+
+            return {
+              ...nurseryData,
+              createdAt: new Date(nurseryData.createdAt),
+              updatedAt: new Date(nurseryData.updatedAt),
+              visitSessions: visitSessions.map(
+                (session: SerializedVisitSession): VisitSession => ({
+                  ...session,
+                  visitDate: session.visitDate
+                    ? new Date(session.visitDate)
+                    : null,
+                  createdAt: new Date(session.createdAt),
+                  updatedAt: new Date(session.updatedAt),
+                  questions: session.questions.map(
+                    (question: SerializedQuestion) => ({
+                      ...question,
+                      answeredAt: question.answeredAt
+                        ? new Date(question.answeredAt)
+                        : undefined,
+                      createdAt: new Date(question.createdAt),
+                      updatedAt: new Date(question.updatedAt),
+                    })
+                  ),
+                })
+              ),
+            };
+          }
         );
 
         resolve(nurseries);

@@ -13,7 +13,15 @@ interface MockLocalStorageData {
   [key: string]: {
     id: string;
     name: string;
-    visitSessions?: any[];
+    visitSessions: {
+      id: string;
+      visitDate: string;
+      status: string;
+      questions: any[];
+      createdAt: string;
+      updatedAt: string;
+      [key: string]: any;
+    }[];
     createdAt: string | Date;
     updatedAt: string | Date;
     [key: string]: any;
@@ -61,6 +69,53 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
       const nurseryId = await nurseryDataStore.createNursery(nurseryInput);
       expect(nurseryId).toMatch(/^nursery-[a-f0-9-]+$/);
       expect(mockLocalStorage.setItem).toHaveBeenCalled();
+    });
+
+    test('保育園作成時に必ず見学セッションが作成されること', async () => {
+      const nurseryInput: CreateNurseryInput = {
+        name: 'テスト保育園',
+        // 見学日を指定しない
+      };
+
+      const nurseryId = await nurseryDataStore.createNursery(nurseryInput);
+
+      // 保存されたデータを確認
+      const setItemCalls = mockLocalStorage.setItem.mock.calls;
+      const lastCall = setItemCalls[setItemCalls.length - 1];
+      const savedData = JSON.parse(lastCall[1]) as MockLocalStorageData;
+      const savedNursery = savedData[nurseryId];
+
+      // 見学セッションが1つ作成されていることを確認
+      expect(savedNursery.visitSessions).toHaveLength(1);
+      expect(savedNursery.visitSessions[0]).toMatchObject({
+        id: expect.stringMatching(/^session-[a-f0-9-]+$/),
+        status: 'planned',
+        questions: [],
+      });
+
+      // 見学日がnull（未定）になっていることを確認
+      expect(savedNursery.visitSessions[0].visitDate).toBeNull();
+    });
+
+    test('見学日指定時は指定した日付で見学セッションが作成されること', async () => {
+      const specifiedDate = new Date('2025-03-15');
+      const nurseryInput: CreateNurseryInput = {
+        name: 'テスト保育園',
+        visitDate: specifiedDate,
+      };
+
+      const nurseryId = await nurseryDataStore.createNursery(nurseryInput);
+
+      // 保存されたデータを確認
+      const setItemCalls = mockLocalStorage.setItem.mock.calls;
+      const lastCall = setItemCalls[setItemCalls.length - 1];
+      const savedData = JSON.parse(lastCall[1]) as MockLocalStorageData;
+      const savedNursery = savedData[nurseryId];
+
+      // 見学セッションが指定日付で作成されていることを確認
+      expect(savedNursery.visitSessions).toHaveLength(1);
+      const visitDate = new Date(savedNursery.visitSessions[0].visitDate);
+      expect(visitDate.toISOString()).toBe(specifiedDate.toISOString());
     });
 
     test('保育園IDで保育園データを取得できること', async () => {
@@ -111,7 +166,18 @@ describe('NurseryDataStore (TDD Green Phase)', () => {
 
       // Green: 実装されたので成功することが期待される
       const nurseries = await nurseryDataStore.getAllNurseries();
-      expect(nurseries).toEqual(mockNurseries);
+
+      // マイグレーション処理により、空のvisitSessionsにデフォルトセッションが追加される
+      expect(nurseries).toHaveLength(2);
+      expect(nurseries[0].id).toBe('nursery-1');
+      expect(nurseries[0].name).toBe('テスト保育園A');
+      expect(nurseries[0].visitSessions).toHaveLength(1);
+      expect(nurseries[0].visitSessions[0].visitDate).toBeNull();
+
+      expect(nurseries[1].id).toBe('nursery-2');
+      expect(nurseries[1].name).toBe('テスト保育園B');
+      expect(nurseries[1].visitSessions).toHaveLength(1);
+      expect(nurseries[1].visitSessions[0].visitDate).toBeNull();
     });
 
     test('保育園データを更新できること', async () => {
