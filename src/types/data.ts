@@ -27,7 +27,7 @@ export interface Question {
 // 見学セッションの型定義
 export interface VisitSession {
   id: string;
-  visitDate: Date;
+  visitDate: Date | null; // nullの場合は「未定」を表現
   status: VisitSessionStatus;
   questions: Question[];
   notes?: string;
