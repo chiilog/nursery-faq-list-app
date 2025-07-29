@@ -25,5 +25,5 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
   },
-  base: '/nursery-faq-list-app/',
+  base: '/',
 });
