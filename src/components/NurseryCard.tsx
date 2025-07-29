@@ -44,29 +44,40 @@ const getLatestVisitDate = (visitSessions: VisitSession[]): string => {
   // 未来の予定日を優先（最も近い日付）
   const futureSessions = realSessions
     .filter((session) => {
-      const sessionDate = new Date(session.visitDate!);
+      if (!session.visitDate) return false;
+      const sessionDate = new Date(session.visitDate);
       sessionDate.setHours(0, 0, 0, 0);
       return sessionDate >= now && session.status === 'planned';
     })
-    .sort((a, b) => a.visitDate!.getTime() - b.visitDate!.getTime());
+    .sort((a, b) => {
+      // フィルタリング済みなのでvisitDateは必ず存在するが、型安全性のためチェック
+      if (!a.visitDate || !b.visitDate) return 0;
+      return a.visitDate.getTime() - b.visitDate.getTime();
+    });
 
-  if (futureSessions.length > 0) {
-    return formatDate(futureSessions[0].visitDate!);
+  if (futureSessions.length > 0 && futureSessions[0].visitDate) {
+    return formatDate(futureSessions[0].visitDate);
   }
 
   // 未来の予定がない場合は最新の日付（過去の場合は「(済)」を追加）
-  const latestSession = realSessions.sort(
-    (a, b) => b.visitDate!.getTime() - a.visitDate!.getTime()
-  )[0];
+  const latestSession = realSessions.sort((a, b) => {
+    // フィルタリング済みなのでvisitDateは必ず存在するが、型安全性のためチェック
+    if (!a.visitDate || !b.visitDate) return 0;
+    return b.visitDate.getTime() - a.visitDate.getTime();
+  })[0];
 
-  const latestDate = new Date(latestSession.visitDate!);
+  if (!latestSession?.visitDate) {
+    return '未定';
+  }
+
+  const latestDate = new Date(latestSession.visitDate);
   latestDate.setHours(0, 0, 0, 0);
 
   if (latestDate < now) {
-    return `${formatDate(latestSession.visitDate!)} (済)`;
+    return `${formatDate(latestSession.visitDate)} (済)`;
   }
 
-  return formatDate(latestSession.visitDate!);
+  return formatDate(latestSession.visitDate);
 };
 
 /**
