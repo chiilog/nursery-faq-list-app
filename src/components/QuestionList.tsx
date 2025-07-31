@@ -16,7 +16,6 @@ import type { Question } from '../types/data';
 import { QuestionItem } from './QuestionItem';
 
 interface QuestionEditFormProps {
-  question: Question;
   editingQuestionText: string;
   editingAnswer: string;
   onQuestionTextChange: (value: string) => void;
@@ -140,7 +139,6 @@ export const QuestionList = ({
               transition="all 0.2s"
             >
               <QuestionEditForm
-                question={question}
                 editingQuestionText={editingQuestionText}
                 editingAnswer={editingAnswer}
                 onQuestionTextChange={onEditingQuestionTextChange}

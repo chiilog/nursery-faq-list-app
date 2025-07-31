@@ -5,17 +5,13 @@
 
 import { useCallback } from 'react';
 import { useQuestionListManagement } from '../useQuestionListManagement';
-import type { QuestionList } from '../../types';
-
-// テンプレートは将来実装予定のため、空配列で初期化（定数として定義）
-const EMPTY_TEMPLATES: QuestionList[] = [];
+import { EMPTY_TEMPLATES } from '../../constants/templates';
 
 /**
  * 質問検索フック
  */
 export function useQuestionSearch() {
   const { questionLists, currentList } = useQuestionListManagement();
-  const templates = EMPTY_TEMPLATES;
 
   // 共通検索ユーティリティ
   const createSearchFunction = useCallback(
@@ -48,12 +44,12 @@ export function useQuestionSearch() {
   // テンプレートの検索・フィルタリング
   const searchTemplates = useCallback(
     (query: string) => {
-      return createSearchFunction(templates, (template) => [
+      return createSearchFunction([...EMPTY_TEMPLATES], (template) => [
         template.title,
         ...template.questions.map((q) => q.text),
       ])(query);
     },
-    [templates, createSearchFunction]
+    [createSearchFunction]
   );
 
   // 質問の検索・フィルタリング
