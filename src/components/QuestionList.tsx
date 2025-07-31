@@ -1,202 +1,162 @@
-import { useState } from 'react';
+/**
+ * 質問リストセクションコンポーネント
+ */
+
 import {
   Box,
-  Heading,
   Text,
   VStack,
-  Badge,
-  Button,
-  Input,
   HStack,
-  Container,
+  Input,
+  Textarea,
+  Button,
 } from '@chakra-ui/react';
-import type { QuestionList as QuestionListType, Question } from '../types';
+import { useMemo } from 'react';
+import type { Question } from '../types/data';
+import { QuestionItem } from './QuestionItem';
+
+interface QuestionEditFormProps {
+  question: Question;
+  editingQuestionText: string;
+  editingAnswer: string;
+  onQuestionTextChange: (value: string) => void;
+  onAnswerChange: (value: string) => void;
+  onSaveAnswer: () => void;
+  onCancelEdit: () => void;
+}
+
+const QuestionEditForm = ({
+  editingQuestionText,
+  editingAnswer,
+  onQuestionTextChange,
+  onAnswerChange,
+  onSaveAnswer,
+  onCancelEdit,
+}: QuestionEditFormProps) => (
+  <VStack align="stretch" gap={3}>
+    <Input
+      size="lg"
+      value={editingQuestionText}
+      onChange={(e) => onQuestionTextChange(e.target.value)}
+      placeholder="質問を入力してください"
+      bg="white"
+    />
+    <Textarea
+      size="lg"
+      placeholder="回答を入力してください"
+      value={editingAnswer}
+      onChange={(e) => onAnswerChange(e.target.value)}
+      rows={3}
+      bg="white"
+      resize="vertical"
+      autoresize
+    />
+    <HStack justify="flex-end" gap={2}>
+      <Button
+        variant="ghost"
+        onClick={onCancelEdit}
+        size={{ base: 'sm', md: 'md' }}
+      >
+        キャンセル
+      </Button>
+      <Button
+        colorScheme="brand"
+        onClick={onSaveAnswer}
+        size={{ base: 'sm', md: 'md' }}
+      >
+        保存
+      </Button>
+    </HStack>
+  </VStack>
+);
 
 interface QuestionListProps {
-  questionList: QuestionListType;
-  onQuestionUpdate?: (questionId: string, updates: Partial<Question>) => void;
+  questions: Question[];
+  editingQuestionId: string | null;
+  editingQuestionText: string;
+  editingAnswer: string;
+  onQuestionClick: (
+    questionId: string,
+    currentAnswer: string,
+    questionText: string
+  ) => void;
+  onEditingQuestionTextChange: (value: string) => void;
+  onEditingAnswerChange: (value: string) => void;
+  onSaveAnswer: () => void;
+  onCancelEdit: () => void;
 }
 
 export const QuestionList = ({
-  questionList,
-  onQuestionUpdate,
+  questions,
+  editingQuestionId,
+  editingQuestionText,
+  editingAnswer,
+  onQuestionClick,
+  onEditingQuestionTextChange,
+  onEditingAnswerChange,
+  onSaveAnswer,
+  onCancelEdit,
 }: QuestionListProps) => {
-  const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(
-    null
-  );
-  const [answerText, setAnswerText] = useState('');
+  // 未回答の質問を先に表示（useMemoでパフォーマンス最適化）
+  const sortedQuestions = useMemo(() => {
+    return [...questions].sort((a, b) => {
+      if (a.isAnswered === b.isAnswered) {
+        return a.orderIndex - b.orderIndex;
+      }
+      return a.isAnswered ? 1 : -1;
+    });
+  }, [questions]);
 
-  // 質問を並び替え: 未回答を上、回答済みを下
-  const sortedQuestions = [...questionList.questions].sort((a, b) => {
-    if (a.isAnswered === b.isAnswered) {
-      return a.orderIndex - b.orderIndex;
-    }
-    return a.isAnswered ? 1 : -1;
-  });
-
-  const handleQuestionClick = (questionId: string) => {
-    setExpandedQuestionId(
-      expandedQuestionId === questionId ? null : questionId
-    );
-    setAnswerText('');
-  };
-
-  const handleSaveAnswer = (questionId: string) => {
-    if (onQuestionUpdate) {
-      onQuestionUpdate(questionId, {
-        answer: answerText,
-        isAnswered: true,
-        answeredAt: new Date(),
-      });
-    }
-    setExpandedQuestionId(null);
-    setAnswerText('');
-  };
-
-  const formatDate = (date: Date) => {
-    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return '高';
-      case 'medium':
-        return '中';
-      case 'low':
-        return '低';
-      default:
-        return priority;
-    }
-  };
-
-  if (questionList.questions.length === 0) {
+  if (questions.length === 0) {
     return (
-      <Container maxW="container.md" py={6}>
-        <VStack gap={4} align="stretch">
-          <Heading as="h1" size="lg" textAlign="center">
-            {questionList.title}
-          </Heading>
-          <Text textAlign="center" color="gray.500">
-            質問がありません
-          </Text>
-        </VStack>
-      </Container>
+      <Box textAlign="center" py={8} color="gray.500">
+        <Text fontSize="lg" mb={2}>
+          まだ質問がありません
+        </Text>
+        <Text fontSize="sm">
+          「質問を追加」ボタンから質問を追加してください
+        </Text>
+      </Box>
     );
   }
 
   return (
-    <Container maxW="container.md" py={6}>
-      <VStack gap={6} align="stretch">
-        <Box textAlign="center">
-          <Heading as="h1" size="lg" mb={2}>
-            {questionList.title}
-          </Heading>
-          <Text fontWeight="medium" color="gray.700">
-            {questionList.nurseryName}
-          </Text>
-          {questionList.visitDate && (
-            <Text color="gray.600" fontSize="sm">
-              {formatDate(questionList.visitDate)}
-            </Text>
+    <VStack align="stretch" gap={4}>
+      {sortedQuestions.map((question) => (
+        <Box
+          key={question.id}
+          data-testid={`question-item-${question.id}`}
+          data-priority={question.priority}
+        >
+          {editingQuestionId === question.id ? (
+            <Box
+              p={{ base: 4, md: 5 }}
+              border="1px"
+              borderColor={question.isAnswered ? 'green.200' : 'gray.200'}
+              borderRadius="lg"
+              bg={question.isAnswered ? 'green.50' : 'white'}
+              shadow="sm"
+              _hover={{ shadow: 'md' }}
+              transition="all 0.2s"
+            >
+              <QuestionEditForm
+                question={question}
+                editingQuestionText={editingQuestionText}
+                editingAnswer={editingAnswer}
+                onQuestionTextChange={onEditingQuestionTextChange}
+                onAnswerChange={onEditingAnswerChange}
+                onSaveAnswer={onSaveAnswer}
+                onCancelEdit={onCancelEdit}
+              />
+            </Box>
+          ) : (
+            <QuestionItem
+              question={question}
+              onQuestionClick={onQuestionClick}
+            />
           )}
         </Box>
-
-        <Box as="ul" role="list" aria-label="質問リスト" listStyleType="none">
-          {sortedQuestions.map((question) => (
-            <Box as="li" key={question.id} role="listitem" mb={4}>
-              <Box
-                cursor="pointer"
-                onClick={(e) => {
-                  // 子要素（input、button）がクリックされた場合は処理をスキップ
-                  const target = e.target as HTMLElement;
-                  if (
-                    target.tagName === 'INPUT' ||
-                    target.tagName === 'BUTTON' ||
-                    target.closest('input, button')
-                  ) {
-                    return;
-                  }
-                  handleQuestionClick(question.id);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleQuestionClick(question.id);
-                  }
-                }}
-                _hover={{ bg: 'gray.50' }}
-                minH="44px"
-                p={4}
-                borderWidth={1}
-                borderRadius="md"
-                bg="white"
-                shadow="sm"
-                role="button"
-                aria-label={`質問: ${question.text}`}
-                tabIndex={0}
-              >
-                <VStack align="stretch" gap={2}>
-                  <HStack justify="space-between" align="flex-start">
-                    <Text fontWeight="medium" flex={1}>
-                      {question.text}
-                    </Text>
-                    <HStack gap={2}>
-                      <Badge
-                        colorScheme={
-                          question.priority === 'high'
-                            ? 'red'
-                            : question.priority === 'medium'
-                              ? 'yellow'
-                              : 'gray'
-                        }
-                      >
-                        {getPriorityLabel(question.priority)}
-                      </Badge>
-                      {question.isAnswered && (
-                        <Badge colorScheme="green">回答済み</Badge>
-                      )}
-                    </HStack>
-                  </HStack>
-
-                  {question.isAnswered && question.answer && (
-                    <Text
-                      color="gray.600"
-                      fontSize="sm"
-                      bg="gray.50"
-                      p={2}
-                      borderRadius="md"
-                    >
-                      {question.answer}
-                    </Text>
-                  )}
-
-                  {expandedQuestionId === question.id && (
-                    <VStack gap={3} align="stretch" pt={2}>
-                      <Input
-                        size="lg"
-                        placeholder="回答を入力してください"
-                        value={answerText}
-                        onChange={(e) => setAnswerText(e.target.value)}
-                      />
-                      <Button
-                        colorScheme="teal"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSaveAnswer(question.id);
-                        }}
-                      >
-                        保存
-                      </Button>
-                    </VStack>
-                  )}
-                </VStack>
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      </VStack>
-    </Container>
+      ))}
+    </VStack>
   );
 };
