@@ -35,11 +35,11 @@ const QuestionEditForm = ({
 }: QuestionEditFormProps) => (
   <VStack align="stretch" gap={3}>
     <Input
+      size="lg"
       value={editingQuestionText}
       onChange={(e) => onQuestionTextChange(e.target.value)}
       placeholder="質問を入力してください"
       bg="white"
-      size={{ base: 'sm', md: 'md' }}
     />
     <Textarea
       placeholder="回答を入力してください"

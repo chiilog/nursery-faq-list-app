@@ -2,17 +2,6 @@ import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react';
 
 // カスタムコンフィグ設定
 const customConfig = defineConfig({
-  globalCss: {
-    // モバイルでのズーム防止（全てのinput要素に適用）
-    'input, textarea, select': {
-      fontSize: '16px !important',
-      minHeight: '44px', // iOS推奨の最小タッチサイズ
-    },
-    // タッチハイライトを削除
-    '*': {
-      WebkitTapHighlightColor: 'transparent',
-    },
-  },
   theme: {
     tokens: {
       colors: {

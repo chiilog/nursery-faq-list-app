@@ -174,6 +174,7 @@ export const QuestionList = ({
                   {expandedQuestionId === question.id && (
                     <VStack gap={3} align="stretch" pt={2}>
                       <Input
+                        size="lg"
                         placeholder="回答を入力してください"
                         value={answerText}
                         onChange={(e) => setAnswerText(e.target.value)}

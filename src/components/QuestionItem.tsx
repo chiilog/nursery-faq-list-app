@@ -124,14 +124,16 @@ export const QuestionItem = ({
             {isEditing ? (
               <VStack align="stretch" gap={2}>
                 <Input
+                  size="lg"
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
                   placeholder="質問を入力してください"
-                  size="md"
                 />
                 <select
                   value={editedPriority}
-                  onChange={(e) => setEditedPriority(e.target.value as QuestionPriority)}
+                  onChange={(e) =>
+                    setEditedPriority(e.target.value as QuestionPriority)
+                  }
                   aria-label="優先度"
                   style={{
                     padding: '4px 8px',

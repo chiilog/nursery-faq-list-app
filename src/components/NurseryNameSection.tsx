@@ -27,10 +27,10 @@ export const NurseryNameSection = ({
         bg="brand.50"
       >
         <Input
+          size="lg"
           value={editingName}
           onChange={(e) => onNameChange(e.target.value)}
           placeholder="保育園名を入力してください"
-          size={{ base: 'md', md: 'lg' }}
           fontSize={{ base: 'lg', md: 'xl' }}
           fontWeight="bold"
           bg="white"
