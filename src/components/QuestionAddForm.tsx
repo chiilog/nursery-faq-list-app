@@ -37,6 +37,7 @@ export const QuestionAddForm = ({
           bg="white"
           borderColor="brand.300"
           _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
+          py={3}
         />
         <HStack justify="flex-end" gap={2}>
           <Button
