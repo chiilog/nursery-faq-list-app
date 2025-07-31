@@ -12,14 +12,14 @@ import {
   HStack,
   Separator,
 } from '@chakra-ui/react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { Layout } from './Layout';
 import { NurseryHeader } from './NurseryHeader';
 import { NurseryInfoCard } from './NurseryInfoCard';
 import { QuestionAddForm } from './QuestionAddForm';
-import { QuestionListSection } from './QuestionListSection';
+import { QuestionList } from './QuestionList';
 import { showToast } from '../utils/toaster';
 import { generateId } from '../utils/id';
 
@@ -212,8 +212,8 @@ export const NurseryDetailPage = () => {
     setHasNameError(!value.trim());
   };
 
-  // 変更があるかどうかを判定
-  const hasChanges = useMemo(() => {
+  // 変更があるかどうかを判定（軽量な計算なのでuseMemo不要）
+  const hasChanges = (() => {
     if (!currentNursery) return false;
 
     const nameChanged = editingNurseryName.trim() !== currentNursery.name;
@@ -224,7 +224,7 @@ export const NurseryDetailPage = () => {
     const dateChanged = newVisitDate !== currentDateString;
 
     return nameChanged || dateChanged;
-  }, [currentNursery, editingNurseryName, newVisitDate]);
+  })();
 
   // 保存ボタンの無効化状態
   const isSaveDisabled = !editingNurseryName.trim() || !hasChanges;
@@ -351,7 +351,7 @@ export const NurseryDetailPage = () => {
           </Box>
 
           {/* 質問リスト */}
-          <QuestionListSection
+          <QuestionList
             questions={questions}
             editingQuestionId={editingQuestionId}
             editingAnswer={editingAnswer}

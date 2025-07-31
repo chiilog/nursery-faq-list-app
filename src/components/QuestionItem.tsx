@@ -1,279 +1,132 @@
-import { useState } from 'react';
-import {
-  Box,
-  Text,
-  Button,
-  HStack,
-  VStack,
-  Badge,
-  Input,
-  Textarea,
-} from '@chakra-ui/react';
-import type { Question, QuestionPriority } from '../types/data';
+/**
+ * 質問項目コンポーネント
+ */
+
+import { Box, Text, HStack, Badge, VStack } from '@chakra-ui/react';
+import type { Question } from '../types/data';
 
 interface QuestionItemProps {
   question: Question;
-  onUpdate: (questionId: string, updates: Partial<Question>) => void;
-  onDelete: (questionId: string) => void;
+  onQuestionClick: (
+    questionId: string,
+    currentAnswer: string,
+    questionText: string
+  ) => void;
 }
+
+/**
+ * 優先度に基づいてバッジの色を取得
+ */
+const getPriorityColorScheme = (priority: string): string => {
+  switch (priority) {
+    case 'high':
+      return 'red';
+    case 'medium':
+      return 'yellow';
+    default:
+      return 'gray';
+  }
+};
+
+/**
+ * 優先度に基づいてバッジのテキストを取得
+ */
+const getPriorityText = (priority: string): string => {
+  switch (priority) {
+    case 'high':
+      return '高';
+    case 'medium':
+      return '中';
+    default:
+      return '低';
+  }
+};
 
 export const QuestionItem = ({
   question,
-  onUpdate,
-  onDelete,
+  onQuestionClick,
 }: QuestionItemProps) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [isAnswering, setIsAnswering] = useState(false);
-  const [editedText, setEditedText] = useState(question.text);
-  const [editedPriority, setEditedPriority] = useState(question.priority);
-  const [answerText, setAnswerText] = useState(question.answer || '');
-  const [validationError, setValidationError] = useState('');
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return '高';
-      case 'medium':
-        return '中';
-      case 'low':
-        return '低';
-      default:
-        return priority;
-    }
-  };
-
-  const getPriorityColorScheme = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'red';
-      case 'medium':
-        return 'yellow';
-      case 'low':
-        return 'gray';
-      default:
-        return 'gray';
-    }
-  };
-
-  const handleEditStart = () => {
-    setIsEditing(true);
-    setEditedText(question.text);
-    setEditedPriority(question.priority);
-    setValidationError('');
-  };
-
-  const handleEditSave = () => {
-    if (!editedText.trim()) {
-      setValidationError('質問文を入力してください');
+  const handleCardClick = (e: React.MouseEvent) => {
+    // ボタンクリック時は何もしない
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
       return;
     }
 
-    onUpdate(question.id, {
-      text: editedText,
-      priority: editedPriority,
-    });
-    setIsEditing(false);
-    setValidationError('');
+    onQuestionClick(question.id, question.answer || '', question.text);
   };
 
-  const handleEditCancel = () => {
-    setIsEditing(false);
-    setEditedText(question.text);
-    setEditedPriority(question.priority);
-    setValidationError('');
-  };
-
-  const handleAnswerStart = () => {
-    setIsAnswering(true);
-    setAnswerText(question.answer || '');
-  };
-
-  const handleAnswerSave = () => {
-    onUpdate(question.id, {
-      answer: answerText,
-      isAnswered: true,
-      answeredAt: new Date(),
-    });
-    setIsAnswering(false);
-  };
-
-  const handleAnswerCancel = () => {
-    setIsAnswering(false);
-    setAnswerText(question.answer || '');
-  };
-
-  const handleDeleteClick = () => {
-    if (window.confirm(`この質問を削除しますか？\n「${question.text}」`)) {
-      onDelete(question.id);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onQuestionClick(question.id, question.answer || '', question.text);
     }
   };
 
   return (
     <Box
-      p={4}
-      borderWidth={1}
-      borderRadius="md"
-      bg="white"
+      p={{ base: 4, md: 5 }}
+      border="1px"
+      borderColor={question.isAnswered ? 'green.200' : 'gray.200'}
+      borderRadius="lg"
+      bg={question.isAnswered ? 'green.50' : 'white'}
       shadow="sm"
-      _hover={{ shadow: 'md' }}
+      _hover={{ shadow: 'md', cursor: 'pointer' }}
+      transition="all 0.2s"
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`質問: ${question.text}${question.isAnswered ? ' (回答済み)' : ' (未回答)'}`}
     >
       <VStack align="stretch" gap={3}>
-        {/* 質問文とメタ情報 */}
-        <HStack justify="space-between" align="flex-start">
-          <VStack align="stretch" flex={1} gap={2}>
-            {isEditing ? (
-              <VStack align="stretch" gap={2}>
-                <Input
-                  size="lg"
-                  value={editedText}
-                  onChange={(e) => setEditedText(e.target.value)}
-                  placeholder="質問を入力してください"
-                />
-                <select
-                  value={editedPriority}
-                  onChange={(e) =>
-                    setEditedPriority(e.target.value as QuestionPriority)
-                  }
-                  aria-label="優先度"
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ccc',
-                    maxWidth: '120px',
-                  }}
-                >
-                  <option value="high">高</option>
-                  <option value="medium">中</option>
-                  <option value="low">低</option>
-                </select>
-                {validationError && (
-                  <Text color="red.500" fontSize="sm">
-                    {validationError}
-                  </Text>
-                )}
-              </VStack>
-            ) : (
-              <>
-                <Text fontWeight="medium" fontSize="md">
-                  {question.text}
-                </Text>
-                <HStack gap={2}>
-                  <Badge
-                    colorScheme={getPriorityColorScheme(question.priority)}
-                  >
-                    {getPriorityLabel(question.priority)}
-                  </Badge>
-                  {question.isAnswered && (
-                    <Badge colorScheme="green">回答済み</Badge>
-                  )}
-                </HStack>
-              </>
-            )}
-          </VStack>
-        </HStack>
-
-        {/* 回答表示 */}
-        {!isEditing && question.isAnswered && question.answer && (
+        <HStack justify="space-between" align="flex-start" wrap="wrap">
           <Text
-            color="gray.600"
-            fontSize="sm"
+            fontWeight="bold"
+            flex={1}
+            fontSize={{ base: 'sm', md: 'md' }}
+            minW="0"
+            wordBreak="break-word"
+          >
+            {question.text}
+          </Text>
+          <HStack gap={2} flexShrink={0}>
+            {question.isAnswered && (
+              <Badge colorScheme="green" size="sm">
+                回答済み
+              </Badge>
+            )}
+            <Badge
+              colorScheme={getPriorityColorScheme(question.priority)}
+              size="sm"
+            >
+              {getPriorityText(question.priority)}
+            </Badge>
+          </HStack>
+        </HStack>
+        {question.answer && (
+          <Box
+            pl={4}
+            borderLeft="3px"
+            borderColor="brand.200"
             bg="gray.50"
-            p={2}
+            p={3}
             borderRadius="md"
           >
-            {question.answer}
+            <Text
+              color="gray.700"
+              fontSize={{ base: 'sm', md: 'md' }}
+              whiteSpace="pre-wrap"
+            >
+              {question.answer}
+            </Text>
+          </Box>
+        )}
+        {!question.answer && (
+          <Text color="gray.400" fontSize="sm" fontStyle="italic">
+            クリックして回答を追加
           </Text>
         )}
-
-        {/* 回答入力モード */}
-        {isAnswering && (
-          <VStack align="stretch" gap={3}>
-            <Textarea
-              size="lg"
-              value={answerText}
-              onChange={(e) => setAnswerText(e.target.value)}
-              placeholder="回答を入力してください"
-              aria-label="回答を入力してください"
-              rows={3}
-            />
-            <HStack gap={2}>
-              <Button
-                colorScheme="teal"
-                size="sm"
-                onClick={handleAnswerSave}
-                minH="44px"
-              >
-                回答を保存
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAnswerCancel}
-                minH="44px"
-              >
-                キャンセル
-              </Button>
-            </HStack>
-          </VStack>
-        )}
-
-        {/* アクションボタン */}
-        <HStack gap={2} justify="flex-end">
-          {isEditing ? (
-            <>
-              <Button
-                colorScheme="teal"
-                size="sm"
-                onClick={handleEditSave}
-                minH="44px"
-              >
-                保存
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleEditCancel}
-                minH="44px"
-              >
-                キャンセル
-              </Button>
-            </>
-          ) : (
-            <>
-              {!isAnswering && !question.isAnswered && (
-                <Button
-                  colorScheme="blue"
-                  size="sm"
-                  onClick={handleAnswerStart}
-                  minH="44px"
-                >
-                  回答を入力
-                </Button>
-              )}
-              {!isAnswering && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEditStart}
-                  minH="44px"
-                >
-                  編集
-                </Button>
-              )}
-              {!isAnswering && (
-                <Button
-                  colorScheme="red"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDeleteClick}
-                  minH="44px"
-                >
-                  削除
-                </Button>
-              )}
-            </>
-          )}
-        </HStack>
       </VStack>
     </Box>
   );

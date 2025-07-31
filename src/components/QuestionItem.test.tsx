@@ -1,37 +1,30 @@
+/**
+ * QuestionItem コンポーネントのテスト
+ */
+
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { QuestionItem } from './QuestionItem';
 import { renderWithProviders, testUtils } from '../test/test-utils';
-import type { Question } from '../types';
-
-// テスト用のモックデータ
-const mockQuestion: Question = testUtils.createMockQuestion({
-  id: '1',
-  text: '保育時間は何時から何時までですか？',
-  priority: 'high',
-  orderIndex: 1,
-});
-
-const mockAnsweredQuestion: Question = testUtils.createMockQuestion({
-  id: '2',
-  text: '給食はありますか？',
-  answer: '完全給食です',
-  isAnswered: true,
-  priority: 'medium',
-  category: '食事',
-  orderIndex: 2,
-  answeredAt: new Date('2024-01-15T10:00:00'),
-});
 
 describe('QuestionItem', () => {
-  describe('質問の表示', () => {
-    test('質問文が表示される', () => {
+  const mockOnQuestionClick = vi.fn();
+
+  beforeEach(() => {
+    mockOnQuestionClick.mockClear();
+  });
+
+  describe('基本表示', () => {
+    test('質問テキストが表示される', () => {
+      const question = testUtils.createMockQuestion({
+        text: '保育時間は何時から何時までですか？',
+      });
+
       renderWithProviders(
         <QuestionItem
-          question={mockQuestion}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
@@ -41,325 +34,403 @@ describe('QuestionItem', () => {
     });
 
     test('優先度バッジが表示される', () => {
+      const question = testUtils.createMockQuestion({
+        priority: 'high',
+      });
+
       renderWithProviders(
         <QuestionItem
-          question={mockQuestion}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
       expect(screen.getByText('高')).toBeInTheDocument();
     });
 
-    test('回答済みの質問には回答内容が表示される', () => {
+    test('回答済みの場合、回答済みバッジが表示される', () => {
+      const question = testUtils.createMockQuestion({
+        isAnswered: true,
+        answer: 'テスト回答',
+      });
+
       renderWithProviders(
         <QuestionItem
-          question={mockAnsweredQuestion}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
-      expect(screen.getByText('完全給食です')).toBeInTheDocument();
       expect(screen.getByText('回答済み')).toBeInTheDocument();
     });
+
+    test('未回答の場合、回答済みバッジが表示されない', () => {
+      const question = testUtils.createMockQuestion({
+        isAnswered: false,
+        answer: '',
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      expect(screen.queryByText('回答済み')).not.toBeInTheDocument();
+    });
   });
 
-  describe('編集機能', () => {
-    test('編集ボタンをクリックすると編集モードになる', async () => {
+  describe('クリック動作', () => {
+    test('カード領域をクリックすると onQuestionClick が呼ばれる', async () => {
       const user = userEvent.setup();
+      const question = testUtils.createMockQuestion({
+        id: 'test-question-1',
+        text: 'テスト質問',
+        answer: 'テスト回答',
+      });
+
       renderWithProviders(
         <QuestionItem
-          question={mockQuestion}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
-      const editButton = screen.getByRole('button', { name: /編集/ });
-      await user.click(editButton);
+      const card = screen.getByRole('button', { name: /質問: テスト質問/ });
+      await user.click(card);
 
-      // 編集モードでは質問テキストが入力フィールドになる
-      expect(
-        screen.getByDisplayValue('保育時間は何時から何時までですか？')
-      ).toBeInTheDocument();
+      expect(mockOnQuestionClick).toHaveBeenCalledOnce();
     });
 
-    test('編集モードで質問文を変更できる', async () => {
+    test('正しい引数（questionId, answer, text）で onQuestionClick が呼ばれる', async () => {
       const user = userEvent.setup();
-      const mockOnUpdate = vi.fn();
+      const question = testUtils.createMockQuestion({
+        id: 'test-question-1',
+        text: 'テスト質問',
+        answer: 'テスト回答',
+      });
 
       renderWithProviders(
         <QuestionItem
-          question={mockQuestion}
-          onUpdate={mockOnUpdate}
-          onDelete={vi.fn()}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
-      // 編集モードに入る
-      const editButton = screen.getByRole('button', { name: /編集/ });
-      await user.click(editButton);
+      const card = screen.getByRole('button', { name: /質問: テスト質問/ });
+      await user.click(card);
 
-      // 質問文を変更
-      const textInput =
-        screen.getByDisplayValue('保育時間は何時から何時までですか？');
-      await user.clear(textInput);
-      await user.type(textInput, '新しい質問文です');
+      expect(mockOnQuestionClick).toHaveBeenCalledWith(
+        'test-question-1',
+        'テスト回答',
+        'テスト質問'
+      );
+    });
 
-      // 保存ボタンをクリック
-      const saveButton = screen.getByRole('button', { name: /保存/ });
-      await user.click(saveButton);
+    test('未回答の場合、空文字列の回答で onQuestionClick が呼ばれる', async () => {
+      const user = userEvent.setup();
+      const question = testUtils.createMockQuestion({
+        id: 'test-question-2',
+        text: '未回答の質問',
+        answer: '',
+        isAnswered: false,
+      });
 
-      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
-        text: '新しい質問文です',
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      const card = screen.getByRole('button', { name: /質問: 未回答の質問/ });
+      await user.click(card);
+
+      expect(mockOnQuestionClick).toHaveBeenCalledWith(
+        'test-question-2',
+        '',
+        '未回答の質問'
+      );
+    });
+  });
+
+  describe('キーボード操作', () => {
+    test('Enterキーで onQuestionClick が呼ばれる', async () => {
+      const user = userEvent.setup();
+      const question = testUtils.createMockQuestion({
+        id: 'keyboard-test-1',
+        text: 'キーボードテスト質問',
+        answer: 'キーボードテスト回答',
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      const card = screen.getByRole('button', {
+        name: /質問: キーボードテスト質問/,
+      });
+      card.focus();
+      await user.keyboard('{Enter}');
+
+      expect(mockOnQuestionClick).toHaveBeenCalledWith(
+        'keyboard-test-1',
+        'キーボードテスト回答',
+        'キーボードテスト質問'
+      );
+    });
+
+    test('Spaceキーで onQuestionClick が呼ばれる', async () => {
+      const user = userEvent.setup();
+      const question = testUtils.createMockQuestion({
+        id: 'keyboard-test-2',
+        text: 'スペースキーテスト質問',
+        answer: 'スペースキーテスト回答',
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      const card = screen.getByRole('button', {
+        name: /質問: スペースキーテスト質問/,
+      });
+      card.focus();
+      await user.keyboard(' ');
+
+      expect(mockOnQuestionClick).toHaveBeenCalledWith(
+        'keyboard-test-2',
+        'スペースキーテスト回答',
+        'スペースキーテスト質問'
+      );
+    });
+
+    test('その他のキーでは onQuestionClick が呼ばれない', async () => {
+      const user = userEvent.setup();
+      const question = testUtils.createMockQuestion({
+        text: 'その他キーテスト質問',
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      const card = screen.getByRole('button', {
+        name: /質問: その他キーテスト質問/,
+      });
+      card.focus();
+      await user.keyboard('{Escape}');
+      await user.keyboard('{Tab}');
+      await user.keyboard('a');
+
+      expect(mockOnQuestionClick).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('優先度表示', () => {
+    test('high優先度で赤バッジ「高」が表示される', () => {
+      const question = testUtils.createMockQuestion({
         priority: 'high',
       });
-    });
-
-    test('編集モードで優先度を変更できる', async () => {
-      const user = userEvent.setup();
-      const mockOnUpdate = vi.fn();
 
       renderWithProviders(
         <QuestionItem
-          question={mockQuestion}
-          onUpdate={mockOnUpdate}
-          onDelete={vi.fn()}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
-      // 編集モードに入る
-      const editButton = screen.getByRole('button', { name: /編集/ });
-      await user.click(editButton);
+      const priorityBadge = screen.getByText('高');
+      expect(priorityBadge).toBeInTheDocument();
 
-      // 優先度を変更
-      const prioritySelect = screen.getByRole('combobox', { name: /優先度/ });
-      await user.selectOptions(prioritySelect, 'low');
-
-      // 保存ボタンをクリック
-      const saveButton = screen.getByRole('button', { name: /保存/ });
-      await user.click(saveButton);
-
-      expect(mockOnUpdate).toHaveBeenCalledWith(
-        '1',
-        expect.objectContaining({
-          priority: 'low',
-        })
+      // バッジの色スキーム確認（data属性やクラスで確認）
+      expect(priorityBadge.closest('[data-theme]')).toHaveAttribute(
+        'data-theme',
+        expect.stringContaining('red')
       );
     });
 
-    test('キャンセルボタンで編集をキャンセルできる', async () => {
-      const user = userEvent.setup();
-      const mockOnUpdate = vi.fn();
+    test('medium優先度で黄バッジ「中」が表示される', () => {
+      const question = testUtils.createMockQuestion({
+        priority: 'medium',
+      });
 
       renderWithProviders(
         <QuestionItem
-          question={mockQuestion}
-          onUpdate={mockOnUpdate}
-          onDelete={vi.fn()}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
-      // 編集モードに入る
-      const editButton = screen.getByRole('button', { name: /編集/ });
-      await user.click(editButton);
-
-      // 質問文を変更
-      const textInput =
-        screen.getByDisplayValue('保育時間は何時から何時までですか？');
-      await user.clear(textInput);
-      await user.type(textInput, '変更された質問文');
-
-      // キャンセルボタンをクリック
-      const cancelButton = screen.getByRole('button', { name: /キャンセル/ });
-      await user.click(cancelButton);
-
-      // onUpdateが呼ばれないことを確認
-      expect(mockOnUpdate).not.toHaveBeenCalled();
-
-      // 元の質問文が表示されることを確認
-      expect(
-        screen.getByText('保育時間は何時から何時までですか？')
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe('削除機能', () => {
-    test('削除ボタンをクリックしてconfirmでOKを選択するとonDeleteが呼ばれる', async () => {
-      const user = userEvent.setup();
-      const mockOnDelete = vi.fn();
-
-      // window.confirmをモック
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-
-      renderWithProviders(
-        <QuestionItem
-          question={mockQuestion}
-          onUpdate={vi.fn()}
-          onDelete={mockOnDelete}
-        />
+      const priorityBadge = screen.getByText('中');
+      expect(priorityBadge).toBeInTheDocument();
+      expect(priorityBadge.closest('[data-theme]')).toHaveAttribute(
+        'data-theme',
+        expect.stringContaining('yellow')
       );
-
-      const deleteButton = screen.getByRole('button', { name: /削除/ });
-      await user.click(deleteButton);
-
-      expect(confirmSpy).toHaveBeenCalledWith(
-        expect.stringContaining('この質問を削除しますか？')
-      );
-      expect(mockOnDelete).toHaveBeenCalledWith('1');
-
-      confirmSpy.mockRestore();
     });
 
-    test('削除ボタンをクリックしてconfirmでCancelを選択するとonDeleteが呼ばれない', async () => {
-      const user = userEvent.setup();
-      const mockOnDelete = vi.fn();
-
-      // window.confirmをモック
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    test('low優先度でグレーバッジ「低」が表示される', () => {
+      const question = testUtils.createMockQuestion({
+        priority: 'low',
+      });
 
       renderWithProviders(
         <QuestionItem
-          question={mockQuestion}
-          onUpdate={vi.fn()}
-          onDelete={mockOnDelete}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
-      const deleteButton = screen.getByRole('button', { name: /削除/ });
-      await user.click(deleteButton);
-
-      expect(confirmSpy).toHaveBeenCalledWith(
-        expect.stringContaining('この質問を削除しますか？')
+      const priorityBadge = screen.getByText('低');
+      expect(priorityBadge).toBeInTheDocument();
+      expect(priorityBadge.closest('[data-theme]')).toHaveAttribute(
+        'data-theme',
+        expect.stringContaining('gray')
       );
-      expect(mockOnDelete).not.toHaveBeenCalled();
+    });
 
-      confirmSpy.mockRestore();
+    test('未定義の優先度でグレーバッジ「低」が表示される', () => {
+      const question = testUtils.createMockQuestion({
+        priority: 'unknown' as any, // 意図的に未定義の値を設定
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      const priorityBadge = screen.getByText('低');
+      expect(priorityBadge).toBeInTheDocument();
+      expect(priorityBadge.closest('[data-theme]')).toHaveAttribute(
+        'data-theme',
+        expect.stringContaining('gray')
+      );
     });
   });
 
-  describe('回答入力機能', () => {
-    test('未回答の質問には回答入力ボタンが表示される', () => {
-      renderWithProviders(
-        <QuestionItem
-          question={mockQuestion}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
-        />
-      );
-
-      expect(
-        screen.getByRole('button', { name: /回答を入力/ })
-      ).toBeInTheDocument();
-    });
-
-    test('回答入力ボタンをクリックすると回答入力フィールドが表示される', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(
-        <QuestionItem
-          question={mockQuestion}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
-        />
-      );
-
-      const answerButton = screen.getByRole('button', { name: /回答を入力/ });
-      await user.click(answerButton);
-
-      expect(
-        screen.getByLabelText(/回答を入力してください/)
-      ).toBeInTheDocument();
-    });
-
-    test('回答を入力して保存できる', async () => {
-      const user = userEvent.setup();
-      const mockOnUpdate = vi.fn();
-
-      renderWithProviders(
-        <QuestionItem
-          question={mockQuestion}
-          onUpdate={mockOnUpdate}
-          onDelete={vi.fn()}
-        />
-      );
-
-      // 回答入力モードに入る
-      const answerButton = screen.getByRole('button', { name: /回答を入力/ });
-      await user.click(answerButton);
-
-      // 回答を入力
-      const answerInput = screen.getByLabelText(/回答を入力してください/);
-      await user.type(answerInput, '7:30〜19:00');
-
-      // 保存ボタンをクリック
-      const saveButton = screen.getByRole('button', { name: /回答を保存/ });
-      await user.click(saveButton);
-
-      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
-        answer: '7:30〜19:00',
+  describe('回答状態による表示', () => {
+    test('回答済みの場合、回答内容が表示される', () => {
+      const question = testUtils.createMockQuestion({
         isAnswered: true,
-        answeredAt: expect.any(Date),
+        answer: '完全給食で、アレルギー対応も個別に相談可能です。',
       });
-    });
-  });
-
-  describe('モバイル最適化', () => {
-    test('ボタンのタッチターゲットが44px以上である', () => {
-      renderWithProviders(
-        <QuestionItem
-          question={mockQuestion}
-          onUpdate={vi.fn()}
-          onDelete={vi.fn()}
-        />
-      );
-
-      const editButton = screen.getByRole('button', { name: /編集/ });
-      const deleteButton = screen.getByRole('button', { name: /削除/ });
-      const answerButton = screen.getByRole('button', { name: /回答を入力/ });
-
-      [editButton, deleteButton, answerButton].forEach((button) => {
-        const styles = window.getComputedStyle(button);
-        const minHeight = parseInt(styles.minHeight) || 0;
-        const height = parseInt(styles.height) || 0;
-        const actualHeight = Math.max(minHeight, height);
-        expect(actualHeight).toBeGreaterThanOrEqual(44);
-      });
-    });
-  });
-
-  describe('バリデーション', () => {
-    test('空の質問文では保存できない', async () => {
-      const user = userEvent.setup();
-      const mockOnUpdate = vi.fn();
 
       renderWithProviders(
         <QuestionItem
-          question={mockQuestion}
-          onUpdate={mockOnUpdate}
-          onDelete={vi.fn()}
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
         />
       );
 
-      // 編集モードに入る
-      const editButton = screen.getByRole('button', { name: /編集/ });
-      await user.click(editButton);
+      expect(
+        screen.getByText('完全給食で、アレルギー対応も個別に相談可能です。')
+      ).toBeInTheDocument();
+    });
 
-      // 質問文を空にする
-      const textInput =
-        screen.getByDisplayValue('保育時間は何時から何時までですか？');
-      await user.clear(textInput);
+    test('未回答の場合、「クリックして回答を追加」が表示される', () => {
+      const question = testUtils.createMockQuestion({
+        isAnswered: false,
+        answer: '',
+      });
 
-      // 保存ボタンをクリック
-      const saveButton = screen.getByRole('button', { name: /保存/ });
-      await user.click(saveButton);
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
 
-      // エラーメッセージが表示される
-      expect(screen.getByText(/質問文を入力してください/)).toBeInTheDocument();
+      expect(screen.getByText('クリックして回答を追加')).toBeInTheDocument();
+    });
 
-      // onUpdateが呼ばれない
-      expect(mockOnUpdate).not.toHaveBeenCalled();
+    test('未回答の場合、回答内容は表示されない', () => {
+      const question = testUtils.createMockQuestion({
+        isAnswered: false,
+        answer: '', // 空の回答
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      // 回答エリアのテキストが存在しないことを確認
+      expect(screen.queryByText(/完全給食/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('アクセシビリティ', () => {
+    test('適切なARIAラベルが設定されている（回答済み）', () => {
+      const question = testUtils.createMockQuestion({
+        text: 'アクセシビリティテスト質問',
+        isAnswered: true,
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      expect(
+        screen.getByRole('button', {
+          name: '質問: アクセシビリティテスト質問 (回答済み)',
+        })
+      ).toBeInTheDocument();
+    });
+
+    test('適切なARIAラベルが設定されている（未回答）', () => {
+      const question = testUtils.createMockQuestion({
+        text: 'アクセシビリティテスト質問',
+        isAnswered: false,
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      expect(
+        screen.getByRole('button', {
+          name: '質問: アクセシビリティテスト質問 (未回答)',
+        })
+      ).toBeInTheDocument();
+    });
+
+    test('タブインデックスが設定されてキーボードフォーカス可能', () => {
+      const question = testUtils.createMockQuestion({
+        text: 'フォーカステスト質問',
+      });
+
+      renderWithProviders(
+        <QuestionItem
+          question={question}
+          onQuestionClick={mockOnQuestionClick}
+        />
+      );
+
+      const card = screen.getByRole('button', {
+        name: /質問: フォーカステスト質問/,
+      });
+      expect(card).toHaveAttribute('tabIndex', '0');
     });
   });
 });

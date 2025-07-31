@@ -3,18 +3,15 @@
  * 質問リスト、テンプレート、質問の検索機能を提供
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useQuestionListManagement } from '../useQuestionListManagement';
-import type { QuestionList } from '../../types';
+import { EMPTY_TEMPLATES } from '../../constants/templates';
 
 /**
  * 質問検索フック
  */
 export function useQuestionSearch() {
   const { questionLists, currentList } = useQuestionListManagement();
-
-  // テンプレートは将来実装予定のため、空配列で初期化
-  const templates: QuestionList[] = useMemo(() => [], []);
 
   // 共通検索ユーティリティ
   const createSearchFunction = useCallback(
@@ -47,12 +44,12 @@ export function useQuestionSearch() {
   // テンプレートの検索・フィルタリング
   const searchTemplates = useCallback(
     (query: string) => {
-      return createSearchFunction(templates, (template) => [
+      return createSearchFunction([...EMPTY_TEMPLATES], (template) => [
         template.title,
         ...template.questions.map((q) => q.text),
       ])(query);
     },
-    [templates, createSearchFunction]
+    [createSearchFunction]
   );
 
   // 質問の検索・フィルタリング
