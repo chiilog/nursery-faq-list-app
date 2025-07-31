@@ -6,6 +6,7 @@
 import { Box, Text, VStack, Input } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import type { Question } from '../types/data';
+import { formatDate } from '../utils/dateFormat';
 
 interface NurseryInfoCardProps {
   nurseryName: string;
@@ -18,13 +19,6 @@ interface NurseryInfoCardProps {
   onNameChange?: (value: string) => void;
   onVisitDateChange?: (value: string) => void;
 }
-
-/**
- * 日付フォーマッター（NurseryCardと同じ形式）
- */
-const formatDate = (date: Date): string => {
-  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
-};
 
 /**
  * 質問進捗計算

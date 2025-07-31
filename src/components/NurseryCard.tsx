@@ -5,6 +5,7 @@
 
 import { Box, Text, VStack, HStack } from '@chakra-ui/react';
 import type { Nursery, VisitSession } from '../types/data';
+import { formatDate } from '../utils/dateFormat';
 
 interface NurseryCardProps {
   /** 表示する保育園の情報 */
@@ -12,13 +13,6 @@ interface NurseryCardProps {
   /** カードクリック時のコールバック関数 */
   onClick: (nursery: Nursery) => void;
 }
-
-/**
- * 日付を見やすい形式（YYYY/M/D）にフォーマット
- */
-const formatDate = (date: Date): string => {
-  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
-};
 
 /**
  * 見学セッションから最新の見学予定日を取得
