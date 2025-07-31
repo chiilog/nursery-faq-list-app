@@ -85,7 +85,7 @@ export const NurseryInfo = ({
                 type="date"
                 value={newVisitDate}
                 onChange={(e) => onVisitDateChange(e.target.value)}
-                size="sm"
+                size="lg"
                 bg="white"
               />
               <HStack>

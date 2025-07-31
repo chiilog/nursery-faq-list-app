@@ -31,6 +31,7 @@ export const QuestionAddForm = ({
         shadow="sm"
       >
         <Input
+          size="lg"
           placeholder="新しい質問を入力してください"
           value={newQuestionText}
           onChange={(e) => onNewQuestionTextChange(e.target.value)}

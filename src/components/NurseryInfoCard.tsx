@@ -75,6 +75,7 @@ export const NurseryInfoCard = ({
         {isEditing ? (
           <VStack align="stretch" gap={1}>
             <Input
+              size="lg"
               value={editingName}
               onChange={(e) => onNameChange?.(e.target.value)}
               placeholder="保育園名を入力してください"
@@ -117,7 +118,7 @@ export const NurseryInfoCard = ({
                 type="date"
                 value={newVisitDate}
                 onChange={(e) => onVisitDateChange?.(e.target.value)}
-                size="sm"
+                size="lg"
                 bg="white"
                 borderColor="brand.300"
                 _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
