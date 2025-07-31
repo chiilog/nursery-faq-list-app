@@ -3,15 +3,17 @@
  * 質問リストテンプレート関連の管理操作を提供
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import type { QuestionList, CreateQuestionListInput } from '../../types';
+
+// テンプレートは将来実装予定のため、空配列で初期化（定数として定義）
+const EMPTY_TEMPLATES: QuestionList[] = [];
 
 /**
  * テンプレート管理フック
  */
 export function useTemplateManagement() {
-  // テンプレートは将来実装予定のため、空配列で初期化
-  const templates: QuestionList[] = useMemo(() => [], []);
+  const templates = EMPTY_TEMPLATES;
 
   // テンプレート読み込み
   const loadAvailableTemplates = useCallback(() => {
