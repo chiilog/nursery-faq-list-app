@@ -42,13 +42,14 @@ const QuestionEditForm = ({
       bg="white"
     />
     <Textarea
+      size="lg"
       placeholder="回答を入力してください"
       value={editingAnswer}
       onChange={(e) => onAnswerChange(e.target.value)}
       rows={3}
       bg="white"
       resize="vertical"
-      size={{ base: 'sm', md: 'md' }}
+      autoresize
     />
     <HStack justify="flex-end" gap={2}>
       <Button

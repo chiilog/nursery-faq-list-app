@@ -189,6 +189,7 @@ export const QuestionItem = ({
         {isAnswering && (
           <VStack align="stretch" gap={3}>
             <Textarea
+              size="lg"
               value={answerText}
               onChange={(e) => setAnswerText(e.target.value)}
               placeholder="回答を入力してください"
