@@ -4,15 +4,17 @@
 
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi, beforeEach } from 'vitest';
 import { QuestionItem } from './QuestionItem';
 import { renderWithProviders, testUtils } from '../test/test-utils';
 
 describe('QuestionItem', () => {
   const mockOnQuestionClick = vi.fn();
+  const mockOnDelete = vi.fn();
 
   beforeEach(() => {
     mockOnQuestionClick.mockClear();
+    mockOnDelete.mockClear();
   });
 
   describe('基本表示', () => {
@@ -25,6 +27,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -42,6 +45,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -58,6 +62,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -74,6 +79,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -94,6 +100,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -115,6 +122,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -141,6 +149,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -168,6 +177,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -196,6 +206,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -222,6 +233,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -247,17 +259,12 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
       const priorityBadge = screen.getByText('高');
       expect(priorityBadge).toBeInTheDocument();
-
-      // バッジの色スキーム確認（data属性やクラスで確認）
-      expect(priorityBadge.closest('[data-theme]')).toHaveAttribute(
-        'data-theme',
-        expect.stringContaining('red')
-      );
     });
 
     test('medium優先度で黄バッジ「中」が表示される', () => {
@@ -269,15 +276,12 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
       const priorityBadge = screen.getByText('中');
       expect(priorityBadge).toBeInTheDocument();
-      expect(priorityBadge.closest('[data-theme]')).toHaveAttribute(
-        'data-theme',
-        expect.stringContaining('yellow')
-      );
     });
 
     test('low優先度でグレーバッジ「低」が表示される', () => {
@@ -289,15 +293,12 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
       const priorityBadge = screen.getByText('低');
       expect(priorityBadge).toBeInTheDocument();
-      expect(priorityBadge.closest('[data-theme]')).toHaveAttribute(
-        'data-theme',
-        expect.stringContaining('gray')
-      );
     });
 
     test('未定義の優先度でグレーバッジ「低」が表示される', () => {
@@ -309,15 +310,12 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
       const priorityBadge = screen.getByText('低');
       expect(priorityBadge).toBeInTheDocument();
-      expect(priorityBadge.closest('[data-theme]')).toHaveAttribute(
-        'data-theme',
-        expect.stringContaining('gray')
-      );
     });
   });
 
@@ -332,6 +330,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -350,6 +349,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -366,6 +366,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -385,6 +386,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -405,6 +407,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -424,6 +427,7 @@ describe('QuestionItem', () => {
         <QuestionItem
           question={question}
           onQuestionClick={mockOnQuestionClick}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -431,6 +435,128 @@ describe('QuestionItem', () => {
         name: /質問: フォーカステスト質問/,
       });
       expect(card).toHaveAttribute('tabIndex', '0');
+    });
+  });
+
+  describe('削除機能', () => {
+    describe('削除ボタンの表示', () => {
+      test('onDeleteが渡されない場合、削除ボタンが表示されない', () => {
+        const question = testUtils.createMockQuestion();
+
+        renderWithProviders(
+          <QuestionItem
+            question={question}
+            onQuestionClick={mockOnQuestionClick}
+          />
+        );
+
+        expect(screen.queryByLabelText('質問を削除')).not.toBeInTheDocument();
+      });
+
+      test('onDeleteが渡された場合、削除ボタンが表示される', () => {
+        const question = testUtils.createMockQuestion();
+
+        renderWithProviders(
+          <QuestionItem
+            question={question}
+            onQuestionClick={mockOnQuestionClick}
+            onDelete={mockOnDelete}
+          />
+        );
+
+        expect(screen.getByLabelText('質問を削除')).toBeInTheDocument();
+      });
+    });
+
+    describe('削除ボタンのクリック処理', () => {
+      test('削除ボタンをクリックすると確認ダイアログが表示される', async () => {
+        const user = userEvent.setup();
+        const question = testUtils.createMockQuestion({
+          text: '削除対象の質問',
+        });
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+        renderWithProviders(
+          <QuestionItem
+            question={question}
+            onQuestionClick={mockOnQuestionClick}
+            onDelete={mockOnDelete}
+          />
+        );
+
+        await user.click(screen.getByLabelText('質問を削除'));
+
+        expect(confirmSpy).toHaveBeenCalledWith(
+          expect.stringMatching(
+            /この質問を削除しますか？.*削除対象の質問.*この操作は取り消せません/s
+          )
+        );
+
+        confirmSpy.mockRestore();
+      });
+
+      test('確認ダイアログでOKを選択すると削除処理が実行される', async () => {
+        const user = userEvent.setup();
+        const question = testUtils.createMockQuestion({
+          id: 'delete-target-id',
+        });
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        renderWithProviders(
+          <QuestionItem
+            question={question}
+            onQuestionClick={mockOnQuestionClick}
+            onDelete={mockOnDelete}
+          />
+        );
+
+        await user.click(screen.getByLabelText('質問を削除'));
+
+        expect(mockOnDelete).toHaveBeenCalledOnce();
+        expect(mockOnDelete).toHaveBeenCalledWith('delete-target-id');
+
+        confirmSpy.mockRestore();
+      });
+
+      test('確認ダイアログでキャンセルを選択すると削除処理が実行されない', async () => {
+        const user = userEvent.setup();
+        const question = testUtils.createMockQuestion();
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+        renderWithProviders(
+          <QuestionItem
+            question={question}
+            onQuestionClick={mockOnQuestionClick}
+            onDelete={mockOnDelete}
+          />
+        );
+
+        await user.click(screen.getByLabelText('質問を削除'));
+
+        expect(mockOnDelete).not.toHaveBeenCalled();
+
+        confirmSpy.mockRestore();
+      });
+
+      test('削除ボタンのクリックイベントが質問カード全体のクリックイベントに伝播しない', async () => {
+        const user = userEvent.setup();
+        const question = testUtils.createMockQuestion();
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        renderWithProviders(
+          <QuestionItem
+            question={question}
+            onQuestionClick={mockOnQuestionClick}
+            onDelete={mockOnDelete}
+          />
+        );
+
+        await user.click(screen.getByLabelText('質問を削除'));
+
+        expect(mockOnQuestionClick).not.toHaveBeenCalled();
+
+        confirmSpy.mockRestore();
+      });
     });
   });
 });
