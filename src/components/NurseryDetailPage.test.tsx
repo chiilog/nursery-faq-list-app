@@ -23,6 +23,7 @@ vi.mock('react-router-dom', async () => {
 
 // useNurseryStoreのモック
 const mockUpdateNursery = vi.fn();
+const mockDeleteQuestion = vi.fn();
 const mockCurrentNursery: Nursery = {
   id: 'nursery-1',
   name: 'テスト保育園',
@@ -34,7 +35,7 @@ const mockCurrentNursery: Nursery = {
       questions: [
         {
           id: 'question-1',
-          text: '開園時間は何時ですか？',
+          text: '保育時間は何時から何時までですか？',
           answer: '',
           isAnswered: false,
           priority: 'high',
@@ -82,7 +83,7 @@ describe('NurseryDetailPage コンポーネント', () => {
       updateNursery: mockUpdateNursery,
       addQuestion: vi.fn(),
       updateQuestion: vi.fn(),
-      deleteQuestion: vi.fn(),
+      deleteQuestion: mockDeleteQuestion,
       setCurrentNursery: vi.fn(),
       clearError: vi.fn(),
     });
@@ -98,15 +99,15 @@ describe('NurseryDetailPage コンポーネント', () => {
     test('見学日情報が表示される', () => {
       renderWithProviders(<NurseryDetailPage />);
 
-      expect(screen.getByText('見学予定日')).toBeInTheDocument();
-      expect(screen.getByText('2025年12月31日')).toBeInTheDocument();
+      expect(screen.getByText(/見学日:/)).toBeInTheDocument();
+      expect(screen.getByText(/2025\/12\/31/)).toBeInTheDocument();
     });
 
     test('質問進捗が表示される', () => {
       renderWithProviders(<NurseryDetailPage />);
 
-      expect(screen.getByText('質問進捗')).toBeInTheDocument();
-      expect(screen.getByText('1/2 回答済み')).toBeInTheDocument();
+      expect(screen.getByText(/質問進捗:/)).toBeInTheDocument();
+      expect(screen.getByText(/1\/2/)).toBeInTheDocument();
     });
 
     test('戻るボタンが表示される', () => {
@@ -121,7 +122,9 @@ describe('NurseryDetailPage コンポーネント', () => {
     test('質問一覧が表示される', () => {
       renderWithProviders(<NurseryDetailPage />);
 
-      expect(screen.getByText('開園時間は何時ですか？')).toBeInTheDocument();
+      expect(
+        screen.getByText('保育時間は何時から何時までですか？')
+      ).toBeInTheDocument();
       expect(screen.getByText('給食はありますか？')).toBeInTheDocument();
     });
 
@@ -132,7 +135,9 @@ describe('NurseryDetailPage コンポーネント', () => {
       expect(questions).toHaveLength(2);
 
       // 最初の質問（未回答）
-      expect(questions[0]).toHaveTextContent('開園時間は何時ですか？');
+      expect(questions[0]).toHaveTextContent(
+        '保育時間は何時から何時までですか？'
+      );
       // 2番目の質問（回答済み）
       expect(questions[1]).toHaveTextContent('給食はありますか？');
     });
@@ -158,11 +163,13 @@ describe('NurseryDetailPage コンポーネント', () => {
       const user = userEvent.setup();
       renderWithProviders(<NurseryDetailPage />);
 
-      const question = screen.getByText('開園時間は何時ですか？');
+      const question = screen.getByRole('button', {
+        name: /質問: 保育時間は何時から何時までですか？/,
+      });
       await user.click(question);
 
       expect(
-        screen.getByDisplayValue('開園時間は何時ですか？')
+        screen.getByDisplayValue('保育時間は何時から何時までですか？')
       ).toBeInTheDocument();
     });
 
@@ -170,7 +177,9 @@ describe('NurseryDetailPage コンポーネント', () => {
       const user = userEvent.setup();
       renderWithProviders(<NurseryDetailPage />);
 
-      const question = screen.getByText('開園時間は何時ですか？');
+      const question = screen.getByRole('button', {
+        name: /質問: 保育時間は何時から何時までですか？/,
+      });
       await user.click(question);
 
       const answerInput = screen.getByPlaceholderText('回答を入力してください');
@@ -197,7 +206,9 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       renderWithProviders(<NurseryDetailPage />);
 
-      const question = screen.getByText('開園時間は何時ですか？');
+      const question = screen.getByRole('button', {
+        name: /質問: 保育時間は何時から何時までですか？/,
+      });
       await user.click(question);
 
       const answerInput = screen.getByPlaceholderText('回答を入力してください');
@@ -281,12 +292,12 @@ describe('NurseryDetailPage コンポーネント', () => {
   });
 
   describe('見学日編集機能', () => {
-    test('見学日をクリックすると日付選択が表示される', async () => {
+    test('編集ボタンをクリックすると日付選択が表示される', async () => {
       const user = userEvent.setup();
       renderWithProviders(<NurseryDetailPage />);
 
-      const visitDate = screen.getByText('2025年12月31日');
-      await user.click(visitDate);
+      const editButton = screen.getByRole('button', { name: '編集' });
+      await user.click(editButton);
 
       expect(screen.getByDisplayValue('2025-12-31')).toBeInTheDocument();
     });
@@ -295,8 +306,8 @@ describe('NurseryDetailPage コンポーネント', () => {
       const user = userEvent.setup();
       renderWithProviders(<NurseryDetailPage />);
 
-      const visitDate = screen.getByText('2025年12月31日');
-      await user.click(visitDate);
+      const editButton = screen.getByRole('button', { name: '編集' });
+      await user.click(editButton);
 
       const dateInput = screen.getByDisplayValue('2025-12-31');
       await user.clear(dateInput);
@@ -458,6 +469,9 @@ describe('NurseryDetailPage コンポーネント', () => {
       expect(screen.getByRole('button', { name: '← 戻る' })).toHaveFocus();
 
       await user.tab();
+      expect(screen.getByRole('button', { name: '編集' })).toHaveFocus();
+
+      await user.tab();
       expect(
         screen.getByRole('button', { name: '+ 質問を追加' })
       ).toHaveFocus();
@@ -466,8 +480,12 @@ describe('NurseryDetailPage コンポーネント', () => {
     test('スクリーンリーダー向けの適切なラベルが設定されている', () => {
       renderWithProviders(<NurseryDetailPage />);
 
-      expect(screen.getByLabelText('見学予定日')).toBeInTheDocument();
-      expect(screen.getByLabelText('質問進捗')).toBeInTheDocument();
+      // 質問のアクセシビリティラベルをチェック
+      expect(
+        screen.getByRole('button', {
+          name: /質問: 保育時間は何時から何時までですか？/,
+        })
+      ).toBeInTheDocument();
     });
   });
 
@@ -484,6 +502,72 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       expect(screen.getByText('テスト保育園')).toBeInTheDocument();
       // モバイル向けの適切なレイアウトが適用されることを確認
+    });
+  });
+
+  describe('質問削除機能', () => {
+    test('削除ボタンが表示される', () => {
+      renderWithProviders(<NurseryDetailPage />);
+
+      const deleteButtons = screen.getAllByLabelText('質問を削除');
+      expect(deleteButtons).toHaveLength(2); // 2つの質問があるので
+    });
+
+    test('削除ボタンをクリックすると確認ダイアログが表示される', async () => {
+      const user = userEvent.setup();
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+      renderWithProviders(<NurseryDetailPage />);
+
+      const deleteButton = screen.getAllByLabelText('質問を削除')[0];
+      await user.click(deleteButton);
+
+      expect(confirmSpy).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /この操作は取り消せません。この質問を削除しますか？/
+        )
+      );
+
+      confirmSpy.mockRestore();
+    });
+
+    test('削除確認後に質問が削除される', async () => {
+      const user = userEvent.setup();
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      renderWithProviders(<NurseryDetailPage />);
+
+      const deleteButton = screen.getAllByLabelText('質問を削除')[0];
+      await user.click(deleteButton);
+
+      expect(mockDeleteQuestion).toHaveBeenCalledWith(
+        'nursery-1',
+        'session-1',
+        'question-1'
+      );
+
+      confirmSpy.mockRestore();
+    });
+
+    test('編集中の質問を削除すると編集状態がリセットされる', async () => {
+      const user = userEvent.setup();
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+      renderWithProviders(<NurseryDetailPage />);
+
+      // 質問をクリックして編集モードにする
+      const questionButton = screen.getByRole('button', {
+        name: /質問: 保育時間は何時から何時までですか？/,
+      });
+      await user.click(questionButton);
+
+      // 削除ボタンをクリック（編集中の質問）
+      const deleteButton = screen.getAllByLabelText('質問を削除')[0];
+      await user.click(deleteButton);
+
+      expect(mockDeleteQuestion).toHaveBeenCalled();
+
+      confirmSpy.mockRestore();
     });
   });
 

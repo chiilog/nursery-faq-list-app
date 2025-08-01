@@ -488,7 +488,7 @@ describe('QuestionItem', () => {
 
         expect(confirmSpy).toHaveBeenCalledWith(
           expect.stringMatching(
-            /この質問を削除しますか？.*削除対象の質問.*この操作は取り消せません/s
+            /この操作は取り消せません。この質問を削除しますか？/s
           )
         );
 

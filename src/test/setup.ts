@@ -1,5 +1,15 @@
 import '@testing-library/jest-dom';
 
+// ResizeObserverのモック
+Object.defineProperty(globalThis, 'ResizeObserver', {
+  value: vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  })),
+  writable: true,
+});
+
 // window.matchMediaのモック
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
