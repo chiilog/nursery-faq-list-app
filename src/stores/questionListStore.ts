@@ -14,10 +14,7 @@ import type {
   SyncState,
 } from '../types/data';
 import { dataStore, DataStoreError } from '../services/dataStore';
-import {
-  sortQuestionsByAnswerStatus,
-  getQuestionListStats,
-} from '../utils/data';
+import { getQuestionListStats } from '../utils/data';
 
 // エラー情報の型定義
 export interface AppError {
@@ -67,11 +64,6 @@ interface QuestionListState {
     questionId: string,
     answer: string
   ) => Promise<void>;
-  reorderQuestions: (
-    listId: string,
-    fromIndex: number,
-    toIndex: number
-  ) => Promise<void>;
 
   // アクション: テンプレート管理
   loadTemplates: () => Promise<void>;
@@ -92,7 +84,6 @@ interface QuestionListState {
     unanswered: number;
     progress: number;
   } | null;
-  sortCurrentListByAnswerStatus: () => Promise<void>;
 }
 
 // 初期状態
@@ -383,59 +374,6 @@ export const useQuestionListStore = create<QuestionListState>()(
         });
       },
 
-      async reorderQuestions(
-        listId: string,
-        fromIndex: number,
-        toIndex: number
-      ) {
-        const { currentList, setLoading, clearError, setCurrentList } = get();
-
-        if (!currentList || currentList.id !== listId) {
-          throw new Error('対象の質問リストが見つかりません');
-        }
-
-        try {
-          setLoading({ isLoading: true, operation: '質問を並び替え中...' });
-          clearError();
-
-          // ローカルで並び替え
-          const questions = [...currentList.questions];
-          const [removed] = questions.splice(fromIndex, 1);
-          questions.splice(toIndex, 0, removed);
-
-          // 順序番号を更新して一括保存
-          const reorderedQuestions = questions.map((question, index) => ({
-            ...question,
-            orderIndex: index,
-          }));
-
-          // バッチ更新で効率的に処理
-          const batchUpdates = reorderedQuestions.map((question) => ({
-            questionId: question.id,
-            updates: { orderIndex: question.orderIndex },
-          }));
-
-          await dataStore.updateQuestionsBatch(listId, batchUpdates);
-
-          // 現在のリストを更新
-          await setCurrentList(listId);
-        } catch (error) {
-          const appError: AppError = {
-            message:
-              error instanceof DataStoreError
-                ? error.message
-                : '質問の並び替えに失敗しました',
-            code:
-              error instanceof DataStoreError ? error.code : 'REORDER_FAILED',
-            timestamp: new Date(),
-          };
-          set({ error: appError });
-          throw error;
-        } finally {
-          setLoading({ isLoading: false });
-        }
-      },
-
       // テンプレート管理アクション
       async loadTemplates() {
         const { setLoading, clearError } = get();
@@ -560,50 +498,6 @@ export const useQuestionListStore = create<QuestionListState>()(
         }
 
         return targetList ? getQuestionListStats(targetList) : null;
-      },
-
-      async sortCurrentListByAnswerStatus() {
-        const { currentList, setLoading, clearError, setCurrentList } = get();
-
-        if (!currentList) {
-          return;
-        }
-
-        try {
-          setLoading({ isLoading: true, operation: '質問を並び替え中...' });
-          clearError();
-
-          const sortedQuestions = sortQuestionsByAnswerStatus(
-            currentList.questions
-          );
-
-          // バッチ更新で効率的に処理
-          const batchUpdates = sortedQuestions.map((question) => ({
-            questionId: question.id,
-            updates: { orderIndex: question.orderIndex },
-          }));
-
-          await dataStore.updateQuestionsBatch(currentList.id, batchUpdates);
-
-          // 現在のリストを更新
-          await setCurrentList(currentList.id);
-        } catch (error) {
-          const appError: AppError = {
-            message:
-              error instanceof DataStoreError
-                ? error.message
-                : '質問の並び替えに失敗しました',
-            code:
-              error instanceof DataStoreError
-                ? error.code
-                : 'SORT_BY_ANSWER_FAILED',
-            timestamp: new Date(),
-          };
-          set({ error: appError });
-          throw error;
-        } finally {
-          setLoading({ isLoading: false });
-        }
       },
     }),
     {
