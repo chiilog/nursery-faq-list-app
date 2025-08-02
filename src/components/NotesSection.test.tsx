@@ -87,7 +87,17 @@ describe('NotesSection', () => {
       expect(counter).toBeInTheDocument();
     });
 
-    test('100文字以下で警告メッセージが表示される', () => {
+    test('100文字残りで警告メッセージが表示される', () => {
+      const notes = 'あ'.repeat(1900); // 1900文字（100文字残り）
+      renderWithProviders(
+        <NotesSection notes={notes} onAutoSave={mockOnAutoSave} />
+      );
+
+      const warningMessage = screen.getByText('あと100文字で上限です');
+      expect(warningMessage).toBeInTheDocument();
+    });
+
+    test('50文字残りで警告メッセージが表示される', () => {
       const notes = 'あ'.repeat(1950); // 1950文字（50文字残り）
       renderWithProviders(
         <NotesSection notes={notes} onAutoSave={mockOnAutoSave} />
