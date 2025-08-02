@@ -20,6 +20,7 @@ import { NurseryHeader } from './NurseryHeader';
 import { NurseryInfoCard } from './NurseryInfoCard';
 import { QuestionAddForm } from './QuestionAddForm';
 import { QuestionList } from './QuestionList';
+import { NotesSection } from './NotesSection';
 import { showToast } from '../utils/toaster';
 import { generateId } from '../utils/id';
 
@@ -36,6 +37,7 @@ export const NurseryDetailPage = () => {
     updateQuestion,
     addQuestion,
     updateNursery,
+    updateVisitSession,
     setCurrentNursery,
     clearError,
     deleteQuestion,
@@ -225,6 +227,24 @@ export const NurseryDetailPage = () => {
     setHasNameError(false); // エラー状態をリセット
   };
 
+  // 見学メモ自動保存のハンドラー
+  const handleNotesAutoSave = async (notes: string) => {
+    if (!currentNursery) return;
+
+    const session = currentNursery.visitSessions[0];
+    if (!session) return;
+
+    try {
+      await updateVisitSession(session.id, { notes });
+    } catch (error) {
+      console.error('Failed to save notes:', error);
+      showToast.error(
+        '保存エラー',
+        'メモの保存に失敗しました。もう一度お試しください。'
+      );
+    }
+  };
+
   // 保育園名の変更ハンドラー
   const handleNurseryNameChange = (value: string) => {
     setEditingNurseryName(value);
@@ -357,7 +377,16 @@ export const NurseryDetailPage = () => {
           />
 
           {/* 保育園情報と質問エリアの区切り */}
-          <Separator my={4} />
+          <Separator my={2} />
+
+          {/* 見学メモセクション */}
+          <NotesSection
+            notes={session?.notes || ''}
+            onAutoSave={(notes) => void handleNotesAutoSave(notes)}
+          />
+
+          {/* 質問エリアと質問追加フォームの区切り */}
+          <Separator my={2} />
 
           {/* 質問追加フォーム */}
           <Box mb={2}>
