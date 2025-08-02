@@ -97,18 +97,12 @@ export const NurseryDetailPage = () => {
     const session = currentNursery.visitSessions[0];
     if (!session) return;
 
-    const nextOrderIndex =
-      session.questions.length > 0
-        ? Math.max(...session.questions.map((q) => q.orderIndex)) + 1
-        : 0;
-
     await addQuestion(currentNursery.id, session.id, {
       text: newQuestionText,
       answer: '',
       isAnswered: false,
       priority: 'medium',
       category: '基本情報',
-      orderIndex: nextOrderIndex,
     });
 
     setIsAddingQuestion(false);

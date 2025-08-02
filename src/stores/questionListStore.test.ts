@@ -47,15 +47,11 @@ vi.mock('../services/dataStore', () => ({
 
 // Data utilities のモック
 vi.mock('../utils/data', () => ({
-  sortQuestionsByAnswerStatus: vi.fn(),
   getQuestionListStats: vi.fn(),
 }));
 
 import { dataStore, DataStoreError } from '../services/dataStore';
-import {
-  sortQuestionsByAnswerStatus,
-  getQuestionListStats,
-} from '../utils/data';
+import { getQuestionListStats } from '../utils/data';
 
 // モックデータ
 const mockQuestionList: QuestionList = {
@@ -71,7 +67,6 @@ const mockQuestionList: QuestionList = {
       isAnswered: true,
       priority: 'high',
       category: '基本情報',
-      orderIndex: 0,
     }),
     createQuestionMock({
       id: 'q2',
@@ -80,7 +75,6 @@ const mockQuestionList: QuestionList = {
       isAnswered: false,
       priority: 'medium',
       category: '食事',
-      orderIndex: 1,
     }),
   ],
   createdAt: new Date('2024-01-01'),
@@ -493,43 +487,6 @@ describe('useQuestionListStore', () => {
     });
   });
 
-  describe('質問を並び替える時', () => {
-    test('現在のリストがない場合エラーを投げる', async () => {
-      // Given: 現在のリストが設定されていない状態
-      useQuestionListStore.setState({ currentList: null });
-
-      // When: 質問を並び替える
-      // Then: エラーを投げる
-      await act(async () => {
-        await expect(
-          useQuestionListStore.getState().reorderQuestions('list-1', 0, 1)
-        ).rejects.toThrow('対象の質問リストが見つかりません');
-      });
-    });
-
-    test('成功時にバッチ更新を実行する', async () => {
-      // Given: 現在のリストが設定されており、データストアが成功する状態
-      useQuestionListStore.setState({ currentList: mockQuestionList });
-      const mockedUpdateQuestionsBatch = vi.mocked(
-        dataStore.updateQuestionsBatch
-      );
-      const mockedGetQuestionList = vi.mocked(dataStore.getQuestionList);
-      mockedUpdateQuestionsBatch.mockResolvedValue();
-      mockedGetQuestionList.mockResolvedValue(mockQuestionList);
-
-      // When: 質問を並び替える
-      await act(async () => {
-        await useQuestionListStore.getState().reorderQuestions('list-1', 0, 1);
-      });
-
-      // Then: バッチ更新が呼ばれる
-      expect(mockedUpdateQuestionsBatch).toHaveBeenCalledWith(
-        'list-1',
-        expect.any(Array)
-      );
-    });
-  });
-
   describe('テンプレートを読み込む時', () => {
     test('成功時にテンプレートを設定する', async () => {
       // Given: データストアがテンプレートを返す状態
@@ -666,54 +623,6 @@ describe('useQuestionListStore', () => {
 
       // Then: nullを返す
       expect(result).toBeNull();
-    });
-  });
-
-  describe('現在のリストを回答状況でソートする時', () => {
-    test('現在のリストがない場合は何もしない', async () => {
-      // Given: 現在のリストが設定されていない状態
-      useQuestionListStore.setState({ currentList: null });
-      const mockedSortQuestionsByAnswerStatus = vi.mocked(
-        sortQuestionsByAnswerStatus
-      );
-
-      // When: ソートを実行する
-      await act(async () => {
-        await useQuestionListStore.getState().sortCurrentListByAnswerStatus();
-      });
-
-      // Then: 何も処理されない
-      expect(mockedSortQuestionsByAnswerStatus).not.toHaveBeenCalled();
-    });
-
-    test('成功時にソートされた順序でバッチ更新する', async () => {
-      // Given: 現在のリストが設定されており、ソート関数とデータストアが成功する状態
-      useQuestionListStore.setState({ currentList: mockQuestionList });
-      const sortedQuestions = [...mockQuestionList.questions].reverse();
-      const mockedSortQuestionsByAnswerStatus = vi.mocked(
-        sortQuestionsByAnswerStatus
-      );
-      const mockedUpdateQuestionsBatch = vi.mocked(
-        dataStore.updateQuestionsBatch
-      );
-      const mockedGetQuestionList = vi.mocked(dataStore.getQuestionList);
-      mockedSortQuestionsByAnswerStatus.mockReturnValue(sortedQuestions);
-      mockedUpdateQuestionsBatch.mockResolvedValue();
-      mockedGetQuestionList.mockResolvedValue(mockQuestionList);
-
-      // When: ソートを実行する
-      await act(async () => {
-        await useQuestionListStore.getState().sortCurrentListByAnswerStatus();
-      });
-
-      // Then: ソートとバッチ更新が実行される
-      expect(mockedSortQuestionsByAnswerStatus).toHaveBeenCalledWith(
-        mockQuestionList.questions
-      );
-      expect(mockedUpdateQuestionsBatch).toHaveBeenCalledWith(
-        'list-1',
-        expect.any(Array)
-      );
     });
   });
 });

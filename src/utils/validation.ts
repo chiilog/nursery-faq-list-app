@@ -145,10 +145,6 @@ export function validateUpdateQuestionInput(
     errors.push(...answerValidation.errors);
   }
 
-  if (input.orderIndex !== undefined && input.orderIndex < 0) {
-    errors.push('順序は0以上の数値を指定してください');
-  }
-
   return {
     isValid: errors.length === 0,
     errors,
@@ -225,10 +221,6 @@ export function validateQuestion(question: Question): ValidationResult {
     errors.push(...answerValidation.errors);
   }
 
-  if (question.orderIndex < 0) {
-    errors.push('順序は0以上の数値を指定してください');
-  }
-
   if (!['high', 'medium', 'low'].includes(question.priority)) {
     errors.push('優先度は high、medium、low のいずれかを指定してください');
   }
@@ -267,13 +259,6 @@ export function validateQuestionList(
       errors.push(`質問${index + 1}: ${questionValidation.errors.join(', ')}`);
     }
   });
-
-  // 質問の順序重複チェック
-  const orders = questionList.questions.map((q) => q.orderIndex);
-  const uniqueOrders = new Set(orders);
-  if (orders.length !== uniqueOrders.size) {
-    errors.push('質問の順序に重複があります');
-  }
 
   return {
     isValid: errors.length === 0,

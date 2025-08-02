@@ -15,9 +15,6 @@ import {
   createQuestion,
   createQuestionList,
   answerQuestion,
-  reorderQuestions,
-  sortQuestionsByAnswerStatus,
-  sortQuestionsByPriority,
   updateQuestionListTimestamp,
   addQuestionToList,
   removeQuestionFromList,
@@ -72,11 +69,10 @@ describe('データユーティリティ関数', () => {
         // Given: 必須フィールドのみの入力データ
         const input = createCreateQuestionInputMock({
           text: 'テスト質問',
+          category: undefined,
         });
-        const orderIndex = 0;
-
         // When: 質問を作成する
-        const question = createQuestion(input, orderIndex);
+        const question = createQuestion(input);
 
         // Then: デフォルト値が設定された質問オブジェクトが返される
         expect(question).toEqual({
@@ -86,9 +82,10 @@ describe('データユーティリティ関数', () => {
           isAnswered: false,
           priority: 'medium',
           category: undefined,
-          orderIndex: 0,
           answeredBy: undefined,
           answeredAt: undefined,
+          createdAt: mockDate,
+          updatedAt: mockDate,
         });
       });
     });
@@ -101,10 +98,8 @@ describe('データユーティリティ関数', () => {
           priority: 'high',
           category: '  基本情報  ',
         });
-        const orderIndex = 1;
-
         // When: 質問を作成する
-        const question = createQuestion(input, orderIndex);
+        const question = createQuestion(input);
 
         // Then: 指定した値とトリム処理が適用された質問オブジェクトが返される
         expect(question).toEqual({
@@ -114,9 +109,10 @@ describe('データユーティリティ関数', () => {
           isAnswered: false,
           priority: 'high',
           category: '基本情報',
-          orderIndex: 1,
           answeredBy: undefined,
           answeredAt: undefined,
+          createdAt: mockDate,
+          updatedAt: mockDate,
         });
       });
     });
@@ -127,10 +123,9 @@ describe('データユーティリティ関数', () => {
         const input = createCreateQuestionInputMock({
           text: '   給食はありますか？   ',
         });
-        const orderIndex = 0;
 
         // When: 質問を作成する
-        const question = createQuestion(input, orderIndex);
+        const question = createQuestion(input);
 
         // Then: 空白がトリムされたテキストが設定される
         expect(question.text).toBe('給食はありますか？');
@@ -144,10 +139,9 @@ describe('データユーティリティ関数', () => {
           text: 'テスト質問',
           category: '   食事   ',
         });
-        const orderIndex = 0;
 
         // When: 質問を作成する
-        const question = createQuestion(input, orderIndex);
+        const question = createQuestion(input);
 
         // Then: 空白がトリムされたカテゴリが設定される
         expect(question.category).toBe('食事');
@@ -250,7 +244,6 @@ describe('データユーティリティ関数', () => {
       isAnswered: false,
       priority: 'medium',
       category: 'テスト',
-      orderIndex: 0,
       answeredBy: undefined,
       answeredAt: undefined,
     });
@@ -348,349 +341,6 @@ describe('データユーティリティ関数', () => {
     });
   });
 
-  describe('reorderQuestions', () => {
-    const createTestQuestions = (): Question[] => [
-      {
-        id: 'q1',
-        text: '質問1',
-        answer: undefined,
-        isAnswered: false,
-        priority: 'medium',
-        orderIndex: 0,
-      } as Question,
-      {
-        id: 'q2',
-        text: '質問2',
-        answer: undefined,
-        isAnswered: false,
-        priority: 'medium',
-        orderIndex: 1,
-      } as Question,
-      {
-        id: 'q3',
-        text: '質問3',
-        answer: undefined,
-        isAnswered: false,
-        priority: 'medium',
-        orderIndex: 2,
-      } as Question,
-    ];
-
-    describe('質問の順序を変更する時', () => {
-      test('指定したインデックス間で質問が移動する', () => {
-        // Given: 3つの質問リスト
-        const questions = createTestQuestions();
-
-        // When: 最初の質問を最後に移動する
-        const reorderedQuestions = reorderQuestions(questions, 0, 2);
-
-        // Then: 質問の順序が変更される
-        expect(reorderedQuestions[0].id).toBe('q2');
-        expect(reorderedQuestions[1].id).toBe('q3');
-        expect(reorderedQuestions[2].id).toBe('q1');
-      });
-    });
-
-    describe('順序番号が更新されることを確認する時', () => {
-      test('新しい順序番号が正しく設定される', () => {
-        // Given: 3つの質問リスト
-        const questions = createTestQuestions();
-
-        // When: 質問の順序を変更する
-        const reorderedQuestions = reorderQuestions(questions, 2, 0);
-
-        // Then: 順序番号が正しく更新される
-        expect(reorderedQuestions[0].orderIndex).toBe(0);
-        expect(reorderedQuestions[1].orderIndex).toBe(1);
-        expect(reorderedQuestions[2].orderIndex).toBe(2);
-      });
-    });
-
-    describe('同じインデックスで移動する時', () => {
-      test('元の配列と同じ順序を返す', () => {
-        // Given: 3つの質問リスト
-        const questions = createTestQuestions();
-
-        // When: 同じインデックスで移動する
-        const reorderedQuestions = reorderQuestions(questions, 1, 1);
-
-        // Then: 元の配列と同じ順序が返される
-        expect(reorderedQuestions[0].id).toBe('q1');
-        expect(reorderedQuestions[1].id).toBe('q2');
-        expect(reorderedQuestions[2].id).toBe('q3');
-      });
-    });
-
-    describe('範囲外のインデックスを指定する時', () => {
-      test('元の配列をそのまま処理する', () => {
-        // Given: 1つの質問配列
-        const questions = [createTestQuestions()[0]];
-
-        // When: 範囲外のインデックスで順序を変更する
-        const reorderedQuestions = reorderQuestions(questions, 0, 5);
-
-        // Then: 処理が実行され、順序番号が更新される
-        expect(reorderedQuestions).toHaveLength(1);
-        expect(reorderedQuestions[0].orderIndex).toBe(0);
-      });
-    });
-
-    describe('元の配列が変更されないことを確認する時', () => {
-      test('元の配列は変更されない', () => {
-        // Given: 3つの質問リスト
-        const questions = createTestQuestions();
-        const originalQuestions = [...questions];
-
-        // When: 質問の順序を変更する
-        reorderQuestions(questions, 0, 2);
-
-        // Then: 元の配列は変更されない
-        expect(questions).toEqual(originalQuestions);
-      });
-    });
-  });
-
-  describe('sortQuestionsByAnswerStatus', () => {
-    const createMixedQuestions = (): Question[] => [
-      {
-        id: 'q1',
-        text: '質問1',
-        answer: '回答1',
-        isAnswered: true,
-        priority: 'medium',
-        orderIndex: 0,
-      } as Question,
-      {
-        id: 'q2',
-        text: '質問2',
-        answer: undefined,
-        isAnswered: false,
-        priority: 'medium',
-        orderIndex: 1,
-      } as Question,
-      {
-        id: 'q3',
-        text: '質問3',
-        answer: '回答3',
-        isAnswered: true,
-        priority: 'medium',
-        orderIndex: 2,
-      } as Question,
-      {
-        id: 'q4',
-        text: '質問4',
-        answer: undefined,
-        isAnswered: false,
-        priority: 'medium',
-        orderIndex: 3,
-      } as Question,
-    ];
-
-    describe('回答状況でソートする時', () => {
-      test('未回答の質問が上位に、回答済みの質問が下位に配置される', () => {
-        // Given: 回答済みと未回答が混在する質問リスト
-        const questions = createMixedQuestions();
-
-        // When: 回答状況でソートする
-        const sortedQuestions = sortQuestionsByAnswerStatus(questions);
-
-        // Then: 未回答が上位、回答済みが下位に配置される
-        expect(sortedQuestions[0].isAnswered).toBe(false);
-        expect(sortedQuestions[1].isAnswered).toBe(false);
-        expect(sortedQuestions[2].isAnswered).toBe(true);
-        expect(sortedQuestions[3].isAnswered).toBe(true);
-      });
-    });
-
-    describe('順序番号が正しく更新されることを確認する時', () => {
-      test('新しい順序番号が連続して設定される', () => {
-        // Given: 混在する質問リスト
-        const questions = createMixedQuestions();
-
-        // When: 回答状況でソートする
-        const sortedQuestions = sortQuestionsByAnswerStatus(questions);
-
-        // Then: 順序番号が連続して設定される
-        sortedQuestions.forEach((question, index) => {
-          expect(question.orderIndex).toBe(index);
-        });
-      });
-    });
-
-    describe('全て未回答の質問をソートする時', () => {
-      test('元の順序を維持する', () => {
-        // Given: 全て未回答の質問リスト
-        const questions = createMixedQuestions().map((q) => ({
-          ...q,
-          isAnswered: false,
-        }));
-
-        // When: 回答状況でソートする
-        const sortedQuestions = sortQuestionsByAnswerStatus(questions);
-
-        // Then: 元の順序が維持される
-        expect(sortedQuestions.map((q) => q.id)).toEqual([
-          'q1',
-          'q2',
-          'q3',
-          'q4',
-        ]);
-      });
-    });
-
-    describe('全て回答済みの質問をソートする時', () => {
-      test('元の順序を維持する', () => {
-        // Given: 全て回答済みの質問リスト
-        const questions = createMixedQuestions().map((q) => ({
-          ...q,
-          isAnswered: true,
-        }));
-
-        // When: 回答状況でソートする
-        const sortedQuestions = sortQuestionsByAnswerStatus(questions);
-
-        // Then: 元の順序が維持される
-        expect(sortedQuestions.map((q) => q.id)).toEqual([
-          'q1',
-          'q2',
-          'q3',
-          'q4',
-        ]);
-      });
-    });
-
-    describe('空の配列をソートする時', () => {
-      test('空の配列を返す', () => {
-        // Given: 空の質問配列
-        const questions: Question[] = [];
-
-        // When: 回答状況でソートする
-        const sortedQuestions = sortQuestionsByAnswerStatus(questions);
-
-        // Then: 空の配列が返される
-        expect(sortedQuestions).toEqual([]);
-      });
-    });
-
-    describe('元の配列が変更されないことを確認する時', () => {
-      test('元の配列は変更されない', () => {
-        // Given: 混在する質問リスト
-        const questions = createMixedQuestions();
-        const originalQuestions = [...questions];
-
-        // When: 回答状況でソートする
-        sortQuestionsByAnswerStatus(questions);
-
-        // Then: 元の配列は変更されない
-        expect(questions).toEqual(originalQuestions);
-      });
-    });
-  });
-
-  describe('sortQuestionsByPriority', () => {
-    const createPriorityQuestions = (): Question[] => [
-      {
-        id: 'q1',
-        text: '質問1',
-        priority: 'low',
-        orderIndex: 0,
-      } as Question,
-      {
-        id: 'q2',
-        text: '質問2',
-        priority: 'high',
-        orderIndex: 1,
-      } as Question,
-      {
-        id: 'q3',
-        text: '質問3',
-        priority: 'medium',
-        orderIndex: 2,
-      } as Question,
-      {
-        id: 'q4',
-        text: '質問4',
-        priority: 'high',
-        orderIndex: 3,
-      } as Question,
-    ];
-
-    describe('優先度でソートする時', () => {
-      test('high、medium、lowの順序で配置される', () => {
-        // Given: 異なる優先度の質問リスト
-        const questions = createPriorityQuestions();
-
-        // When: 優先度でソートする
-        const sortedQuestions = sortQuestionsByPriority(questions);
-
-        // Then: high、medium、lowの順序で配置される
-        expect(sortedQuestions[0].priority).toBe('high');
-        expect(sortedQuestions[1].priority).toBe('high');
-        expect(sortedQuestions[2].priority).toBe('medium');
-        expect(sortedQuestions[3].priority).toBe('low');
-      });
-    });
-
-    describe('同じ優先度の質問がある時', () => {
-      test('元の順序を維持する', () => {
-        // Given: 同じ優先度の質問が含まれる質問リスト
-        const questions = createPriorityQuestions();
-
-        // When: 優先度でソートする
-        const sortedQuestions = sortQuestionsByPriority(questions);
-
-        // Then: 同じ優先度内では元の順序が維持される（q2がq4より前）
-        const highPriorityQuestions = sortedQuestions.filter(
-          (q) => q.priority === 'high'
-        );
-        expect(highPriorityQuestions[0].id).toBe('q2');
-        expect(highPriorityQuestions[1].id).toBe('q4');
-      });
-    });
-
-    describe('順序番号が正しく更新されることを確認する時', () => {
-      test('新しい順序番号が連続して設定される', () => {
-        // Given: 異なる優先度の質問リスト
-        const questions = createPriorityQuestions();
-
-        // When: 優先度でソートする
-        const sortedQuestions = sortQuestionsByPriority(questions);
-
-        // Then: 順序番号が連続して設定される
-        sortedQuestions.forEach((question, index) => {
-          expect(question.orderIndex).toBe(index);
-        });
-      });
-    });
-
-    describe('空の配列をソートする時', () => {
-      test('空の配列を返す', () => {
-        // Given: 空の質問配列
-        const questions: Question[] = [];
-
-        // When: 優先度でソートする
-        const sortedQuestions = sortQuestionsByPriority(questions);
-
-        // Then: 空の配列が返される
-        expect(sortedQuestions).toEqual([]);
-      });
-    });
-
-    describe('元の配列が変更されないことを確認する時', () => {
-      test('元の配列は変更されない', () => {
-        // Given: 異なる優先度の質問リスト
-        const questions = createPriorityQuestions();
-        const originalQuestions = [...questions];
-
-        // When: 優先度でソートする
-        sortQuestionsByPriority(questions);
-
-        // Then: 元の配列は変更されない
-        expect(questions).toEqual(originalQuestions);
-      });
-    });
-  });
-
   describe('updateQuestionListTimestamp', () => {
     const baseQuestionList: QuestionList = {
       id: 'list1',
@@ -775,7 +425,6 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          orderIndex: 0,
         } as Question,
       ],
       sharedWith: [],
@@ -785,7 +434,7 @@ describe('データユーティリティ関数', () => {
     };
 
     describe('質問リストに新しい質問を追加する時', () => {
-      test('新しい質問が末尾に追加される', () => {
+      test('新しい質問が先頭に追加される', () => {
         // Given: 既存の質問が1つある質問リストと新しい質問の入力データ
         const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
@@ -796,27 +445,13 @@ describe('データユーティリティ関数', () => {
         // When: 質問を質問リストに追加する
         const updatedList = addQuestionToList(baseQuestionList, questionInput);
 
-        // Then: 新しい質問が末尾に追加される
+        // Then: 新しい質問が先頭に追加される
         expect(updatedList.questions).toHaveLength(2);
-        expect(updatedList.questions[1].text).toBe('新しい質問');
-        expect(updatedList.questions[1].priority).toBe('high');
-        expect(updatedList.questions[1].category).toBe('テスト');
-        expect(updatedList.questions[1].orderIndex).toBe(1);
-      });
-    });
-
-    describe('順序番号が正しく設定されることを確認する時', () => {
-      test('新しい質問の順序番号が既存の質問数と同じになる', () => {
-        // Given: 既存の質問が1つある質問リスト
-        const questionInput = createCreateQuestionInputMock({
-          text: '新しい質問',
-        });
-
-        // When: 質問を追加する
-        const updatedList = addQuestionToList(baseQuestionList, questionInput);
-
-        // Then: 新しい質問の順序番号が1になる（0から開始するため）
-        expect(updatedList.questions[1].orderIndex).toBe(1);
+        expect(updatedList.questions[0].text).toBe('新しい質問');
+        expect(updatedList.questions[0].priority).toBe('high');
+        expect(updatedList.questions[0].category).toBe('テスト');
+        // 既存の質問が後に配置される
+        expect(updatedList.questions[1].text).toBe('既存の質問');
       });
     });
 
@@ -849,7 +484,6 @@ describe('データユーティリティ関数', () => {
         // Then: 最初の質問として追加される
         expect(updatedList.questions).toHaveLength(1);
         expect(updatedList.questions[0].text).toBe('最初の質問');
-        expect(updatedList.questions[0].orderIndex).toBe(0);
       });
     });
 
@@ -884,7 +518,6 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          orderIndex: 0,
         } as Question,
         {
           id: 'q2',
@@ -892,7 +525,6 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          orderIndex: 1,
         } as Question,
         {
           id: 'q3',
@@ -900,7 +532,6 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          orderIndex: 2,
         } as Question,
       ],
       sharedWith: [],
@@ -924,20 +555,6 @@ describe('データユーティリティ関数', () => {
         ).toBeUndefined();
         expect(updatedList.questions[0].id).toBe('q1');
         expect(updatedList.questions[1].id).toBe('q3');
-      });
-    });
-
-    describe('削除後の順序番号が更新されることを確認する時', () => {
-      test('残った質問の順序番号が連続して設定される', () => {
-        // Given: 3つの質問がある質問リスト
-        const questionList = createQuestionListWithMultipleQuestions();
-
-        // When: 最初の質問を削除する
-        const updatedList = removeQuestionFromList(questionList, 'q1');
-
-        // Then: 残った質問の順序番号が連続して設定される
-        expect(updatedList.questions[0].orderIndex).toBe(0);
-        expect(updatedList.questions[1].orderIndex).toBe(1);
       });
     });
 
@@ -1021,7 +638,6 @@ describe('データユーティリティ関数', () => {
           isAnswered: false,
           priority: 'medium',
           category: '元のカテゴリ',
-          orderIndex: 0,
           answeredBy: undefined,
           answeredAt: undefined,
         }),
@@ -1032,7 +648,6 @@ describe('データユーティリティ関数', () => {
           isAnswered: false,
           priority: 'low',
           category: undefined,
-          orderIndex: 1,
           answeredBy: undefined,
           answeredAt: undefined,
         }),
@@ -1054,7 +669,6 @@ describe('データユーティリティ関数', () => {
           isAnswered: true,
           priority: 'high',
           category: '更新されたカテゴリ',
-          orderIndex: 0,
           answeredBy: 'user123',
           answeredAt: mockDate,
         });
@@ -1106,7 +720,6 @@ describe('データユーティリティ関数', () => {
           answer: undefined,
           isAnswered: false,
           priority: 'medium',
-          orderIndex: 0,
         });
 
         // When: 存在しない質問IDで更新を試行する
@@ -1318,7 +931,6 @@ describe('データユーティリティ関数', () => {
           isAnswered: true,
           priority: 'high',
           category: 'テンプレートカテゴリ1',
-          orderIndex: 0,
           answeredBy: 'template-user',
           answeredAt: new Date('2023-01-01'),
         }),
@@ -1329,7 +941,6 @@ describe('データユーティリティ関数', () => {
           isAnswered: false,
           priority: 'medium',
           category: 'テンプレートカテゴリ2',
-          orderIndex: 1,
           answeredBy: undefined,
           answeredAt: undefined,
         }),
@@ -1454,26 +1065,6 @@ describe('データユーティリティ関数', () => {
         expect(newQuestionList.questions[1].id).not.toBe(
           template.questions[1].id
         );
-      });
-    });
-
-    describe('順序番号が正しく設定されることを確認する時', () => {
-      test('質問の順序番号が0から連続して設定される', () => {
-        // Given: テンプレート質問リスト
-        const template = createTemplateQuestionList();
-        const customizations: CreateQuestionListInput = {
-          title: '新しい質問リスト',
-        };
-
-        // When: テンプレートから質問リストを作成する
-        const newQuestionList = createQuestionListFromTemplate(
-          template,
-          customizations
-        );
-
-        // Then: 順序番号が正しく設定される
-        expect(newQuestionList.questions[0].orderIndex).toBe(0);
-        expect(newQuestionList.questions[1].orderIndex).toBe(1);
       });
     });
 

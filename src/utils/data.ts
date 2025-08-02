@@ -20,10 +20,7 @@ export function generateId(): string {
 /**
  * 新しい質問オブジェクトを作成する
  */
-export function createQuestion(
-  input: CreateQuestionInput,
-  orderIndex: number
-): Question {
+export function createQuestion(input: CreateQuestionInput): Question {
   const now = new Date();
   return {
     id: generateId(),
@@ -32,7 +29,6 @@ export function createQuestion(
     isAnswered: false,
     priority: input.priority || 'medium',
     category: input.category?.trim(),
-    orderIndex,
     answeredBy: undefined,
     answeredAt: undefined,
     createdAt: now,
@@ -81,66 +77,6 @@ export function answerQuestion(
 }
 
 /**
- * 質問の順序を更新する
- */
-export function reorderQuestions(
-  questions: Question[],
-  fromIndex: number,
-  toIndex: number
-): Question[] {
-  const result = [...questions];
-  const [removed] = result.splice(fromIndex, 1);
-  result.splice(toIndex, 0, removed);
-
-  // 順序番号を更新
-  return result.map((question, index) => ({
-    ...question,
-    orderIndex: index,
-  }));
-}
-
-/**
- * 回答済みの質問を下部に移動する
- */
-export function sortQuestionsByAnswerStatus(questions: Question[]): Question[] {
-  const unanswered = questions.filter((q) => !q.isAnswered);
-  const answered = questions.filter((q) => q.isAnswered);
-
-  const sortedQuestions = [...unanswered, ...answered];
-
-  // 順序番号を更新
-  return sortedQuestions.map((question, index) => ({
-    ...question,
-    orderIndex: index,
-  }));
-}
-
-/**
- * 質問を優先度でソートする
- */
-export function sortQuestionsByPriority(questions: Question[]): Question[] {
-  const priorityOrder = { high: 0, medium: 1, low: 2 };
-
-  const sorted = [...questions].sort((a, b) => {
-    const aPriority = priorityOrder[a.priority];
-    const bPriority = priorityOrder[b.priority];
-
-    if (aPriority !== bPriority) {
-      return aPriority - bPriority;
-    }
-
-    // 優先度が同じ場合は順序で比較
-    return a.orderIndex - b.orderIndex;
-  });
-
-  // 順序番号を更新
-  return sorted.map((question, index) => ({
-    ...question,
-    orderIndex: index,
-  }));
-}
-
-/**
  * 質問リストの更新日時を現在時刻に設定する
  */
 export function updateQuestionListTimestamp(
@@ -153,17 +89,30 @@ export function updateQuestionListTimestamp(
 }
 
 /**
+ * 質問配列に新しい質問を先頭に追加する
+ */
+export function addQuestionToQuestionsArray(
+  existingQuestions: Question[],
+  newQuestion: Question
+): Question[] {
+  // 配列の先頭に追加
+  return [newQuestion, ...existingQuestions];
+}
+
+/**
  * 質問リストに質問を追加する
  */
 export function addQuestionToList(
   questionList: QuestionList,
   questionInput: CreateQuestionInput
 ): QuestionList {
-  const newQuestion = createQuestion(
-    questionInput,
-    questionList.questions.length
+  const newQuestion = createQuestion(questionInput);
+
+  // 共通関数を使用して質問配列を更新
+  const updatedQuestions = addQuestionToQuestionsArray(
+    questionList.questions,
+    newQuestion
   );
-  const updatedQuestions = [...questionList.questions, newQuestion];
 
   return updateQuestionListTimestamp({
     ...questionList,
@@ -178,12 +127,9 @@ export function removeQuestionFromList(
   questionList: QuestionList,
   questionId: string
 ): QuestionList {
-  const updatedQuestions = questionList.questions
-    .filter((q) => q.id !== questionId)
-    .map((question, index) => ({
-      ...question,
-      orderIndex: index,
-    }));
+  const updatedQuestions = questionList.questions.filter(
+    (q) => q.id !== questionId
+  );
 
   return updateQuestionListTimestamp({
     ...questionList,
@@ -236,12 +182,11 @@ export function createQuestionListFromTemplate(
   const baseList = createQuestionList(customizations);
 
   // テンプレートの質問をコピー（回答は除く）
-  const templateQuestions = template.questions.map((question, index) => ({
+  const templateQuestions = template.questions.map((question) => ({
     ...question,
     id: generateId(),
     answer: undefined,
     isAnswered: false,
-    orderIndex: index,
     answeredBy: undefined,
     answeredAt: undefined,
   }));

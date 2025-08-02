@@ -11,7 +11,6 @@ import {
   Textarea,
   Button,
 } from '@chakra-ui/react';
-import { useMemo } from 'react';
 import type { Question } from '../types/data';
 import { QuestionItem } from './QuestionItem';
 
@@ -98,16 +97,6 @@ export const QuestionList = ({
   onCancelEdit,
   onDeleteQuestion,
 }: QuestionListProps) => {
-  // 未回答の質問を先に表示（useMemoでパフォーマンス最適化）
-  const sortedQuestions = useMemo(() => {
-    return [...questions].sort((a, b) => {
-      if (a.isAnswered === b.isAnswered) {
-        return a.orderIndex - b.orderIndex;
-      }
-      return a.isAnswered ? 1 : -1;
-    });
-  }, [questions]);
-
   if (questions.length === 0) {
     return (
       <Box textAlign="center" py={8} color="gray.500">
@@ -123,7 +112,7 @@ export const QuestionList = ({
 
   return (
     <VStack align="stretch" gap={4}>
-      {sortedQuestions.map((question) => (
+      {questions.map((question) => (
         <Box
           key={question.id}
           data-testid={`question-item-${question.id}`}

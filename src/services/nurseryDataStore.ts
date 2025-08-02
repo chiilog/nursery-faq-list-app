@@ -15,6 +15,7 @@ import type {
   UpdateQuestionInput,
 } from '../types/data';
 import { generatePrefixedId } from '../utils/id';
+import { addQuestionToQuestionsArray } from '../utils/data';
 
 // シリアライズされたデータの型定義（JSON形式）
 interface SerializedNursery {
@@ -47,7 +48,6 @@ interface SerializedQuestion {
   isAnswered: boolean;
   priority: 'high' | 'medium' | 'low';
   category?: string;
-  orderIndex: number;
   answeredBy?: string;
   answeredAt?: string; // ISO date string
   createdAt: string; // ISO date string
@@ -359,14 +359,13 @@ class NurseryDataStore {
         visitDate: input.visitDate,
         status: input.status || 'planned',
         questions:
-          input.questions?.map((q, index) => ({
+          input.questions?.map((q) => ({
             id: generatePrefixedId('question'),
             text: q.text,
             answer: '',
             isAnswered: false,
             priority: q.priority || 'medium',
             category: q.category,
-            orderIndex: index,
             createdAt: now,
             updatedAt: now,
           })) || [],
@@ -585,6 +584,7 @@ class NurseryDataStore {
       const questionId = generatePrefixedId('question');
       const now = new Date();
 
+      // 新しい質問を作成
       const newQuestion: Question = {
         id: questionId,
         text: input.text,
@@ -592,12 +592,16 @@ class NurseryDataStore {
         isAnswered: input.isAnswered || false,
         priority: input.priority || 'medium',
         category: input.category || '基本情報',
-        orderIndex: input.orderIndex,
         createdAt: now,
         updatedAt: now,
       };
 
-      session.questions.push(newQuestion);
+      // 共通関数を使用して質問配列を更新
+      session.questions = addQuestionToQuestionsArray(
+        session.questions,
+        newQuestion
+      );
+
       this.saveNurseries(nurseries);
 
       return questionId;
@@ -653,8 +657,6 @@ class NurseryDataStore {
         question.isAnswered = updates.isAnswered;
       if (updates.priority !== undefined) question.priority = updates.priority;
       if (updates.category !== undefined) question.category = updates.category;
-      if (updates.orderIndex !== undefined)
-        question.orderIndex = updates.orderIndex;
       question.updatedAt = new Date();
 
       this.saveNurseries(nurseries);
