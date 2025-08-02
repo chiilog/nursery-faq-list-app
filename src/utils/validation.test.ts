@@ -528,43 +528,12 @@ describe('validateUpdateQuestionInput', () => {
     });
   });
 
-  describe('順序更新のケース', () => {
-    it('負の順序で更新しようとした時、バリデーションエラーが返される', () => {
-      // Given: 負の順序で更新
-      const input: UpdateQuestionInput = {
-        orderIndex: -1,
-      };
-
-      // When: バリデーションを実行
-      const result = validateUpdateQuestionInput(input);
-
-      // Then: バリデーション失敗
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('順序は0以上の数値を指定してください');
-    });
-
-    it('有効な順序で更新する時、バリデーションが成功する', () => {
-      // Given: 有効な順序で更新
-      const input: UpdateQuestionInput = {
-        orderIndex: 5,
-      };
-
-      // When: バリデーションを実行
-      const result = validateUpdateQuestionInput(input);
-
-      // Then: バリデーション成功
-      expect(result.isValid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
-  });
-
   describe('複合更新のケース', () => {
     it('複数の項目を同時に更新する時、全てのバリデーションが適用される', () => {
       // Given: 複数項目の更新（一部エラー含む）
       const input: UpdateQuestionInput = {
         text: '', // エラー
         answer: 'あ'.repeat(1001), // エラー
-        orderIndex: -1, // エラー
       };
 
       // When: バリデーションを実行
@@ -574,7 +543,6 @@ describe('validateUpdateQuestionInput', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('質問内容を入力してください');
       expect(result.errors).toContain('回答は1000文字以内で入力してください');
-      expect(result.errors).toContain('順序は0以上の数値を指定してください');
     });
   });
 });
@@ -733,7 +701,6 @@ describe('validateQuestion', () => {
       text: '開園時間はいつですか？',
       isAnswered: false,
       priority: 'medium',
-      orderIndex: 0,
     });
 
   describe('必須項目のケース', () => {
@@ -750,21 +717,6 @@ describe('validateQuestion', () => {
       // Then: バリデーション失敗
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('質問内容を入力してください');
-    });
-
-    it('負の順序の質問を渡した時、バリデーションエラーが返される', () => {
-      // Given: 負の順序の質問
-      const question: Question = {
-        ...createValidQuestion(),
-        orderIndex: -1,
-      };
-
-      // When: バリデーションを実行
-      const result = validateQuestion(question);
-
-      // Then: バリデーション失敗
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('順序は0以上の数値を指定してください');
     });
 
     it('無効な優先度の質問を渡した時、バリデーションエラーが返される', () => {
@@ -825,7 +777,6 @@ describe('validateQuestion', () => {
         answer: '開園時間は午前7時から午後7時までです。',
         priority: 'high',
         category: '基本情報',
-        orderIndex: 1,
       };
 
       // When: バリデーションを実行
@@ -848,13 +799,12 @@ describe('validateQuestionList', () => {
     isTemplate: false,
   });
 
-  const createValidQuestion = (id: string, orderIndex: number): Question =>
+  const createValidQuestion = (id: string, index: number): Question =>
     createQuestionMock({
       id,
-      text: `質問${orderIndex}`,
+      text: `質問${index}`,
       isAnswered: false,
       priority: 'medium',
-      orderIndex,
     });
 
   describe('基本項目のケース', () => {
@@ -918,7 +868,6 @@ describe('validateQuestionList', () => {
         text: '', // エラー
         isAnswered: false,
         priority: 'medium',
-        orderIndex: 0,
       });
       const questionList: QuestionList = {
         ...createValidQuestionList(),
@@ -931,23 +880,6 @@ describe('validateQuestionList', () => {
       // Then: バリデーション失敗
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('質問1: 質問内容を入力してください');
-    });
-
-    it('順序が重複する質問を含む質問リストを渡した時、バリデーションエラーが返される', () => {
-      // Given: 順序が重複する質問を含む質問リスト
-      const question1 = createValidQuestion('id1', 0);
-      const question2 = createValidQuestion('id2', 0); // 重複
-      const questionList: QuestionList = {
-        ...createValidQuestionList(),
-        questions: [question1, question2],
-      };
-
-      // When: バリデーションを実行
-      const result = validateQuestionList(questionList);
-
-      // Then: バリデーション失敗
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('質問の順序に重複があります');
     });
 
     it('有効な質問のみを含む質問リストを渡した時、バリデーションが成功する', () => {
@@ -978,7 +910,6 @@ describe('validateQuestionList', () => {
         text: '', // エラー
         isAnswered: false,
         priority: 'medium',
-        orderIndex: -1, // エラー
       });
       const questionList: QuestionList = {
         ...createValidQuestionList(),
@@ -1000,9 +931,7 @@ describe('validateQuestionList', () => {
       expect(result.errors).toContain(
         '見学日は今日以降の日付を選択してください'
       );
-      expect(result.errors).toContain(
-        '質問1: 質問内容を入力してください, 順序は0以上の数値を指定してください'
-      );
+      expect(result.errors).toContain('質問1: 質問内容を入力してください');
     });
   });
 

@@ -97,15 +97,12 @@ export const NurseryDetailPage = () => {
     const session = currentNursery.visitSessions[0];
     if (!session) return;
 
-    // 新しい質問は常にorderIndex: 0で追加される（addQuestionToList内で処理）
-
     await addQuestion(currentNursery.id, session.id, {
       text: newQuestionText,
       answer: '',
       isAnswered: false,
       priority: 'medium',
       category: '基本情報',
-      orderIndex: 0,
     });
 
     setIsAddingQuestion(false);

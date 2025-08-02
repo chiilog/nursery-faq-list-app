@@ -835,16 +835,12 @@ export class DataStore {
       const newList = createQuestionList(customizations);
 
       // テンプレートの質問をコピー
-      const templateQuestions = template.questions.map((question, index) =>
-        createQuestion(
-          {
-            text: question.text,
-            priority: question.priority,
-            category: question.category,
-            orderIndex: index,
-          },
-          index
-        )
+      const templateQuestions = template.questions.map((question) =>
+        createQuestion({
+          text: question.text,
+          priority: question.priority,
+          category: question.category,
+        })
       );
 
       const finalList: QuestionList = {

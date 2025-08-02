@@ -14,7 +14,6 @@ export const mockQuestion = createQuestionMock({
   category: '基本情報',
   isAnswered: true,
   priority: 'medium',
-  orderIndex: 1,
 });
 
 // モック質問リストデータ
@@ -31,7 +30,6 @@ export const mockQuestionList: QuestionList = {
       category: '食事',
       isAnswered: false,
       priority: 'medium',
-      orderIndex: 2,
     }),
   ],
   createdAt: new Date('2023-01-01'),
@@ -50,7 +48,6 @@ export const mockTemplate: QuestionList = {
       category: '基本情報',
       isAnswered: false,
       priority: 'medium',
-      orderIndex: 1,
     }),
     createQuestionMock({
       id: 'tq2',
@@ -58,7 +55,6 @@ export const mockTemplate: QuestionList = {
       category: '費用',
       isAnswered: false,
       priority: 'medium',
-      orderIndex: 2,
     }),
   ],
   createdAt: new Date('2023-01-01'),

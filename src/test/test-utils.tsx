@@ -58,7 +58,6 @@ export const testUtils = {
     isAnswered: false,
     priority: 'medium' as const,
     category: '基本情報',
-    orderIndex: 0,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     ...overrides,
@@ -69,7 +68,6 @@ export const testUtils = {
     text: 'テスト質問',
     priority: 'medium' as const,
     category: '基本情報',
-    orderIndex: 0,
     ...overrides,
   }),
 };

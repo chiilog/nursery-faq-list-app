@@ -275,7 +275,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
                 text: '質問1',
                 isAnswered: true,
                 priority: 'high',
-                orderIndex: 0,
                 answer: 'はい',
               }),
               createQuestionMock({
@@ -283,7 +282,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
                 text: '質問2',
                 isAnswered: false,
                 priority: 'medium',
-                orderIndex: 1,
                 answer: '',
               }),
             ],
@@ -300,7 +298,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
                 text: '質問3',
                 isAnswered: true,
                 priority: 'low',
-                orderIndex: 0,
                 answer: 'いいえ',
               }),
             ],

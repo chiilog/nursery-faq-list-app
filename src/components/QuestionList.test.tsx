@@ -14,7 +14,6 @@ const mockQuestions: Question[] = [
     isAnswered: false,
     priority: 'high',
     category: '基本情報',
-    orderIndex: 1,
   }),
   testUtils.createMockQuestion({
     id: '2',
@@ -23,7 +22,6 @@ const mockQuestions: Question[] = [
     isAnswered: true,
     priority: 'high',
     category: '食事',
-    orderIndex: 2,
     answeredAt: new Date('2024-01-15T10:00:00'),
   }),
 ];

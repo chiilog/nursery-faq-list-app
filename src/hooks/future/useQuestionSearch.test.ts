@@ -22,7 +22,6 @@ const createQuestion = (
   category,
   isAnswered: answer !== '',
   priority: 'medium',
-  orderIndex: parseInt(id.slice(1)),
   createdAt: new Date('2023-01-01'),
   updatedAt: new Date('2023-01-01'),
 });
