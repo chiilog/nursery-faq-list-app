@@ -24,8 +24,6 @@ const mockQuestionManagement = {
   updateQuestionInList: vi.fn(),
   deleteQuestionFromList: vi.fn(),
   answerQuestionInList: vi.fn(),
-  reorderQuestionsInList: vi.fn(),
-  sortByAnswerStatus: vi.fn(),
 };
 
 // モック設定
@@ -33,8 +31,8 @@ vi.mock('./useQuestionListManagement', () => ({
   useQuestionListManagement: () => mockListManagement,
 }));
 
-vi.mock('./useQuestionManagement', () => ({
-  useQuestionManagement: () => mockQuestionManagement,
+vi.mock('./useQuestionOperations', () => ({
+  useQuestionOperations: () => mockQuestionManagement,
 }));
 
 describe('質問リストMVPフック', () => {
@@ -70,8 +68,6 @@ describe('質問リストMVPフック', () => {
       expect(typeof result.current.updateQuestionInList).toBe('function');
       expect(typeof result.current.deleteQuestionFromList).toBe('function');
       expect(typeof result.current.answerQuestionInList).toBe('function');
-      expect(typeof result.current.reorderQuestionsInList).toBe('function');
-      expect(typeof result.current.sortByAnswerStatus).toBe('function');
     });
   });
 
@@ -95,8 +91,6 @@ describe('質問リストMVPフック', () => {
         'updateQuestionInList',
         'deleteQuestionFromList',
         'answerQuestionInList',
-        'reorderQuestionsInList',
-        'sortByAnswerStatus',
       ];
 
       expectedProperties.forEach((prop) => {
@@ -123,14 +117,12 @@ describe('質問リストMVPフック', () => {
       await result.current.addQuestionToList('list-id', {
         text: 'テスト質問',
         category: 'テスト',
-        orderIndex: 0,
       });
       expect(mockQuestionManagement.addQuestionToList).toHaveBeenCalledWith(
         'list-id',
         {
           text: 'テスト質問',
           category: 'テスト',
-          orderIndex: 0,
         }
       );
     });

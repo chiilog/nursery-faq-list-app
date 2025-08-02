@@ -4,7 +4,7 @@
  */
 
 import { useQuestionListManagement } from './useQuestionListManagement';
-import { useQuestionManagement } from './useQuestionManagement';
+import { useQuestionOperations } from './useQuestionOperations';
 
 /**
  * 質問リスト操作フック（MVP版）
@@ -12,7 +12,7 @@ import { useQuestionManagement } from './useQuestionManagement';
  */
 export function useQuestionList() {
   const listManagement = useQuestionListManagement();
-  const questionManagement = useQuestionManagement();
+  const questionOperations = useQuestionOperations();
 
   return {
     // データ状態
@@ -27,11 +27,9 @@ export function useQuestionList() {
     selectList: listManagement.selectList,
 
     // 質問管理操作
-    addQuestionToList: questionManagement.addQuestionToList,
-    updateQuestionInList: questionManagement.updateQuestionInList,
-    deleteQuestionFromList: questionManagement.deleteQuestionFromList,
-    answerQuestionInList: questionManagement.answerQuestionInList,
-    reorderQuestionsInList: questionManagement.reorderQuestionsInList,
-    sortByAnswerStatus: questionManagement.sortByAnswerStatus,
+    addQuestionToList: questionOperations.addQuestionToList,
+    updateQuestionInList: questionOperations.updateQuestionInList,
+    deleteQuestionFromList: questionOperations.deleteQuestionFromList,
+    answerQuestionInList: questionOperations.answerQuestionInList,
   };
 }
