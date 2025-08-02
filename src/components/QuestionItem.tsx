@@ -2,7 +2,8 @@
  * 質問項目コンポーネント
  */
 
-import { Box, Text, HStack, Badge, VStack } from '@chakra-ui/react';
+import { Box, Text, HStack, Badge, VStack, IconButton } from '@chakra-ui/react';
+import { FaTrash } from 'react-icons/fa';
 import type { Question } from '../types/data';
 
 interface QuestionItemProps {
@@ -12,6 +13,7 @@ interface QuestionItemProps {
     currentAnswer: string,
     questionText: string
   ) => void;
+  onDelete?: (questionId: string) => void;
 }
 
 /**
@@ -45,6 +47,7 @@ const getPriorityText = (priority: string): string => {
 export const QuestionItem = ({
   question,
   onQuestionClick,
+  onDelete,
 }: QuestionItemProps) => {
   const handleCardClick = (e: React.MouseEvent) => {
     // ボタンクリック時は何もしない
@@ -60,6 +63,19 @@ export const QuestionItem = ({
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onQuestionClick(question.id, question.answer || '', question.text);
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onDelete) return;
+
+    const confirmed = window.confirm(
+      `この操作は取り消せません。この質問を削除しますか？`
+    );
+
+    if (confirmed) {
+      onDelete(question.id);
     }
   };
 
@@ -102,6 +118,18 @@ export const QuestionItem = ({
             >
               {getPriorityText(question.priority)}
             </Badge>
+            {onDelete && (
+              <IconButton
+                aria-label="質問を削除"
+                size="sm"
+                colorPalette="red"
+                variant="surface"
+                onClick={handleDeleteClick}
+                _hover={{ bg: 'red.50' }}
+              >
+                <FaTrash />
+              </IconButton>
+            )}
           </HStack>
         </HStack>
         {question.answer && (

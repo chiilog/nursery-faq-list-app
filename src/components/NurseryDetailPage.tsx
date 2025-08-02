@@ -38,6 +38,7 @@ export const NurseryDetailPage = () => {
     updateNursery,
     setCurrentNursery,
     clearError,
+    deleteQuestion,
   } = useNurseryStore();
 
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
@@ -112,6 +113,31 @@ export const NurseryDetailPage = () => {
 
     setIsAddingQuestion(false);
     setNewQuestionText('');
+  };
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!currentNursery) return;
+
+    const session = currentNursery.visitSessions[0];
+    if (!session) return;
+
+    try {
+      await deleteQuestion(currentNursery.id, session.id, questionId);
+      showToast.success('削除完了', '質問を削除しました');
+
+      // 編集中の質問が削除された場合は編集状態をリセット
+      if (editingQuestionId === questionId) {
+        setEditingQuestionId(null);
+        setEditingAnswer('');
+        setEditingQuestionText('');
+      }
+    } catch (error) {
+      console.error('Failed to delete question:', error);
+      showToast.error(
+        '削除エラー',
+        '質問の削除に失敗しました。もう一度お試しください。'
+      );
+    }
   };
 
   // 保育園編集関連の処理
@@ -361,6 +387,9 @@ export const NurseryDetailPage = () => {
             onCancelEdit={() => setEditingQuestionId(null)}
             onEditingAnswerChange={setEditingAnswer}
             onEditingQuestionTextChange={setEditingQuestionText}
+            onDeleteQuestion={(questionId) =>
+              void handleDeleteQuestion(questionId)
+            }
           />
         </VStack>
       </Box>

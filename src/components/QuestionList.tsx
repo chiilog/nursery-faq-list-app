@@ -83,6 +83,7 @@ interface QuestionListProps {
   onEditingAnswerChange: (value: string) => void;
   onSaveAnswer: () => void;
   onCancelEdit: () => void;
+  onDeleteQuestion?: (questionId: string) => void;
 }
 
 export const QuestionList = ({
@@ -95,6 +96,7 @@ export const QuestionList = ({
   onEditingAnswerChange,
   onSaveAnswer,
   onCancelEdit,
+  onDeleteQuestion,
 }: QuestionListProps) => {
   // 未回答の質問を先に表示（useMemoでパフォーマンス最適化）
   const sortedQuestions = useMemo(() => {
@@ -151,6 +153,7 @@ export const QuestionList = ({
             <QuestionItem
               question={question}
               onQuestionClick={onQuestionClick}
+              onDelete={onDeleteQuestion}
             />
           )}
         </Box>
