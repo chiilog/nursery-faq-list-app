@@ -17,7 +17,6 @@ export interface Question {
   isAnswered: boolean;
   priority: QuestionPriority;
   category?: string;
-  orderIndex: number; // orderからorderIndexに変更
   answeredBy?: string; // 回答者ID
   answeredAt?: Date;
   createdAt: Date;
@@ -126,7 +125,6 @@ export interface CreateQuestionInput {
   isAnswered?: boolean;
   priority?: QuestionPriority;
   category?: string;
-  orderIndex: number;
 }
 
 // 質問更新時の入力データ型
@@ -136,7 +134,6 @@ export interface UpdateQuestionInput {
   isAnswered?: boolean;
   priority?: QuestionPriority;
   category?: string;
-  orderIndex?: number;
 }
 
 // 質問テンプレート作成時の入力データ型
