@@ -118,55 +118,53 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
         ) : null}
 
         {/* テキストエリア */}
-        <Box position="relative">
-          <Textarea
-            ref={textareaRef}
-            value={localNotes}
-            onChange={(e) => handleNotesChange(e.target.value)}
-            onBlur={handleBlur}
-            placeholder="見学中のメモをここに..."
-            resize="vertical"
-            minHeight="120px"
-            maxHeight="300px"
-            readOnly={isReadOnly}
-            aria-label="見学メモ"
-            autoresize
-            borderColor={
-              isOverLimit
+        <Textarea
+          ref={textareaRef}
+          value={localNotes}
+          onChange={(e) => handleNotesChange(e.target.value)}
+          onBlur={handleBlur}
+          placeholder="見学中のメモをここに..."
+          resize="vertical"
+          minHeight="120px"
+          maxHeight="300px"
+          readOnly={isReadOnly}
+          aria-label="見学メモ"
+          fontSize={{ base: '16px', md: 'md' }}
+          borderColor={
+            isOverLimit
+              ? 'red.300'
+              : isVeryNearLimit
                 ? 'red.300'
-                : isVeryNearLimit
-                  ? 'red.300'
-                  : isNearLimit
-                    ? 'orange.300'
-                    : 'gray.300'
-            }
-            _focus={{
-              borderColor: isOverLimit
+                : isNearLimit
+                  ? 'orange.300'
+                  : 'gray.300'
+          }
+          _focus={{
+            borderColor: isOverLimit
+              ? 'red.500'
+              : isVeryNearLimit
                 ? 'red.500'
-                : isVeryNearLimit
-                  ? 'red.500'
-                  : isNearLimit
-                    ? 'orange.500'
-                    : 'brand.500',
-              boxShadow: isOverLimit
+                : isNearLimit
+                  ? 'orange.500'
+                  : 'brand.500',
+            boxShadow: isOverLimit
+              ? '0 0 0 1px red.500'
+              : isVeryNearLimit
                 ? '0 0 0 1px red.500'
-                : isVeryNearLimit
-                  ? '0 0 0 1px red.500'
-                  : isNearLimit
-                    ? '0 0 0 1px orange.500'
-                    : '0 0 0 1px var(--chakra-colors-brand-500)',
-            }}
-            _hover={{
-              borderColor: isOverLimit
+                : isNearLimit
+                  ? '0 0 0 1px orange.500'
+                  : '0 0 0 1px var(--chakra-colors-brand-500)',
+          }}
+          _hover={{
+            borderColor: isOverLimit
+              ? 'red.400'
+              : isVeryNearLimit
                 ? 'red.400'
-                : isVeryNearLimit
-                  ? 'red.400'
-                  : isNearLimit
-                    ? 'orange.400'
-                    : 'gray.400',
-            }}
-          />
-        </Box>
+                : isNearLimit
+                  ? 'orange.400'
+                  : 'gray.400',
+          }}
+        />
 
         {/* フッター */}
         <HStack justify="space-between" align="center">

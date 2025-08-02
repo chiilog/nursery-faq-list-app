@@ -236,13 +236,12 @@ describe('NotesSection', () => {
   });
 
   describe('テキストエリアの機能', () => {
-    test('autoresizeプロパティが設定されている', () => {
+    test('基本的なスタイルが設定されている', () => {
       renderWithProviders(
         <NotesSection notes="" onAutoSave={mockOnAutoSave} />
       );
 
       const textarea = screen.getByRole('textbox', { name: /見学メモ/i });
-      // Chakra UIのTextareaのautoresizeプロパティは内部実装なので、
       // 基本的な表示とminHeight/maxHeightが設定されていることを確認
       expect(textarea).toHaveStyle('min-height: 120px');
     });
