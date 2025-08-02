@@ -15,6 +15,7 @@ import type {
   UpdateQuestionInput,
 } from '../types/data';
 import { generatePrefixedId } from '../utils/id';
+import { addQuestionToQuestionsArray } from '../utils/data';
 
 // シリアライズされたデータの型定義（JSON形式）
 interface SerializedNursery {
@@ -585,6 +586,7 @@ class NurseryDataStore {
       const questionId = generatePrefixedId('question');
       const now = new Date();
 
+      // 新しい質問を作成（orderIndex: 0で先頭に追加）
       const newQuestion: Question = {
         id: questionId,
         text: input.text,
@@ -592,12 +594,17 @@ class NurseryDataStore {
         isAnswered: input.isAnswered || false,
         priority: input.priority || 'medium',
         category: input.category || '基本情報',
-        orderIndex: input.orderIndex,
+        orderIndex: 0,
         createdAt: now,
         updatedAt: now,
       };
 
-      session.questions.push(newQuestion);
+      // 共通関数を使用して質問配列を更新
+      session.questions = addQuestionToQuestionsArray(
+        session.questions,
+        newQuestion
+      );
+
       this.saveNurseries(nurseries);
 
       return questionId;

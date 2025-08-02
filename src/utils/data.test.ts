@@ -72,6 +72,7 @@ describe('データユーティリティ関数', () => {
         // Given: 必須フィールドのみの入力データ
         const input = createCreateQuestionInputMock({
           text: 'テスト質問',
+          category: undefined,
         });
         const orderIndex = 0;
 
@@ -89,6 +90,8 @@ describe('データユーティリティ関数', () => {
           orderIndex: 0,
           answeredBy: undefined,
           answeredAt: undefined,
+          createdAt: mockDate,
+          updatedAt: mockDate,
         });
       });
     });
@@ -117,6 +120,8 @@ describe('データユーティリティ関数', () => {
           orderIndex: 1,
           answeredBy: undefined,
           answeredAt: undefined,
+          createdAt: mockDate,
+          updatedAt: mockDate,
         });
       });
     });
@@ -785,7 +790,7 @@ describe('データユーティリティ関数', () => {
     };
 
     describe('質問リストに新しい質問を追加する時', () => {
-      test('新しい質問が末尾に追加される', () => {
+      test('新しい質問が先頭に追加される', () => {
         // Given: 既存の質問が1つある質問リストと新しい質問の入力データ
         const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
@@ -796,17 +801,20 @@ describe('データユーティリティ関数', () => {
         // When: 質問を質問リストに追加する
         const updatedList = addQuestionToList(baseQuestionList, questionInput);
 
-        // Then: 新しい質問が末尾に追加される
+        // Then: 新しい質問が先頭に追加される
         expect(updatedList.questions).toHaveLength(2);
-        expect(updatedList.questions[1].text).toBe('新しい質問');
-        expect(updatedList.questions[1].priority).toBe('high');
-        expect(updatedList.questions[1].category).toBe('テスト');
+        expect(updatedList.questions[0].text).toBe('新しい質問');
+        expect(updatedList.questions[0].priority).toBe('high');
+        expect(updatedList.questions[0].category).toBe('テスト');
+        expect(updatedList.questions[0].orderIndex).toBe(0);
+        // 既存の質問のorderIndexが1増加している
+        expect(updatedList.questions[1].text).toBe('既存の質問');
         expect(updatedList.questions[1].orderIndex).toBe(1);
       });
     });
 
     describe('順序番号が正しく設定されることを確認する時', () => {
-      test('新しい質問の順序番号が既存の質問数と同じになる', () => {
+      test('新しい質問の順序番号が0になり、既存の質問の順序番号が増加する', () => {
         // Given: 既存の質問が1つある質問リスト
         const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
@@ -815,8 +823,11 @@ describe('データユーティリティ関数', () => {
         // When: 質問を追加する
         const updatedList = addQuestionToList(baseQuestionList, questionInput);
 
-        // Then: 新しい質問の順序番号が1になる（0から開始するため）
+        // Then: 新しい質問の順序番号が0になり、既存の質問の順序番号が1になる
+        expect(updatedList.questions[0].orderIndex).toBe(0);
+        expect(updatedList.questions[0].text).toBe('新しい質問');
         expect(updatedList.questions[1].orderIndex).toBe(1);
+        expect(updatedList.questions[1].text).toBe('既存の質問');
       });
     });
 

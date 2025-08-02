@@ -153,17 +153,37 @@ export function updateQuestionListTimestamp(
 }
 
 /**
+ * 質問配列に新しい質問を先頭に追加し、既存質問のorderIndexを調整する
+ */
+export function addQuestionToQuestionsArray(
+  existingQuestions: Question[],
+  newQuestion: Question
+): Question[] {
+  // 既存の質問のorderIndexを+1ずつインクリメント
+  const updatedExistingQuestions = existingQuestions.map((q) => ({
+    ...q,
+    orderIndex: q.orderIndex + 1,
+  }));
+
+  // 新しい質問を先頭に、既存の質問をその後に配置
+  return [newQuestion, ...updatedExistingQuestions];
+}
+
+/**
  * 質問リストに質問を追加する
  */
 export function addQuestionToList(
   questionList: QuestionList,
   questionInput: CreateQuestionInput
 ): QuestionList {
-  const newQuestion = createQuestion(
-    questionInput,
-    questionList.questions.length
+  // 新しい質問のorderIndexは0
+  const newQuestion = createQuestion(questionInput, 0);
+
+  // 共通関数を使用して質問配列を更新
+  const updatedQuestions = addQuestionToQuestionsArray(
+    questionList.questions,
+    newQuestion
   );
-  const updatedQuestions = [...questionList.questions, newQuestion];
 
   return updateQuestionListTimestamp({
     ...questionList,
