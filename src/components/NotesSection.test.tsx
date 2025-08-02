@@ -126,18 +126,17 @@ describe('NotesSection', () => {
       const textarea = screen.getByRole('textbox', { name: /見学メモ/i });
       const exactly2000chars = 'あ'.repeat(2000);
 
-      // 2000文字を直接設定（userEventを使わずより高速に）
+      // userEventを使用してより現実的なテスト
       await user.clear(textarea);
       await user.click(textarea);
 
-      // fireEventを使って直接値を設定
-      const { fireEvent } = await import('@testing-library/react');
-      fireEvent.change(textarea, { target: { value: exactly2000chars } });
+      // 大量のテキストを効率的に入力するためpaste操作を使用
+      await user.paste(exactly2000chars);
 
       // 値が2000文字であることを確認
       expect(textarea).toHaveValue(exactly2000chars);
       expect((textarea as HTMLTextAreaElement).value.length).toBe(2000);
-    }, 10000); // タイムアウトを10秒に延長
+    }, 15000); // タイムアウトを15秒に延長
 
     test('2000文字を超えると制限メッセージが表示される', () => {
       const notes = 'あ'.repeat(2001); // 2001文字
