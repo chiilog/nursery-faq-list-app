@@ -221,10 +221,6 @@ export function validateQuestion(question: Question): ValidationResult {
     errors.push(...answerValidation.errors);
   }
 
-  if (!['high', 'medium', 'low'].includes(question.priority)) {
-    errors.push('優先度は high、medium、low のいずれかを指定してください');
-  }
-
   return {
     isValid: errors.length === 0,
     errors,

@@ -12,7 +12,6 @@ const mockQuestions: Question[] = [
     text: '保育時間は何時から何時までですか？',
     answer: '',
     isAnswered: false,
-    priority: 'high',
     category: '基本情報',
   }),
   testUtils.createMockQuestion({
@@ -20,7 +19,6 @@ const mockQuestions: Question[] = [
     text: '給食はありますか？アレルギー対応は？',
     answer: '完全給食、アレルギー個別対応可能',
     isAnswered: true,
-    priority: 'high',
     category: '食事',
     answeredAt: new Date('2024-01-15T10:00:00'),
   }),

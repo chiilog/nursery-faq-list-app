@@ -56,7 +56,6 @@ export const testUtils = {
     text: 'テスト質問',
     answer: '',
     isAnswered: false,
-    priority: 'medium' as const,
     category: '基本情報',
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -66,7 +65,6 @@ export const testUtils = {
   // CreateQuestionInputのモック作成
   createMockCreateQuestionInput: (overrides = {}) => ({
     text: 'テスト質問',
-    priority: 'medium' as const,
     category: '基本情報',
     ...overrides,
   }),

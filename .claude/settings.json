@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path | select(test(\"\\\\.(js|ts|jsx|tsx)$\"))' | xargs --no-run-if-empty -I {} prettier --write '{}'"
+            "command": "jq -r '.tool_input.file_path | select(test(\"\\\\.(js|ts|jsx|tsx)$\"))' | xargs --no-run-if-empty -I {} npx prettier --write '{}'"
           }
         ]
       }

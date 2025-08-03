@@ -838,7 +838,6 @@ export class DataStore {
       const templateQuestions = template.questions.map((question) =>
         createQuestion({
           text: question.text,
-          priority: question.priority,
           category: question.category,
         })
       );

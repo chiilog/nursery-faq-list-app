@@ -83,7 +83,6 @@ const mockQuestionList: QuestionList = {
 const mockQuestionInput: CreateQuestionInput = {
   text: '保育時間を教えてください',
   category: '基本情報',
-  priority: 'medium',
 };
 
 describe('DataStore', () => {
@@ -161,7 +160,6 @@ describe('DataStore', () => {
       answer: '',
       category: '基本情報',
       isAnswered: false,
-      priority: 'medium',
       createdAt: new Date('2024-01-01T00:00:00Z'),
       updatedAt: new Date('2024-01-01T00:00:00Z'),
     });
@@ -181,7 +179,6 @@ describe('DataStore', () => {
           answer: '',
           category: '基本情報',
           isAnswered: false,
-          priority: 'medium',
           createdAt: new Date('2024-01-01T00:00:00Z'),
           updatedAt: new Date('2024-01-01T00:00:00Z'),
         },

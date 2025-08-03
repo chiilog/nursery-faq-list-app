@@ -103,7 +103,6 @@ export const NurseryDetailPage = () => {
       text: newQuestionText,
       answer: '',
       isAnswered: false,
-      priority: 'medium',
       category: '基本情報',
     });
 

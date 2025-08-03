@@ -13,7 +13,6 @@ export const mockQuestion = createQuestionMock({
   answer: '7:00-19:00',
   category: '基本情報',
   isAnswered: true,
-  priority: 'medium',
 });
 
 // モック質問リストデータ
@@ -29,7 +28,6 @@ export const mockQuestionList: QuestionList = {
       answer: '',
       category: '食事',
       isAnswered: false,
-      priority: 'medium',
     }),
   ],
   createdAt: new Date('2023-01-01'),
@@ -47,14 +45,12 @@ export const mockTemplate: QuestionList = {
       text: '保育時間を教えてください',
       category: '基本情報',
       isAnswered: false,
-      priority: 'medium',
     }),
     createQuestionMock({
       id: 'tq2',
       text: '費用はいくらですか？',
       category: '費用',
       isAnswered: false,
-      priority: 'medium',
     }),
   ],
   createdAt: new Date('2023-01-01'),

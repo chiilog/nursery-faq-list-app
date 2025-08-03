@@ -80,7 +80,6 @@ describe('データユーティリティ関数', () => {
           text: 'テスト質問',
           answer: undefined,
           isAnswered: false,
-          priority: 'medium',
           category: undefined,
           answeredBy: undefined,
           answeredAt: undefined,
@@ -95,7 +94,6 @@ describe('データユーティリティ関数', () => {
         // Given: 全フィールドを含む入力データ
         const input = createCreateQuestionInputMock({
           text: '  保育時間を教えてください  ',
-          priority: 'high',
           category: '  基本情報  ',
         });
         // When: 質問を作成する
@@ -107,7 +105,6 @@ describe('データユーティリティ関数', () => {
           text: '保育時間を教えてください',
           answer: undefined,
           isAnswered: false,
-          priority: 'high',
           category: '基本情報',
           answeredBy: undefined,
           answeredAt: undefined,
@@ -242,7 +239,6 @@ describe('データユーティリティ関数', () => {
       text: 'テスト質問',
       answer: undefined,
       isAnswered: false,
-      priority: 'medium',
       category: 'テスト',
       answeredBy: undefined,
       answeredAt: undefined,
@@ -424,7 +420,6 @@ describe('データユーティリティ関数', () => {
           text: '既存の質問',
           answer: undefined,
           isAnswered: false,
-          priority: 'medium',
         } as Question,
       ],
       sharedWith: [],
@@ -438,7 +433,6 @@ describe('データユーティリティ関数', () => {
         // Given: 既存の質問が1つある質問リストと新しい質問の入力データ
         const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
-          priority: 'high',
           category: 'テスト',
         });
 
@@ -448,7 +442,6 @@ describe('データユーティリティ関数', () => {
         // Then: 新しい質問が先頭に追加される
         expect(updatedList.questions).toHaveLength(2);
         expect(updatedList.questions[0].text).toBe('新しい質問');
-        expect(updatedList.questions[0].priority).toBe('high');
         expect(updatedList.questions[0].category).toBe('テスト');
         // 既存の質問が後に配置される
         expect(updatedList.questions[1].text).toBe('既存の質問');
@@ -517,21 +510,18 @@ describe('データユーティリティ関数', () => {
           text: '質問1',
           answer: undefined,
           isAnswered: false,
-          priority: 'medium',
         } as Question,
         {
           id: 'q2',
           text: '質問2',
           answer: undefined,
           isAnswered: false,
-          priority: 'medium',
         } as Question,
         {
           id: 'q3',
           text: '質問3',
           answer: undefined,
           isAnswered: false,
-          priority: 'medium',
         } as Question,
       ],
       sharedWith: [],
@@ -636,7 +626,6 @@ describe('データユーティリティ関数', () => {
           text: '元の質問1',
           answer: undefined,
           isAnswered: false,
-          priority: 'medium',
           category: '元のカテゴリ',
           answeredBy: undefined,
           answeredAt: undefined,
@@ -646,7 +635,6 @@ describe('データユーティリティ関数', () => {
           text: '元の質問2',
           answer: undefined,
           isAnswered: false,
-          priority: 'low',
           category: undefined,
           answeredBy: undefined,
           answeredAt: undefined,
@@ -667,7 +655,6 @@ describe('データユーティリティ関数', () => {
           text: '更新された質問1',
           answer: '更新された回答',
           isAnswered: true,
-          priority: 'high',
           category: '更新されたカテゴリ',
           answeredBy: 'user123',
           answeredAt: mockDate,
@@ -719,7 +706,6 @@ describe('データユーティリティ関数', () => {
           text: '存在しない質問',
           answer: undefined,
           isAnswered: false,
-          priority: 'medium',
         });
 
         // When: 存在しない質問IDで更新を試行する
@@ -929,7 +915,6 @@ describe('データユーティリティ関数', () => {
           text: 'テンプレート質問1',
           answer: 'テンプレート回答1',
           isAnswered: true,
-          priority: 'high',
           category: 'テンプレートカテゴリ1',
           answeredBy: 'template-user',
           answeredAt: new Date('2023-01-01'),
@@ -939,7 +924,6 @@ describe('データユーティリティ関数', () => {
           text: 'テンプレート質問2',
           answer: undefined,
           isAnswered: false,
-          priority: 'medium',
           category: 'テンプレートカテゴリ2',
           answeredBy: undefined,
           answeredAt: undefined,
@@ -996,12 +980,10 @@ describe('データユーティリティ関数', () => {
         // Then: 質問のテキストと基本情報がコピーされる
         expect(newQuestionList.questions).toHaveLength(2);
         expect(newQuestionList.questions[0].text).toBe('テンプレート質問1');
-        expect(newQuestionList.questions[0].priority).toBe('high');
         expect(newQuestionList.questions[0].category).toBe(
           'テンプレートカテゴリ1'
         );
         expect(newQuestionList.questions[1].text).toBe('テンプレート質問2');
-        expect(newQuestionList.questions[1].priority).toBe('medium');
         expect(newQuestionList.questions[1].category).toBe(
           'テンプレートカテゴリ2'
         );

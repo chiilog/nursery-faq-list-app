@@ -3,9 +3,6 @@
  * 保育園中心の設計に基づいた型安全性を保証
  */
 
-// 質問の優先度
-export type QuestionPriority = 'high' | 'medium' | 'low';
-
 // 見学セッションのステータス
 export type VisitSessionStatus = 'planned' | 'completed' | 'cancelled';
 
@@ -15,7 +12,6 @@ export interface Question {
   text: string;
   answer?: string;
   isAnswered: boolean;
-  priority: QuestionPriority;
   category?: string;
   answeredBy?: string; // 回答者ID
   answeredAt?: Date;
@@ -123,7 +119,6 @@ export interface CreateQuestionInput {
   text: string;
   answer?: string;
   isAnswered?: boolean;
-  priority?: QuestionPriority;
   category?: string;
 }
 
@@ -132,7 +127,6 @@ export interface UpdateQuestionInput {
   text?: string;
   answer?: string;
   isAnswered?: boolean;
-  priority?: QuestionPriority;
   category?: string;
 }
 
