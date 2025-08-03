@@ -65,7 +65,6 @@ const mockQuestionList: QuestionList = {
       text: '保育時間を教えてください',
       answer: '7:00-19:00',
       isAnswered: true,
-      priority: 'high',
       category: '基本情報',
     }),
     createQuestionMock({
@@ -73,7 +72,6 @@ const mockQuestionList: QuestionList = {
       text: '給食はありますか',
       answer: '',
       isAnswered: false,
-      priority: 'medium',
       category: '食事',
     }),
   ],
@@ -90,7 +88,6 @@ const mockCreateInput: CreateQuestionListInput = {
 const mockQuestionInput = createCreateQuestionInputMock({
   text: '新しい質問',
   category: 'テスト',
-  priority: 'medium',
 });
 
 describe('useQuestionListStore', () => {

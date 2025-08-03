@@ -113,11 +113,7 @@ export const QuestionList = ({
   return (
     <VStack align="stretch" gap={4}>
       {questions.map((question) => (
-        <Box
-          key={question.id}
-          data-testid={`question-item-${question.id}`}
-          data-priority={question.priority}
-        >
+        <Box key={question.id} data-testid={`question-item-${question.id}`}>
           {editingQuestionId === question.id ? (
             <Box
               p={{ base: 4, md: 5 }}

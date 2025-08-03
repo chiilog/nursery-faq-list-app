@@ -21,7 +21,6 @@ const createQuestion = (
   answer,
   category,
   isAnswered: answer !== '',
-  priority: 'medium',
   createdAt: new Date('2023-01-01'),
   updatedAt: new Date('2023-01-01'),
 });

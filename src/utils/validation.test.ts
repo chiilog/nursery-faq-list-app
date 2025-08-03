@@ -439,7 +439,6 @@ describe('validateCreateQuestionInput', () => {
       // Given: 優先度とカテゴリを含む有効な入力
       const input = createCreateQuestionInputMock({
         text: '開園時間はいつですか？',
-        priority: 'high',
         category: '基本情報',
       });
 
@@ -700,7 +699,6 @@ describe('validateQuestion', () => {
       id: 'test-id',
       text: '開園時間はいつですか？',
       isAnswered: false,
-      priority: 'medium',
     });
 
   describe('必須項目のケース', () => {
@@ -717,23 +715,6 @@ describe('validateQuestion', () => {
       // Then: バリデーション失敗
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('質問内容を入力してください');
-    });
-
-    it('無効な優先度の質問を渡した時、バリデーションエラーが返される', () => {
-      // Given: 無効な優先度の質問
-      const question: Question = {
-        ...createValidQuestion(),
-        priority: 'invalid' as 'high' | 'medium' | 'low',
-      };
-
-      // When: バリデーションを実行
-      const result = validateQuestion(question);
-
-      // Then: バリデーション失敗
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        '優先度は high、medium、low のいずれかを指定してください'
-      );
     });
   });
 
@@ -775,7 +756,6 @@ describe('validateQuestion', () => {
       const question: Question = {
         ...createValidQuestion(),
         answer: '開園時間は午前7時から午後7時までです。',
-        priority: 'high',
         category: '基本情報',
       };
 
@@ -804,7 +784,6 @@ describe('validateQuestionList', () => {
       id,
       text: `質問${index}`,
       isAnswered: false,
-      priority: 'medium',
     });
 
   describe('基本項目のケース', () => {
@@ -867,7 +846,6 @@ describe('validateQuestionList', () => {
         id: 'invalid-id',
         text: '', // エラー
         isAnswered: false,
-        priority: 'medium',
       });
       const questionList: QuestionList = {
         ...createValidQuestionList(),
@@ -909,7 +887,6 @@ describe('validateQuestionList', () => {
         id: 'invalid-id',
         text: '', // エラー
         isAnswered: false,
-        priority: 'medium',
       });
       const questionList: QuestionList = {
         ...createValidQuestionList(),

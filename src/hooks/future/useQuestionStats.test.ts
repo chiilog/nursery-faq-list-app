@@ -22,7 +22,6 @@ const createQuestionListWithStats = (
     text: `質問${index + 1}`,
     answer: index < answered ? '回答済み' : '',
     isAnswered: index < answered,
-    priority: 'medium' as const,
     category: 'テスト',
     createdAt: new Date('2023-01-01'),
     updatedAt: new Date('2023-01-01'),

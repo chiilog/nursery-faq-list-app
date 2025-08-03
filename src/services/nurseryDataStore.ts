@@ -46,7 +46,6 @@ interface SerializedQuestion {
   text: string;
   answer?: string;
   isAnswered: boolean;
-  priority: 'high' | 'medium' | 'low';
   category?: string;
   answeredBy?: string;
   answeredAt?: string; // ISO date string
@@ -364,7 +363,6 @@ class NurseryDataStore {
             text: q.text,
             answer: '',
             isAnswered: false,
-            priority: q.priority || 'medium',
             category: q.category,
             createdAt: now,
             updatedAt: now,
@@ -590,7 +588,6 @@ class NurseryDataStore {
         text: input.text,
         answer: input.answer || '',
         isAnswered: input.isAnswered || false,
-        priority: input.priority || 'medium',
         category: input.category || '基本情報',
         createdAt: now,
         updatedAt: now,
@@ -655,7 +652,6 @@ class NurseryDataStore {
       if (updates.answer !== undefined) question.answer = updates.answer;
       if (updates.isAnswered !== undefined)
         question.isAnswered = updates.isAnswered;
-      if (updates.priority !== undefined) question.priority = updates.priority;
       if (updates.category !== undefined) question.category = updates.category;
       question.updatedAt = new Date();
 

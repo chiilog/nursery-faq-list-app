@@ -38,7 +38,6 @@ const mockCurrentNursery: Nursery = {
           text: '保育時間は何時から何時までですか？',
           answer: '',
           isAnswered: false,
-          priority: 'high',
           category: '基本情報',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -48,7 +47,6 @@ const mockCurrentNursery: Nursery = {
           text: '給食はありますか？',
           answer: 'あります',
           isAnswered: true,
-          priority: 'medium',
           category: '生活',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -144,15 +142,6 @@ describe('NurseryDetailPage コンポーネント', () => {
       renderWithProviders(<NurseryDetailPage />);
 
       expect(screen.getByText('あります')).toBeInTheDocument();
-    });
-
-    test('優先度が視覚的に表示される', () => {
-      renderWithProviders(<NurseryDetailPage />);
-
-      const highPriorityQuestion = screen.getByTestId(
-        'question-item-question-1'
-      );
-      expect(highPriorityQuestion).toHaveAttribute('data-priority', 'high');
     });
   });
 
@@ -282,7 +271,6 @@ describe('NurseryDetailPage コンポーネント', () => {
           text: '延長保育はありますか？',
           answer: '',
           isAnswered: false,
-          priority: 'medium',
           category: '基本情報',
         })
       );

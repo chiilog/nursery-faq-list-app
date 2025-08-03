@@ -36,22 +36,6 @@ describe('QuestionItem', () => {
       ).toBeInTheDocument();
     });
 
-    test('優先度バッジが表示される', () => {
-      const question = testUtils.createMockQuestion({
-        priority: 'high',
-      });
-
-      renderWithProviders(
-        <QuestionItem
-          question={question}
-          onQuestionClick={mockOnQuestionClick}
-          onDelete={mockOnDelete}
-        />
-      );
-
-      expect(screen.getByText('高')).toBeInTheDocument();
-    });
-
     test('回答済みの場合、回答済みバッジが表示される', () => {
       const question = testUtils.createMockQuestion({
         isAnswered: true,
@@ -246,76 +230,6 @@ describe('QuestionItem', () => {
       await user.keyboard('a');
 
       expect(mockOnQuestionClick).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('優先度表示', () => {
-    test('high優先度で赤バッジ「高」が表示される', () => {
-      const question = testUtils.createMockQuestion({
-        priority: 'high',
-      });
-
-      renderWithProviders(
-        <QuestionItem
-          question={question}
-          onQuestionClick={mockOnQuestionClick}
-          onDelete={mockOnDelete}
-        />
-      );
-
-      const priorityBadge = screen.getByText('高');
-      expect(priorityBadge).toBeInTheDocument();
-    });
-
-    test('medium優先度で黄バッジ「中」が表示される', () => {
-      const question = testUtils.createMockQuestion({
-        priority: 'medium',
-      });
-
-      renderWithProviders(
-        <QuestionItem
-          question={question}
-          onQuestionClick={mockOnQuestionClick}
-          onDelete={mockOnDelete}
-        />
-      );
-
-      const priorityBadge = screen.getByText('中');
-      expect(priorityBadge).toBeInTheDocument();
-    });
-
-    test('low優先度でグレーバッジ「低」が表示される', () => {
-      const question = testUtils.createMockQuestion({
-        priority: 'low',
-      });
-
-      renderWithProviders(
-        <QuestionItem
-          question={question}
-          onQuestionClick={mockOnQuestionClick}
-          onDelete={mockOnDelete}
-        />
-      );
-
-      const priorityBadge = screen.getByText('低');
-      expect(priorityBadge).toBeInTheDocument();
-    });
-
-    test('未定義の優先度でグレーバッジ「低」が表示される', () => {
-      const question = testUtils.createMockQuestion({
-        priority: 'unknown' as any, // 意図的に未定義の値を設定
-      });
-
-      renderWithProviders(
-        <QuestionItem
-          question={question}
-          onQuestionClick={mockOnQuestionClick}
-          onDelete={mockOnDelete}
-        />
-      );
-
-      const priorityBadge = screen.getByText('低');
-      expect(priorityBadge).toBeInTheDocument();
     });
   });
 

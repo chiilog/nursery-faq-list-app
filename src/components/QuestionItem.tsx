@@ -16,34 +16,6 @@ interface QuestionItemProps {
   onDelete?: (questionId: string) => void;
 }
 
-/**
- * 優先度に基づいてバッジの色を取得
- */
-const getPriorityColorScheme = (priority: string): string => {
-  switch (priority) {
-    case 'high':
-      return 'red';
-    case 'medium':
-      return 'yellow';
-    default:
-      return 'gray';
-  }
-};
-
-/**
- * 優先度に基づいてバッジのテキストを取得
- */
-const getPriorityText = (priority: string): string => {
-  switch (priority) {
-    case 'high':
-      return '高';
-    case 'medium':
-      return '中';
-    default:
-      return '低';
-  }
-};
-
 export const QuestionItem = ({
   question,
   onQuestionClick,
@@ -112,12 +84,6 @@ export const QuestionItem = ({
                 回答済み
               </Badge>
             )}
-            <Badge
-              colorScheme={getPriorityColorScheme(question.priority)}
-              size="sm"
-            >
-              {getPriorityText(question.priority)}
-            </Badge>
             {onDelete && (
               <IconButton
                 aria-label="質問を削除"
