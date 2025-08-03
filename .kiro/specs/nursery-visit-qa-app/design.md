@@ -86,6 +86,7 @@
 - **VisitSessionForm**: 見学セッション作成・編集フォーム
 - **QuestionItem**: 個別質問表示・編集
 - **AnswerInput**: 回答入力フォーム
+- **NotesSection**: 見学メモ入力（文字数制限・自動保存機能付き）
 - **TemplateSelector**: 質問テンプレート選択
 - **SyncIndicator**: 同期状況表示
 - **OfflineIndicator**: オフライン状態表示
@@ -117,7 +118,7 @@ interface VisitSession {
   visitDate: Date;
   status: 'planned' | 'completed' | 'cancelled';
   questions: Question[];
-  notes?: string;
+  notes?: string; // 見学メモ（2000文字制限・自動保存・リアルタイム警告機能付き）
   sharedWith?: string[]; // 共有相手のID
   createdAt: Date;
   updatedAt: Date;
@@ -132,11 +133,11 @@ interface Question {
   text: string;
   answer?: string;
   isAnswered: boolean;
-  priority: 'high' | 'medium' | 'low';
   category?: string;
-  order: number;
   answeredBy?: string; // 回答者ID
   answeredAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
@@ -311,9 +312,7 @@ CREATE TABLE questions (
   text TEXT NOT NULL,
   answer TEXT,
   is_answered INTEGER DEFAULT 0, -- SQLite boolean
-  priority TEXT CHECK (priority IN ('high', 'medium', 'low')) DEFAULT 'medium',
   category TEXT,
-  order_index INTEGER NOT NULL,
   answered_by TEXT REFERENCES profiles(id),
   answered_at DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -333,7 +332,6 @@ CREATE TABLE question_list_shares (
 -- インデックス（パフォーマンス最適化）
 CREATE INDEX idx_question_lists_owner ON question_lists(owner_id);
 CREATE INDEX idx_questions_list ON questions(list_id);
-CREATE INDEX idx_questions_order ON questions(list_id, order_index);
 CREATE INDEX idx_shares_list ON question_list_shares(list_id);
 CREATE INDEX idx_shares_user ON question_list_shares(shared_with);
 ```

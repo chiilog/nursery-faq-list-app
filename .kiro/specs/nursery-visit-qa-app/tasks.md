@@ -123,6 +123,13 @@
   - **Refactor**: 日付フォーマット、進捗計算の改善
   - _要件: 1.6, 1.7_
 
+- [ ] 4.7 @deprecated型の段階的削除（保育園中心設計への完全移行）
+  - **Phase 1**: QuestionListCreator、QuestionList コンポーネントをNursery中心設計に変更
+  - **Phase 2**: @deprecatedインターフェース（QuestionList、CreateQuestionListInput等）の削除
+  - **Phase 3**: 関連するhooks、stores、servicesの削除
+  - **Verification**: 全てのテストが新設計で動作することを確認
+  - _要件: 保育園中心設計への完全移行_
+
 ### 5. データセキュリティ機能
 
 - [ ] 5.1 データ暗号化の実装
