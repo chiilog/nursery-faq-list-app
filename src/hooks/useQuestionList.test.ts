@@ -116,7 +116,6 @@ describe('質問リストMVPフック', () => {
       // addQuestionToListが呼び出されることを確認
       await result.current.addQuestionToList('list-id', {
         text: 'テスト質問',
-        category: 'テスト',
       });
       expect(mockQuestionManagement.addQuestionToList).toHaveBeenCalledWith(
         'list-id',

@@ -38,7 +38,6 @@ const mockCurrentNursery: Nursery = {
           text: '保育時間は何時から何時までですか？',
           answer: '',
           isAnswered: false,
-          category: '基本情報',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -47,7 +46,6 @@ const mockCurrentNursery: Nursery = {
           text: '給食はありますか？',
           answer: 'あります',
           isAnswered: true,
-          category: '生活',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -271,7 +269,6 @@ describe('NurseryDetailPage コンポーネント', () => {
           text: '延長保育はありますか？',
           answer: '',
           isAnswered: false,
-          category: '基本情報',
         })
       );
     });

@@ -10,16 +10,10 @@ import { useQuestionSearch } from './useQuestionSearch';
 import type { QuestionList, Question } from '../../types/data';
 
 // テスト用データ作成ヘルパー
-const createQuestion = (
-  id: string,
-  text: string,
-  answer = '',
-  category = '基本'
-): Question => ({
+const createQuestion = (id: string, text: string, answer = ''): Question => ({
   id,
   text,
   answer,
-  category,
   isAnswered: answer !== '',
   createdAt: new Date('2023-01-01'),
   updatedAt: new Date('2023-01-01'),
@@ -42,30 +36,23 @@ const createQuestionList = (
 
 // テスト用の質問リストデータ
 const sakuraQuestions = [
-  createQuestion(
-    'q1',
-    '開園時間は何時から何時まででしょうか？',
-    '7:00-19:00',
-    '基本情報'
-  ),
+  createQuestion('q1', '開園時間は何時から何時まででしょうか？', '7:00-19:00'),
   createQuestion(
     'q2',
     '給食は園で作っていますか？',
-    '園内の厨房で手作りしています',
-    '食事'
+    '園内の厨房で手作りしています'
   ),
-  createQuestion('q3', '延長保育はありますか？', '', '時間'),
-  createQuestion('q4', '病児保育の対応はどうなっていますか？', '', '健康'),
+  createQuestion('q3', '延長保育はありますか？', ''),
+  createQuestion('q4', '病児保育の対応はどうなっていますか？', ''),
 ];
 
 const himawariQuestions = [
-  createQuestion('q5', '月謝はいくらですか？', '3歳児: 28,000円', '費用'),
-  createQuestion('q6', '英語教育はありますか？', '', '教育'),
+  createQuestion('q5', '月謝はいくらですか？', '3歳児: 28,000円'),
+  createQuestion('q6', '英語教育はありますか？', ''),
   createQuestion(
     'q7',
     '給食のアレルギー対応はしていますか？',
-    '除去食で対応可能です',
-    '食事'
+    '除去食で対応可能です'
   ),
 ];
 
@@ -83,8 +70,8 @@ const testLists = [
     himawariQuestions
   ),
   createQuestionList('list3', '認可外保育所の確認事項', '小さな家保育所', [
-    createQuestion('q8', '保育料金の支払い方法は？', '', '費用'),
-    createQuestion('q9', '園児の年齢構成を教えてください', '', '基本情報'),
+    createQuestion('q8', '保育料金の支払い方法は？', ''),
+    createQuestion('q9', '園児の年齢構成を教えてください', ''),
   ]),
 ];
 
@@ -221,18 +208,6 @@ describe('質問を検索する時', () => {
       // Then: 7:00という回答がある質問が見つかる
       expect(searchResults).toHaveLength(1);
       expect(searchResults[0].answer).toContain('7:00');
-    });
-
-    test('カテゴリで検索すると該当する質問が見つかる', () => {
-      // Given: さくら保育園のリストが現在選択されている
-      const { result } = renderHookWithChakra(() => useQuestionSearch());
-
-      // When: 「食事」で検索する
-      const searchResults = result.current.searchQuestionsInCurrentList('食事');
-
-      // Then: 食事カテゴリの質問が見つかる
-      expect(searchResults).toHaveLength(1);
-      expect(searchResults[0].category).toBe('食事');
     });
 
     test('現在のリストが選択されていない時は空の結果が返される', () => {

@@ -103,7 +103,6 @@ export const NurseryDetailPage = () => {
       text: newQuestionText,
       answer: '',
       isAnswered: false,
-      category: '基本情報',
     });
 
     setIsAddingQuestion(false);

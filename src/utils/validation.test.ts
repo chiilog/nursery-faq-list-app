@@ -756,7 +756,6 @@ describe('validateQuestion', () => {
       const question: Question = {
         ...createValidQuestion(),
         answer: '開園時間は午前7時から午後7時までです。',
-        category: '基本情報',
       };
 
       // When: バリデーションを実行
