@@ -133,7 +133,6 @@ interface Question {
   text: string;
   answer?: string;
   isAnswered: boolean;
-  category?: string;
   answeredBy?: string; // 回答者ID
   answeredAt?: Date;
   createdAt: Date;
@@ -312,7 +311,6 @@ CREATE TABLE questions (
   text TEXT NOT NULL,
   answer TEXT,
   is_answered INTEGER DEFAULT 0, -- SQLite boolean
-  category TEXT,
   answered_by TEXT REFERENCES profiles(id),
   answered_at DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
