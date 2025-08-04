@@ -14,6 +14,10 @@ import type {
   SyncState,
 } from '../types/data';
 import { dataStore, DataStoreError } from '../services/dataStore';
+import {
+  nurseryDataStore,
+  NurseryDataStoreError,
+} from '../services/nurseryDataStore';
 import { getQuestionListStats } from '../utils/data';
 
 // エラー情報の型定義
@@ -118,7 +122,8 @@ export const useQuestionListStore = create<QuestionListState>()(
           });
           clearError();
 
-          const lists = await dataStore.getAllQuestionLists();
+          // 新アーキテクチャのnurseryDataStoreのCompat APIを使用
+          const lists = await nurseryDataStore.getAllQuestionListsCompat();
 
           set((state) => ({
             questionLists: lists,
@@ -130,10 +135,17 @@ export const useQuestionListStore = create<QuestionListState>()(
         } catch (error) {
           const appError: AppError = {
             message:
-              error instanceof DataStoreError
+              error instanceof NurseryDataStoreError
                 ? error.message
-                : '質問リストの読み込みに失敗しました',
-            code: error instanceof DataStoreError ? error.code : 'LOAD_FAILED',
+                : error instanceof DataStoreError
+                  ? error.message
+                  : '質問リストの読み込みに失敗しました',
+            code:
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : error instanceof DataStoreError
+                  ? error.code
+                  : 'LOAD_FAILED',
             timestamp: new Date(),
           };
           set({ error: appError });
@@ -149,7 +161,9 @@ export const useQuestionListStore = create<QuestionListState>()(
           setLoading({ isLoading: true, operation: '質問リストを作成中...' });
           clearError();
 
-          const newListId = await dataStore.createQuestionList(input);
+          // 新アーキテクチャのnurseryDataStoreのCompat APIを使用
+          const newListId =
+            await nurseryDataStore.createQuestionListCompat(input);
 
           // リストを再読み込み
           await loadQuestionLists();
@@ -158,11 +172,17 @@ export const useQuestionListStore = create<QuestionListState>()(
         } catch (error) {
           const appError: AppError = {
             message:
-              error instanceof DataStoreError
+              error instanceof NurseryDataStoreError
                 ? error.message
-                : '質問リストの作成に失敗しました',
+                : error instanceof DataStoreError
+                  ? error.message
+                  : '質問リストの作成に失敗しました',
             code:
-              error instanceof DataStoreError ? error.code : 'CREATE_FAILED',
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : error instanceof DataStoreError
+                  ? error.code
+                  : 'CREATE_FAILED',
             timestamp: new Date(),
           };
           set({ error: appError });
@@ -179,18 +199,25 @@ export const useQuestionListStore = create<QuestionListState>()(
           setLoading({ isLoading: true, operation: '質問リストを更新中...' });
           clearError();
 
-          await dataStore.updateQuestionList(id, updates);
+          // 新アーキテクチャのnurseryDataStoreのCompat APIを使用
+          await nurseryDataStore.updateQuestionListCompat(id, updates);
 
           // リストを再読み込み
           await loadQuestionLists();
         } catch (error) {
           const appError: AppError = {
             message:
-              error instanceof DataStoreError
+              error instanceof NurseryDataStoreError
                 ? error.message
-                : '質問リストの更新に失敗しました',
+                : error instanceof DataStoreError
+                  ? error.message
+                  : '質問リストの更新に失敗しました',
             code:
-              error instanceof DataStoreError ? error.code : 'UPDATE_FAILED',
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : error instanceof DataStoreError
+                  ? error.code
+                  : 'UPDATE_FAILED',
             timestamp: new Date(),
           };
           set({ error: appError });
