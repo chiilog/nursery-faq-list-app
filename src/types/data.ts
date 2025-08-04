@@ -95,7 +95,7 @@ export interface UpdateNurseryInput {
   phoneNumber?: string;
   website?: string;
   notes?: string;
-  visitSessions?: VisitSession[]; // 内部実装用（一時的に追加）
+  visitSessions?: VisitSession[];
 }
 
 // 見学セッション作成時の入力データ型
@@ -104,6 +104,7 @@ export interface CreateVisitSessionInput {
   status?: VisitSessionStatus;
   notes?: string;
   questions?: CreateQuestionInput[];
+  sharedWith?: string[];
 }
 
 // 見学セッション更新時の入力データ型
@@ -147,6 +148,8 @@ export interface CreateQuestionListInput {
   title: string;
   nurseryName?: string;
   visitDate?: Date;
+  questions?: CreateQuestionInput[];
+  sharedWith?: string[];
   isTemplate?: boolean;
 }
 
