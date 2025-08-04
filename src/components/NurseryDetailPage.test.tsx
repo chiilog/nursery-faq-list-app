@@ -207,6 +207,7 @@ describe('NurseryDetailPage コンポーネント', () => {
         'session-1',
         'question-1',
         {
+          text: '保育時間は何時から何時までですか？',
           answer: '7時から19時まで',
           isAnswered: true,
         }

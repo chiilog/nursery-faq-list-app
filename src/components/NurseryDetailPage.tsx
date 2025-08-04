@@ -85,12 +85,14 @@ export const NurseryDetailPage = () => {
     if (!session) return;
 
     await updateQuestion(currentNursery.id, session.id, editingQuestionId, {
+      text: editingQuestionText,
       answer: editingAnswer,
       isAnswered: editingAnswer.trim() !== '',
     });
 
     setEditingQuestionId(null);
     setEditingAnswer('');
+    setEditingQuestionText('');
   };
 
   const handleAddQuestion = async () => {
