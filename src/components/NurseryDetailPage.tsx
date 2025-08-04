@@ -59,10 +59,10 @@ export const NurseryDetailPage = () => {
 
   // URLパラメータから保育園IDを取得してロード
   useEffect(() => {
-    if (nurseryId && (!currentNursery || currentNursery.id !== nurseryId)) {
+    if (nurseryId) {
       void setCurrentNursery(nurseryId);
     }
-  }, [nurseryId, currentNursery, setCurrentNursery]);
+  }, [nurseryId, setCurrentNursery]);
 
   const handleBack = () => {
     void navigate('/');
@@ -251,18 +251,15 @@ export const NurseryDetailPage = () => {
   };
 
   // 変更があるかどうかを判定（軽量な計算なのでuseMemo不要）
-  const hasChanges = (() => {
-    if (!currentNursery) return false;
+  const currentSession = currentNursery?.visitSessions[0];
+  const currentDateString = currentSession?.visitDate
+    ? currentSession.visitDate.toISOString().split('T')[0]
+    : '';
 
-    const nameChanged = editingNurseryName.trim() !== currentNursery.name;
-    const session = currentNursery.visitSessions[0];
-    const currentDateString = session?.visitDate
-      ? session.visitDate.toISOString().split('T')[0]
-      : '';
-    const dateChanged = newVisitDate !== currentDateString;
-
-    return nameChanged || dateChanged;
-  })();
+  const hasChanges =
+    currentNursery &&
+    (editingNurseryName.trim() !== currentNursery.name ||
+      newVisitDate !== currentDateString);
 
   // 保存ボタンの無効化状態
   const isSaveDisabled = !editingNurseryName.trim() || !hasChanges;

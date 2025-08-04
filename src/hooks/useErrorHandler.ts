@@ -36,7 +36,7 @@ interface UseErrorHandlerOptions {
  */
 export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
   const { store = 'both' } = options;
-  
+
   const nurseryStore = useNurseryStore();
   const questionListStore = useQuestionListStore();
 
@@ -48,7 +48,7 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
         clearError: nurseryStore.clearError,
       };
     }
-    
+
     if (store === 'questionList') {
       return {
         error: questionListStore.error,
@@ -67,7 +67,16 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
       error: primaryError,
       clearError: clearAllErrors,
     };
-  }, [store, nurseryStore, questionListStore]);
+    // 意図的にストア全体ではなく使用するプロパティのみを依存配列に含める
+    // これによりストアの他のプロパティ変更時の不要な再計算を防ぐ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    store,
+    nurseryStore.error,
+    nurseryStore.clearError,
+    questionListStore.error,
+    questionListStore.clearError,
+  ]);
 
   // ユーザーフレンドリーなエラーメッセージを取得
   const getUserFriendlyMessage = useCallback((error: AppError): string => {
