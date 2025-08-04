@@ -60,7 +60,6 @@ export function useQuestionSearch() {
       return createSearchFunction(currentList.questions, (question) => [
         question.text,
         question.answer || '',
-        question.category || '',
       ])(query);
     },
     [currentList, createSearchFunction]

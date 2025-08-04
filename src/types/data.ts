@@ -12,7 +12,6 @@ export interface Question {
   text: string;
   answer?: string;
   isAnswered: boolean;
-  category?: string;
   answeredBy?: string; // 回答者ID
   answeredAt?: Date;
   createdAt: Date;
@@ -119,7 +118,6 @@ export interface CreateQuestionInput {
   text: string;
   answer?: string;
   isAnswered?: boolean;
-  category?: string;
 }
 
 // 質問更新時の入力データ型
@@ -127,7 +125,6 @@ export interface UpdateQuestionInput {
   text?: string;
   answer?: string;
   isAnswered?: boolean;
-  category?: string;
 }
 
 // 質問テンプレート作成時の入力データ型

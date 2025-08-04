@@ -27,7 +27,6 @@ export function createQuestion(input: CreateQuestionInput): Question {
     text: input.text.trim(),
     answer: undefined,
     isAnswered: false,
-    category: input.category?.trim(),
     answeredBy: undefined,
     answeredAt: undefined,
     createdAt: now,

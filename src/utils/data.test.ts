@@ -69,7 +69,6 @@ describe('データユーティリティ関数', () => {
         // Given: 必須フィールドのみの入力データ
         const input = createCreateQuestionInputMock({
           text: 'テスト質問',
-          category: undefined,
         });
         // When: 質問を作成する
         const question = createQuestion(input);
@@ -80,7 +79,6 @@ describe('データユーティリティ関数', () => {
           text: 'テスト質問',
           answer: undefined,
           isAnswered: false,
-          category: undefined,
           answeredBy: undefined,
           answeredAt: undefined,
           createdAt: mockDate,
@@ -94,7 +92,6 @@ describe('データユーティリティ関数', () => {
         // Given: 全フィールドを含む入力データ
         const input = createCreateQuestionInputMock({
           text: '  保育時間を教えてください  ',
-          category: '  基本情報  ',
         });
         // When: 質問を作成する
         const question = createQuestion(input);
@@ -105,7 +102,6 @@ describe('データユーティリティ関数', () => {
           text: '保育時間を教えてください',
           answer: undefined,
           isAnswered: false,
-          category: '基本情報',
           answeredBy: undefined,
           answeredAt: undefined,
           createdAt: mockDate,
@@ -126,22 +122,6 @@ describe('データユーティリティ関数', () => {
 
         // Then: 空白がトリムされたテキストが設定される
         expect(question.text).toBe('給食はありますか？');
-      });
-    });
-
-    describe('カテゴリに前後の空白がある時', () => {
-      test('空白がトリムされた質問オブジェクトを返す', () => {
-        // Given: 前後に空白があるカテゴリ
-        const input = createCreateQuestionInputMock({
-          text: 'テスト質問',
-          category: '   食事   ',
-        });
-
-        // When: 質問を作成する
-        const question = createQuestion(input);
-
-        // Then: 空白がトリムされたカテゴリが設定される
-        expect(question.category).toBe('食事');
       });
     });
   });
@@ -239,7 +219,6 @@ describe('データユーティリティ関数', () => {
       text: 'テスト質問',
       answer: undefined,
       isAnswered: false,
-      category: 'テスト',
       answeredBy: undefined,
       answeredAt: undefined,
     });
@@ -433,7 +412,6 @@ describe('データユーティリティ関数', () => {
         // Given: 既存の質問が1つある質問リストと新しい質問の入力データ
         const questionInput = createCreateQuestionInputMock({
           text: '新しい質問',
-          category: 'テスト',
         });
 
         // When: 質問を質問リストに追加する
@@ -442,7 +420,6 @@ describe('データユーティリティ関数', () => {
         // Then: 新しい質問が先頭に追加される
         expect(updatedList.questions).toHaveLength(2);
         expect(updatedList.questions[0].text).toBe('新しい質問');
-        expect(updatedList.questions[0].category).toBe('テスト');
         // 既存の質問が後に配置される
         expect(updatedList.questions[1].text).toBe('既存の質問');
       });
@@ -626,7 +603,6 @@ describe('データユーティリティ関数', () => {
           text: '元の質問1',
           answer: undefined,
           isAnswered: false,
-          category: '元のカテゴリ',
           answeredBy: undefined,
           answeredAt: undefined,
         }),
@@ -635,7 +611,6 @@ describe('データユーティリティ関数', () => {
           text: '元の質問2',
           answer: undefined,
           isAnswered: false,
-          category: undefined,
           answeredBy: undefined,
           answeredAt: undefined,
         }),
@@ -655,7 +630,6 @@ describe('データユーティリティ関数', () => {
           text: '更新された質問1',
           answer: '更新された回答',
           isAnswered: true,
-          category: '更新されたカテゴリ',
           answeredBy: 'user123',
           answeredAt: mockDate,
         });
@@ -915,7 +889,6 @@ describe('データユーティリティ関数', () => {
           text: 'テンプレート質問1',
           answer: 'テンプレート回答1',
           isAnswered: true,
-          category: 'テンプレートカテゴリ1',
           answeredBy: 'template-user',
           answeredAt: new Date('2023-01-01'),
         }),
@@ -924,7 +897,6 @@ describe('データユーティリティ関数', () => {
           text: 'テンプレート質問2',
           answer: undefined,
           isAnswered: false,
-          category: 'テンプレートカテゴリ2',
           answeredBy: undefined,
           answeredAt: undefined,
         }),
@@ -977,16 +949,10 @@ describe('データユーティリティ関数', () => {
           customizations
         );
 
-        // Then: 質問のテキストと基本情報がコピーされる
+        // Then: 質問のテキストがコピーされる
         expect(newQuestionList.questions).toHaveLength(2);
         expect(newQuestionList.questions[0].text).toBe('テンプレート質問1');
-        expect(newQuestionList.questions[0].category).toBe(
-          'テンプレートカテゴリ1'
-        );
         expect(newQuestionList.questions[1].text).toBe('テンプレート質問2');
-        expect(newQuestionList.questions[1].category).toBe(
-          'テンプレートカテゴリ2'
-        );
       });
     });
 
