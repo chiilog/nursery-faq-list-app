@@ -37,7 +37,7 @@ export interface Nursery {
   address?: string;
   phoneNumber?: string;
   website?: string;
-  visitSessions: VisitSession[]; // 段階的移行中：将来的にstring[]に変更予定
+  visitSessions: VisitSession[];
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -95,7 +95,7 @@ export interface UpdateNurseryInput {
   phoneNumber?: string;
   website?: string;
   notes?: string;
-  visitSessions?: VisitSession[]; // 段階的移行中：将来的にstring[]に変更予定
+  visitSessions?: VisitSession[];
 }
 
 // 見学セッション作成時の入力データ型
