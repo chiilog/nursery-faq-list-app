@@ -24,7 +24,7 @@ export function convertQuestionListToNursery(questionList: QuestionList): {
   const nursery: Nursery = {
     id: generatePrefixedId('nursery'),
     name: questionList.nurseryName || '未設定の保育園',
-    visitSessions: [], // 後でvisitSessionを追加
+    visitSessions: [], // 後でvisitSessionを追加する
     createdAt: questionList.createdAt,
     updatedAt: questionList.updatedAt,
   };
@@ -129,7 +129,7 @@ export function migrateAllQuestionLists(questionLists: QuestionList[]): {
     const nursery: Nursery = {
       id: nurseryId,
       name: nurseryName,
-      visitSessions: [], // 後でVisitSessionオブジェクトを設定
+      visitSessions: [], // ループ内でVisitSessionを作成して追加
       createdAt: lists[0].createdAt, // 最初のリストの作成日時を使用
       updatedAt: new Date(),
     };
