@@ -37,7 +37,7 @@ export interface Nursery {
   address?: string;
   phoneNumber?: string;
   website?: string;
-  visitSessions: VisitSession[];
+  visitSessions: VisitSession[]; // 段階的移行中：将来的にstring[]に変更予定
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -95,7 +95,7 @@ export interface UpdateNurseryInput {
   phoneNumber?: string;
   website?: string;
   notes?: string;
-  visitSessions?: VisitSession[]; // 内部実装用（一時的に追加）
+  visitSessions?: VisitSession[]; // 段階的移行中：将来的にstring[]に変更予定
 }
 
 // 見学セッション作成時の入力データ型
@@ -104,6 +104,7 @@ export interface CreateVisitSessionInput {
   status?: VisitSessionStatus;
   notes?: string;
   questions?: CreateQuestionInput[];
+  sharedWith?: string[];
 }
 
 // 見学セッション更新時の入力データ型
@@ -147,6 +148,8 @@ export interface CreateQuestionListInput {
   title: string;
   nurseryName?: string;
   visitDate?: Date;
+  questions?: CreateQuestionInput[];
+  sharedWith?: string[];
   isTemplate?: boolean;
 }
 
