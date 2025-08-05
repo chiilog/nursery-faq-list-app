@@ -4,6 +4,43 @@
 
 import type { FormData, ValidationErrors } from './types';
 
+/**
+ * 日付文字列の妥当性をチェック
+ * HTML5 date inputが受け入れない極端な日付を検出
+ */
+const isValidDateString = (dateString: string): boolean => {
+  // YYYY-MM-DD形式の基本チェック
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!datePattern.test(dateString)) {
+    return false;
+  }
+
+  const [year, month, day] = dateString.split('-').map(Number);
+
+  // 極端に大きな年や小さな年の検出
+  if (year < 1000 || year > 9999) {
+    return false;
+  }
+
+  // 月の範囲チェック
+  if (month < 1 || month > 12) {
+    return false;
+  }
+
+  // 日の範囲チェック
+  if (day < 1 || day > 31) {
+    return false;
+  }
+
+  // 実際の日付として妥当かチェック
+  const date = new Date(year, month - 1, day);
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+};
+
 export const validateNurseryForm = (formData: FormData): ValidationErrors => {
   const errors: ValidationErrors = {};
 
@@ -21,7 +58,9 @@ export const validateNurseryForm = (formData: FormData): ValidationErrors => {
   if (formData.visitDate.trim()) {
     // 日付が入力されている場合のみバリデーション
     const dateValue = new Date(formData.visitDate);
-    if (isNaN(dateValue.getTime())) {
+
+    // 無効な日付の検出を強化
+    if (isNaN(dateValue.getTime()) || !isValidDateString(formData.visitDate)) {
       errors.visitDate = '有効な日付を入力してください';
     } else {
       // 過去の日付チェック（今日以降のみ許可）
