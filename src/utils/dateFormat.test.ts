@@ -175,7 +175,7 @@ describe('formatDate', () => {
 
     it('2月の境界値（平年と潤年）を正しくフォーマットする', () => {
       const feb28Normal = new Date('2023-02-28T00:00:00.000Z'); // 平年
-      const feb29Leap = new Date('2024-02-29T00:00:00.000Z'); // 潤年
+      const feb29Leap = new Date('2024-02-29T00:00:00.000Z'); // 閏年
 
       expect(formatDate(feb28Normal)).toBe('2023/2/28');
       expect(formatDate(feb29Leap)).toBe('2024/2/29');

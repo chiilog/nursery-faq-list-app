@@ -148,6 +148,51 @@ describe('createQuestion', () => {
       expect(result.createdAt).toEqual(mockDate);
     });
   });
+
+  describe('異常系', () => {
+    it('input.textがnullの場合はエラーを投げる', () => {
+      const input = { text: null } as any;
+      expect(() => createQuestion(input)).toThrow('Question text is required');
+    });
+
+    it('input.textがundefinedの場合はエラーを投げる', () => {
+      const input = { text: undefined } as any;
+      expect(() => createQuestion(input)).toThrow('Question text is required');
+    });
+
+    it('inputがnullの場合はエラーを投げる', () => {
+      expect(() => createQuestion(null as any)).toThrow(
+        'Question text is required'
+      );
+    });
+
+    it('inputがundefinedの場合はエラーを投げる', () => {
+      expect(() => createQuestion(undefined as any)).toThrow(
+        'Question text is required'
+      );
+    });
+
+    it('空文字列の場合はエラーを投げる', () => {
+      const input: CreateQuestionInput = { text: '' };
+      expect(() => createQuestion(input)).toThrow(
+        'Question text cannot be empty'
+      );
+    });
+
+    it('空白のみの文字列の場合はエラーを投げる', () => {
+      const input: CreateQuestionInput = { text: '   ' };
+      expect(() => createQuestion(input)).toThrow(
+        'Question text cannot be empty'
+      );
+    });
+
+    it('タブや改行のみの文字列の場合はエラーを投げる', () => {
+      const input: CreateQuestionInput = { text: '\t\n\r ' };
+      expect(() => createQuestion(input)).toThrow(
+        'Question text cannot be empty'
+      );
+    });
+  });
 });
 
 describe('answerQuestion', () => {
@@ -185,6 +230,7 @@ describe('answerQuestion', () => {
         isAnswered: true,
         answeredBy: undefined,
         answeredAt: mockDate,
+        updatedAt: mockDate,
       });
     });
 
@@ -197,6 +243,7 @@ describe('answerQuestion', () => {
         isAnswered: true,
         answeredBy: 'user123',
         answeredAt: mockDate,
+        updatedAt: mockDate,
       });
     });
 
@@ -206,6 +253,7 @@ describe('answerQuestion', () => {
       expect(result.answer).toBe('7:00-19:00');
       expect(result.isAnswered).toBe(true);
       expect(result.answeredAt).toEqual(mockDate);
+      expect(result.updatedAt).toEqual(mockDate);
     });
 
     it('改行やタブを含む回答をトリミングする', () => {
@@ -214,6 +262,7 @@ describe('answerQuestion', () => {
       expect(result.answer).toBe('7:00-19:00');
       expect(result.isAnswered).toBe(true);
       expect(result.answeredAt).toEqual(mockDate);
+      expect(result.updatedAt).toEqual(mockDate);
     });
 
     it('元の質問オブジェクトを変更しない（イミュータブル）', () => {
@@ -235,6 +284,7 @@ describe('answerQuestion', () => {
         isAnswered: false,
         answeredBy: undefined,
         answeredAt: undefined,
+        updatedAt: mockDate,
       });
     });
 
@@ -247,6 +297,7 @@ describe('answerQuestion', () => {
         isAnswered: false,
         answeredBy: undefined,
         answeredAt: undefined,
+        updatedAt: mockDate,
       });
     });
 
@@ -255,6 +306,7 @@ describe('answerQuestion', () => {
 
       expect(result.answeredBy).toBe('user123');
       expect(result.answeredAt).toBeUndefined();
+      expect(result.updatedAt).toEqual(mockDate);
     });
   });
 
@@ -276,6 +328,7 @@ describe('answerQuestion', () => {
         isAnswered: true,
         answeredBy: 'newUser',
         answeredAt: mockDate,
+        updatedAt: mockDate,
       });
     });
 
@@ -296,6 +349,7 @@ describe('answerQuestion', () => {
         isAnswered: false,
         answeredBy: undefined,
         answeredAt: undefined,
+        updatedAt: mockDate,
       });
     });
   });

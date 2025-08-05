@@ -16,10 +16,19 @@ export function generateId(): string {
  * 新しい質問オブジェクトを作成する
  */
 export function createQuestion(input: CreateQuestionInput): Question {
+  if (!input || typeof input.text !== 'string') {
+    throw new Error('Question text is required');
+  }
+
+  const trimmedText = input.text.trim();
+  if (trimmedText.length === 0) {
+    throw new Error('Question text cannot be empty');
+  }
+
   const now = new Date();
   return {
     id: generateId(),
-    text: input.text.trim(),
+    text: trimmedText,
     answer: undefined,
     isAnswered: false,
     answeredBy: undefined,
@@ -45,6 +54,7 @@ export function answerQuestion(
     isAnswered: answer.trim().length > 0,
     answeredBy,
     answeredAt: answer.trim().length > 0 ? now : undefined,
+    updatedAt: now,
   };
 }
 
