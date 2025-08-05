@@ -7,19 +7,21 @@ import { Button, HStack } from '@chakra-ui/react';
 interface FormActionsProps {
   onSave: () => void;
   onCancel: () => void;
-  isDisabled: boolean;
+  isSaveDisabled: boolean;
+  isCancelDisabled?: boolean;
 }
 
 export const FormActions = ({
   onSave,
   onCancel,
-  isDisabled,
+  isSaveDisabled,
+  isCancelDisabled = false,
 }: FormActionsProps) => {
   return (
     <HStack gap={4} justify="stretch">
       <Button
         onClick={onSave}
-        disabled={isDisabled}
+        disabled={isSaveDisabled}
         colorScheme="brand"
         size="lg"
         borderRadius="md"
@@ -40,7 +42,7 @@ export const FormActions = ({
       </Button>
       <Button
         onClick={onCancel}
-        disabled={isDisabled}
+        disabled={isCancelDisabled}
         variant="ghost"
         size="lg"
         borderRadius="md"

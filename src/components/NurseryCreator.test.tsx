@@ -290,7 +290,7 @@ describe('NurseryCreator コンポーネント', () => {
   });
 
   describe('ローディング状態', () => {
-    test('保存中はボタンが無効化される', () => {
+    test('保存中は保存ボタンが無効化される', () => {
       // ローディング状態をモック
       vi.mocked(useNurseryStore).mockReturnValue({
         createNursery: mockCreateNursery,
@@ -303,6 +303,21 @@ describe('NurseryCreator コンポーネント', () => {
 
       const saveButton = screen.getByRole('button', { name: '保存' });
       expect(saveButton).toBeDisabled();
+    });
+
+    test('保存中でもキャンセルボタンは有効', () => {
+      // ローディング状態をモック
+      vi.mocked(useNurseryStore).mockReturnValue({
+        createNursery: mockCreateNursery,
+        clearError: mockClearError,
+        loading: { isLoading: true, operation: '保育園を作成中...' },
+        error: null,
+      });
+
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      expect(cancelButton).toBeEnabled();
     });
 
     test('保存中はローディングインジケーターが表示される', () => {
@@ -555,11 +570,13 @@ describe('NurseryCreator コンポーネント', () => {
 
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
-      // ローディング中はボタンが無効化され、入力フィールドも無効化される
+      // ローディング中は保存ボタンと入力フィールドが無効化される
       expect(screen.getByRole('button', { name: '保存' })).toBeDisabled();
-      expect(screen.getByRole('button', { name: 'キャンセル' })).toBeDisabled();
       expect(screen.getByLabelText('保育園名')).toBeDisabled();
       expect(screen.getByLabelText('見学日')).toBeDisabled();
+
+      // キャンセルボタンは有効のまま（UX改善）
+      expect(screen.getByRole('button', { name: 'キャンセル' })).toBeEnabled();
 
       // ローディングメッセージが表示される
       expect(screen.getByText('保育園を作成中...')).toBeInTheDocument();

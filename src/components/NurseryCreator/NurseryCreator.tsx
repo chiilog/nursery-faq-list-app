@@ -116,7 +116,8 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
       <FormActions
         onSave={() => void handleSave()}
         onCancel={onCancel}
-        isDisabled={loading.isLoading}
+        isSaveDisabled={loading.isLoading}
+        isCancelDisabled={false}
       />
     </Box>
   );
