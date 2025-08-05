@@ -402,7 +402,11 @@ export const NurseryDetailPage = () => {
             editingQuestionText={editingQuestionText}
             onQuestionClick={handleQuestionClick}
             onSaveAnswer={() => void handleSaveAnswer()}
-            onCancelEdit={() => setEditingQuestionId(null)}
+            onCancelEdit={() => {
+              setEditingQuestionId(null);
+              setEditingAnswer('');
+              setEditingQuestionText('');
+            }}
             onEditingAnswerChange={setEditingAnswer}
             onEditingQuestionTextChange={setEditingQuestionText}
             onDeleteQuestion={(questionId) =>

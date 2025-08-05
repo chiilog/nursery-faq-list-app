@@ -5,11 +5,15 @@
 
 // データモデル型
 export type {
+  // 基本型（両アーキテクチャで共通）
   Question,
   SyncState,
   CreateQuestionInput,
   UpdateQuestionInput,
-  // Nursery中心設計の型
+} from './data';
+
+// Nursery中心設計の型
+export type {
   Nursery,
   VisitSession,
   VisitSessionStatus,
