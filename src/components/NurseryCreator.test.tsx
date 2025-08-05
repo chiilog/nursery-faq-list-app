@@ -197,6 +197,33 @@ describe('NurseryCreator コンポーネント', () => {
       expect(screen.queryByText(/有効な日付/)).not.toBeInTheDocument();
     });
 
+    test('極端に大きな年の日付を入力した場合はエラーメッセージが表示される', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+
+      await user.type(nameInput, 'テスト保育園');
+
+      // 極端に大きな年（99999）を設定してHTMLバリデーションをバイパス
+      Object.defineProperty(visitDateInput, 'value', {
+        writable: true,
+        value: '99999-09-31',
+      });
+
+      // フォーカスを外してバリデーションをトリガー
+      visitDateInput.dispatchEvent(new Event('blur', { bubbles: true }));
+
+      const saveButton = screen.getByRole('button', { name: '保存' });
+      await user.click(saveButton);
+
+      // エラーメッセージが表示されることを確認
+      expect(
+        screen.getByText('有効な日付を入力してください')
+      ).toBeInTheDocument();
+    });
+
     test('過去の日付の場合はエラーメッセージが表示される', async () => {
       const user = userEvent.setup();
 
