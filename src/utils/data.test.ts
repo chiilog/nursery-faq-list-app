@@ -1,1062 +1,528 @@
 /**
  * データユーティリティ関数のテスト
- * TDD思想に基づく振る舞いベーステスト
- * Given-When-Then構造による明確なテスト記述
+ * TDD原則に基づく包括的なテストケース
  */
 
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import type {
-  Question,
-  QuestionList,
-  CreateQuestionListInput,
-} from '../types/data';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   generateId,
   createQuestion,
-  createQuestionList,
   answerQuestion,
-  updateQuestionListTimestamp,
-  addQuestionToList,
-  removeQuestionFromList,
-  updateQuestionInList,
-  getQuestionListStats,
-  createQuestionListFromTemplate,
+  addQuestionToQuestionsArray,
 } from './data';
-import {
-  createQuestionMock,
-  createCreateQuestionInputMock,
-} from '../test/test-utils';
+import type { CreateQuestionInput, Question } from '../types/data';
 
-// モックデータ
-const mockDate = new Date('2023-12-01T10:00:00Z');
+describe('generateId', () => {
+  describe('正常系', () => {
+    it('UUID v4形式の文字列を返す', () => {
+      const id = generateId();
 
-// crypto.randomUUIDのモック
-const mockGenerateId = vi.fn(() => 'mock-uuid-123');
+      // UUID v4のパターンをチェック
+      const uuidV4Pattern =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      expect(id).toMatch(uuidV4Pattern);
+      expect(typeof id).toBe('string');
+      expect(id.length).toBe(36);
+    });
 
-describe('データユーティリティ関数', () => {
+    it('呼び出すたびに異なるIDを返す', () => {
+      const id1 = generateId();
+      const id2 = generateId();
+      const id3 = generateId();
+
+      expect(id1).not.toBe(id2);
+      expect(id2).not.toBe(id3);
+      expect(id1).not.toBe(id3);
+    });
+
+    it('crypto.randomUUIDを呼び出している', () => {
+      const mockRandomUUID = vi.spyOn(crypto, 'randomUUID');
+      mockRandomUUID.mockReturnValue('12345678-1234-4000-8000-123456789abc');
+
+      const result = generateId();
+
+      expect(mockRandomUUID).toHaveBeenCalledTimes(1);
+      expect(result).toBe('12345678-1234-4000-8000-123456789abc');
+
+      mockRandomUUID.mockRestore();
+    });
+  });
+});
+
+describe('createQuestion', () => {
+  let mockDate: Date;
+
   beforeEach(() => {
+    mockDate = new Date('2024-01-01T00:00:00.000Z');
     vi.useFakeTimers();
     vi.setSystemTime(mockDate);
-
-    // crypto.randomUUIDをモック
-    Object.defineProperty(globalThis, 'crypto', {
-      value: { randomUUID: mockGenerateId },
-      writable: true,
-    });
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
   });
 
-  describe('generateId', () => {
-    describe('IDを生成する時', () => {
-      test('UUID形式の文字列を返す', () => {
-        // When: IDを生成する
-        const id = generateId();
+  describe('正常系', () => {
+    it('最小限の入力で質問オブジェクトを作成する', () => {
+      const input: CreateQuestionInput = {
+        text: '保育時間を教えてください',
+      };
 
-        // Then: UUID形式の文字列が返される
-        expect(id).toBe('mock-uuid-123');
-        expect(mockGenerateId).toHaveBeenCalledOnce();
+      const result = createQuestion(input);
+
+      expect(result).toEqual({
+        id: expect.any(String),
+        text: '保育時間を教えてください',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: mockDate,
+        updatedAt: mockDate,
       });
-    });
-  });
-
-  describe('createQuestion', () => {
-    describe('必須フィールドのみで質問を作成する時', () => {
-      test('デフォルト値が設定された質問オブジェクトを返す', () => {
-        // Given: 必須フィールドのみの入力データ
-        const input = createCreateQuestionInputMock({
-          text: 'テスト質問',
-        });
-        // When: 質問を作成する
-        const question = createQuestion(input);
-
-        // Then: デフォルト値が設定された質問オブジェクトが返される
-        expect(question).toEqual({
-          id: 'mock-uuid-123',
-          text: 'テスト質問',
-          answer: undefined,
-          isAnswered: false,
-          answeredBy: undefined,
-          answeredAt: undefined,
-          createdAt: mockDate,
-          updatedAt: mockDate,
-        });
-      });
+      expect(result.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      );
     });
 
-    describe('全フィールドを指定して質問を作成する時', () => {
-      test('指定した値が設定された質問オブジェクトを返す', () => {
-        // Given: 全フィールドを含む入力データ
-        const input = createCreateQuestionInputMock({
-          text: '  保育時間を教えてください  ',
-        });
-        // When: 質問を作成する
-        const question = createQuestion(input);
+    it('回答付きの入力で質問オブジェクトを作成する', () => {
+      const input: CreateQuestionInput = {
+        text: '保育時間を教えてください',
+        answer: '7:00-19:00',
+        isAnswered: true,
+      };
 
-        // Then: 指定した値とトリム処理が適用された質問オブジェクトが返される
-        expect(question).toEqual({
-          id: 'mock-uuid-123',
-          text: '保育時間を教えてください',
-          answer: undefined,
-          isAnswered: false,
-          answeredBy: undefined,
-          answeredAt: undefined,
-          createdAt: mockDate,
-          updatedAt: mockDate,
-        });
+      const result = createQuestion(input);
+
+      expect(result).toEqual({
+        id: expect.any(String),
+        text: '保育時間を教えてください',
+        answer: undefined, // createQuestion関数では入力のanswerは無視される仕様
+        isAnswered: false, // createQuestion関数では入力のisAnsweredは無視される仕様
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: mockDate,
+        updatedAt: mockDate,
       });
     });
 
-    describe('テキストに前後の空白がある時', () => {
-      test('空白がトリムされた質問オブジェクトを返す', () => {
-        // Given: 前後に空白があるテキスト
-        const input = createCreateQuestionInputMock({
-          text: '   給食はありますか？   ',
-        });
+    it('前後の空白を含むテキストをトリミングする', () => {
+      const input: CreateQuestionInput = {
+        text: '  保育時間を教えてください  ',
+      };
 
-        // When: 質問を作成する
-        const question = createQuestion(input);
+      const result = createQuestion(input);
 
-        // Then: 空白がトリムされたテキストが設定される
-        expect(question.text).toBe('給食はありますか？');
-      });
-    });
-  });
-
-  describe('createQuestionList', () => {
-    describe('必須フィールドのみで質問リストを作成する時', () => {
-      test('デフォルト値が設定された質問リストオブジェクトを返す', () => {
-        // Given: 必須フィールドのみの入力データ
-        const input: CreateQuestionListInput = {
-          title: 'テスト質問リスト',
-        };
-
-        // When: 質問リストを作成する
-        const questionList = createQuestionList(input);
-
-        // Then: デフォルト値が設定された質問リストオブジェクトが返される
-        expect(questionList).toEqual({
-          id: 'mock-uuid-123',
-          title: 'テスト質問リスト',
-          nurseryName: undefined,
-          visitDate: undefined,
-          questions: [],
-          sharedWith: [],
-          createdAt: mockDate,
-          updatedAt: mockDate,
-          isTemplate: false,
-        });
-      });
+      expect(result.text).toBe('保育時間を教えてください');
     });
 
-    describe('全フィールドを指定して質問リストを作成する時', () => {
-      test('指定した値が設定された質問リストオブジェクトを返す', () => {
-        // Given: 全フィールドを含む入力データ
-        const visitDate = new Date('2023-12-15');
-        const input: CreateQuestionListInput = {
-          title: '  テスト保育園見学リスト  ',
-          nurseryName: '  テスト保育園  ',
-          visitDate,
-          isTemplate: true,
-        };
+    it('改行やタブを含むテキストをトリミングする', () => {
+      const input: CreateQuestionInput = {
+        text: '\n\t  保育時間を教えてください  \r\n',
+      };
 
-        // When: 質問リストを作成する
-        const questionList = createQuestionList(input);
+      const result = createQuestion(input);
 
-        // Then: 指定した値とトリム処理が適用された質問リストオブジェクトが返される
-        expect(questionList).toEqual({
-          id: 'mock-uuid-123',
-          title: 'テスト保育園見学リスト',
-          nurseryName: 'テスト保育園',
-          visitDate,
-          questions: [],
-          sharedWith: [],
-          createdAt: mockDate,
-          updatedAt: mockDate,
-          isTemplate: true,
-        });
-      });
+      expect(result.text).toBe('保育時間を教えてください');
     });
 
-    describe('タイトルに前後の空白がある時', () => {
-      test('空白がトリムされた質問リストオブジェクトを返す', () => {
-        // Given: 前後に空白があるタイトル
-        const input: CreateQuestionListInput = {
-          title: '   保育園見学質問リスト   ',
-        };
+    it('毎回異なるIDを生成する', () => {
+      const input: CreateQuestionInput = {
+        text: '保育時間を教えてください',
+      };
 
-        // When: 質問リストを作成する
-        const questionList = createQuestionList(input);
+      const result1 = createQuestion(input);
+      const result2 = createQuestion(input);
 
-        // Then: 空白がトリムされたタイトルが設定される
-        expect(questionList.title).toBe('保育園見学質問リスト');
-      });
+      expect(result1.id).not.toBe(result2.id);
     });
 
-    describe('保育園名に前後の空白がある時', () => {
-      test('空白がトリムされた質問リストオブジェクトを返す', () => {
-        // Given: 前後に空白がある保育園名
-        const input: CreateQuestionListInput = {
-          title: 'テスト質問リスト',
-          nurseryName: '   さくら保育園   ',
-        };
+    it('作成日時と更新日時が同じ値になる', () => {
+      const input: CreateQuestionInput = {
+        text: '保育時間を教えてください',
+      };
 
-        // When: 質問リストを作成する
-        const questionList = createQuestionList(input);
+      const result = createQuestion(input);
 
-        // Then: 空白がトリムされた保育園名が設定される
-        expect(questionList.nurseryName).toBe('さくら保育園');
-      });
+      expect(result.createdAt).toEqual(result.updatedAt);
+      expect(result.createdAt).toEqual(mockDate);
     });
   });
 
-  describe('answerQuestion', () => {
-    const baseQuestion = createQuestionMock({
-      id: 'q1',
-      text: 'テスト質問',
+  describe('異常系', () => {
+    it('input.textがnullの場合はエラーを投げる', () => {
+      const input = { text: null } as any;
+      expect(() => createQuestion(input)).toThrow('Question text is required');
+    });
+
+    it('input.textがundefinedの場合はエラーを投げる', () => {
+      const input = { text: undefined } as any;
+      expect(() => createQuestion(input)).toThrow('Question text is required');
+    });
+
+    it('inputがnullの場合はエラーを投げる', () => {
+      expect(() => createQuestion(null as any)).toThrow(
+        'Question text is required'
+      );
+    });
+
+    it('inputがundefinedの場合はエラーを投げる', () => {
+      expect(() => createQuestion(undefined as any)).toThrow(
+        'Question text is required'
+      );
+    });
+
+    it('空文字列の場合はエラーを投げる', () => {
+      const input: CreateQuestionInput = { text: '' };
+      expect(() => createQuestion(input)).toThrow(
+        'Question text cannot be empty'
+      );
+    });
+
+    it('空白のみの文字列の場合はエラーを投げる', () => {
+      const input: CreateQuestionInput = { text: '   ' };
+      expect(() => createQuestion(input)).toThrow(
+        'Question text cannot be empty'
+      );
+    });
+
+    it('タブや改行のみの文字列の場合はエラーを投げる', () => {
+      const input: CreateQuestionInput = { text: '\t\n\r ' };
+      expect(() => createQuestion(input)).toThrow(
+        'Question text cannot be empty'
+      );
+    });
+  });
+});
+
+describe('answerQuestion', () => {
+  let mockDate: Date;
+  let baseQuestion: Question;
+
+  beforeEach(() => {
+    mockDate = new Date('2024-01-01T00:00:00.000Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(mockDate);
+
+    baseQuestion = {
+      id: 'test-id',
+      text: '保育時間を教えてください',
       answer: undefined,
       isAnswered: false,
       answeredBy: undefined,
       answeredAt: undefined,
-    });
-
-    describe('回答を設定する時', () => {
-      test('回答が設定され、isAnsweredがtrueになる', () => {
-        // Given: 未回答の質問と回答テキスト
-        const answer = 'テスト回答';
-
-        // When: 質問に回答する
-        const answeredQuestion = answerQuestion(baseQuestion, answer);
-
-        // Then: 回答が設定され、isAnsweredがtrueになる
-        expect(answeredQuestion.answer).toBe('テスト回答');
-        expect(answeredQuestion.isAnswered).toBe(true);
-        expect(answeredQuestion.answeredAt).toEqual(mockDate);
-      });
-    });
-
-    describe('回答者を指定して回答を設定する時', () => {
-      test('回答者が設定された質問オブジェクトを返す', () => {
-        // Given: 未回答の質問、回答テキスト、回答者
-        const answer = 'テスト回答';
-        const answeredBy = 'user123';
-
-        // When: 回答者を指定して質問に回答する
-        const answeredQuestion = answerQuestion(
-          baseQuestion,
-          answer,
-          answeredBy
-        );
-
-        // Then: 回答者が設定される
-        expect(answeredQuestion.answeredBy).toBe('user123');
-        expect(answeredQuestion.isAnswered).toBe(true);
-      });
-    });
-
-    describe('空の回答を設定する時', () => {
-      test('isAnsweredがfalseでansweredAtがundefinedになる', () => {
-        // Given: 未回答の質問と空の回答テキスト
-        const answer = '';
-
-        // When: 空の回答を設定する
-        const answeredQuestion = answerQuestion(baseQuestion, answer);
-
-        // Then: isAnsweredがfalseでansweredAtがundefinedになる
-        expect(answeredQuestion.answer).toBe('');
-        expect(answeredQuestion.isAnswered).toBe(false);
-        expect(answeredQuestion.answeredAt).toBeUndefined();
-      });
-    });
-
-    describe('空白のみの回答を設定する時', () => {
-      test('空白がトリムされ、isAnsweredがfalseになる', () => {
-        // Given: 未回答の質問と空白のみの回答テキスト
-        const answer = '   ';
-
-        // When: 空白のみの回答を設定する
-        const answeredQuestion = answerQuestion(baseQuestion, answer);
-
-        // Then: 空白がトリムされ、isAnsweredがfalseになる
-        expect(answeredQuestion.answer).toBe('');
-        expect(answeredQuestion.isAnswered).toBe(false);
-        expect(answeredQuestion.answeredAt).toBeUndefined();
-      });
-    });
-
-    describe('前後に空白がある回答を設定する時', () => {
-      test('空白がトリムされた回答が設定される', () => {
-        // Given: 未回答の質問と前後に空白がある回答テキスト
-        const answer = '   詳細な回答です   ';
-
-        // When: 回答を設定する
-        const answeredQuestion = answerQuestion(baseQuestion, answer);
-
-        // Then: 空白がトリムされた回答が設定される
-        expect(answeredQuestion.answer).toBe('詳細な回答です');
-        expect(answeredQuestion.isAnswered).toBe(true);
-      });
-    });
-
-    describe('元の質問オブジェクトが変更されないことを確認する時', () => {
-      test('元の質問オブジェクトは変更されない', () => {
-        // Given: 未回答の質問
-        const originalQuestion = { ...baseQuestion };
-        const answer = 'テスト回答';
-
-        // When: 質問に回答する
-        answerQuestion(baseQuestion, answer);
-
-        // Then: 元の質問オブジェクトは変更されない
-        expect(baseQuestion).toEqual(originalQuestion);
-      });
-    });
-  });
-
-  describe('updateQuestionListTimestamp', () => {
-    const baseQuestionList: QuestionList = {
-      id: 'list1',
-      title: 'テスト質問リスト',
-      nurseryName: 'テスト保育園',
-      visitDate: undefined,
-      questions: [],
-      sharedWith: [],
-      createdAt: new Date('2023-01-01'),
-      updatedAt: new Date('2023-01-01'),
-      isTemplate: false,
+      createdAt: new Date('2023-12-01T00:00:00.000Z'),
+      updatedAt: new Date('2023-12-01T00:00:00.000Z'),
     };
+  });
 
-    describe('質問リストのタイムスタンプを更新する時', () => {
-      test('updatedAtが現在時刻に更新される', () => {
-        // Given: 質問リスト
-        const questionList = { ...baseQuestionList };
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
-        // When: タイムスタンプを更新する
-        const updatedList = updateQuestionListTimestamp(questionList);
+  describe('正常系', () => {
+    it('空でない回答を設定すると回答済みになる', () => {
+      const result = answerQuestion(baseQuestion, '7:00-19:00');
 
-        // Then: updatedAtが現在時刻に更新される
-        expect(updatedList.updatedAt).toEqual(mockDate);
+      expect(result).toEqual({
+        ...baseQuestion,
+        answer: '7:00-19:00',
+        isAnswered: true,
+        answeredBy: undefined,
+        answeredAt: mockDate,
+        updatedAt: mockDate,
       });
     });
 
-    describe('createdAtは変更されないことを確認する時', () => {
-      test('createdAtは元の値を維持する', () => {
-        // Given: 質問リスト
-        const questionList = { ...baseQuestionList };
-        const originalCreatedAt = questionList.createdAt;
+    it('回答者情報付きで回答を設定する', () => {
+      const result = answerQuestion(baseQuestion, '7:00-19:00', 'user123');
 
-        // When: タイムスタンプを更新する
-        const updatedList = updateQuestionListTimestamp(questionList);
-
-        // Then: createdAtは変更されない
-        expect(updatedList.createdAt).toEqual(originalCreatedAt);
+      expect(result).toEqual({
+        ...baseQuestion,
+        answer: '7:00-19:00',
+        isAnswered: true,
+        answeredBy: 'user123',
+        answeredAt: mockDate,
+        updatedAt: mockDate,
       });
     });
 
-    describe('他のフィールドは変更されないことを確認する時', () => {
-      test('updatedAt以外のフィールドは元の値を維持する', () => {
-        // Given: 質問リスト
-        const questionList = { ...baseQuestionList };
+    it('前後の空白を含む回答をトリミングする', () => {
+      const result = answerQuestion(baseQuestion, '  7:00-19:00  ');
 
-        // When: タイムスタンプを更新する
-        const updatedList = updateQuestionListTimestamp(questionList);
-
-        // Then: updatedAt以外のフィールドは変更されない
-        expect(updatedList.id).toBe(questionList.id);
-        expect(updatedList.title).toBe(questionList.title);
-        expect(updatedList.nurseryName).toBe(questionList.nurseryName);
-        expect(updatedList.questions).toEqual(questionList.questions);
-      });
+      expect(result.answer).toBe('7:00-19:00');
+      expect(result.isAnswered).toBe(true);
+      expect(result.answeredAt).toEqual(mockDate);
+      expect(result.updatedAt).toEqual(mockDate);
     });
 
-    describe('元のオブジェクトが変更されないことを確認する時', () => {
-      test('元の質問リストオブジェクトは変更されない', () => {
-        // Given: 質問リスト
-        const questionList = { ...baseQuestionList };
-        const originalList = { ...questionList };
+    it('改行やタブを含む回答をトリミングする', () => {
+      const result = answerQuestion(baseQuestion, '\n\t  7:00-19:00  \r\n');
 
-        // When: タイムスタンプを更新する
-        updateQuestionListTimestamp(questionList);
+      expect(result.answer).toBe('7:00-19:00');
+      expect(result.isAnswered).toBe(true);
+      expect(result.answeredAt).toEqual(mockDate);
+      expect(result.updatedAt).toEqual(mockDate);
+    });
 
-        // Then: 元のオブジェクトは変更されない
-        expect(questionList).toEqual(originalList);
-      });
+    it('元の質問オブジェクトを変更しない（イミュータブル）', () => {
+      const originalQuestion = { ...baseQuestion };
+
+      answerQuestion(baseQuestion, '7:00-19:00');
+
+      expect(baseQuestion).toEqual(originalQuestion);
     });
   });
 
-  describe('addQuestionToList', () => {
-    const baseQuestionList: QuestionList = {
-      id: 'list1',
-      title: 'テスト質問リスト',
-      nurseryName: 'テスト保育園',
-      visitDate: undefined,
-      questions: [
-        {
-          id: 'existing-q1',
-          text: '既存の質問',
-          answer: undefined,
-          isAnswered: false,
-        } as Question,
-      ],
-      sharedWith: [],
-      createdAt: new Date('2023-01-01'),
-      updatedAt: new Date('2023-01-01'),
-      isTemplate: false,
-    };
+  describe('空の回答の場合', () => {
+    it('空文字列の回答は未回答状態になる', () => {
+      const result = answerQuestion(baseQuestion, '');
 
-    describe('質問リストに新しい質問を追加する時', () => {
-      test('新しい質問が先頭に追加される', () => {
-        // Given: 既存の質問が1つある質問リストと新しい質問の入力データ
-        const questionInput = createCreateQuestionInputMock({
-          text: '新しい質問',
-        });
-
-        // When: 質問を質問リストに追加する
-        const updatedList = addQuestionToList(baseQuestionList, questionInput);
-
-        // Then: 新しい質問が先頭に追加される
-        expect(updatedList.questions).toHaveLength(2);
-        expect(updatedList.questions[0].text).toBe('新しい質問');
-        // 既存の質問が後に配置される
-        expect(updatedList.questions[1].text).toBe('既存の質問');
+      expect(result).toEqual({
+        ...baseQuestion,
+        answer: '',
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        updatedAt: mockDate,
       });
     });
 
-    describe('タイムスタンプが更新されることを確認する時', () => {
-      test('updatedAtが現在時刻に更新される', () => {
-        // Given: 質問リストと新しい質問
-        const questionInput = createCreateQuestionInputMock({
-          text: '新しい質問',
-        });
+    it('空白のみの回答は未回答状態になる', () => {
+      const result = answerQuestion(baseQuestion, '   ');
 
-        // When: 質問を追加する
-        const updatedList = addQuestionToList(baseQuestionList, questionInput);
-
-        // Then: updatedAtが現在時刻に更新される
-        expect(updatedList.updatedAt).toEqual(mockDate);
+      expect(result).toEqual({
+        ...baseQuestion,
+        answer: '',
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        updatedAt: mockDate,
       });
     });
 
-    describe('空の質問リストに質問を追加する時', () => {
-      test('最初の質問として正しく追加される', () => {
-        // Given: 空の質問リスト
-        const emptyList = { ...baseQuestionList, questions: [] };
-        const questionInput = createCreateQuestionInputMock({
-          text: '最初の質問',
-        });
+    it('空白のみの回答でも回答者情報は設定されるが回答日時は設定されない', () => {
+      const result = answerQuestion(baseQuestion, '   ', 'user123');
 
-        // When: 質問を追加する
-        const updatedList = addQuestionToList(emptyList, questionInput);
-
-        // Then: 最初の質問として追加される
-        expect(updatedList.questions).toHaveLength(1);
-        expect(updatedList.questions[0].text).toBe('最初の質問');
-      });
-    });
-
-    describe('元の質問リストが変更されないことを確認する時', () => {
-      test('元の質問リストオブジェクトは変更されない', () => {
-        // Given: 質問リスト
-        const originalList = { ...baseQuestionList };
-        const questionInput = createCreateQuestionInputMock({
-          text: '新しい質問',
-        });
-
-        // When: 質問を追加する
-        addQuestionToList(baseQuestionList, questionInput);
-
-        // Then: 元のオブジェクトは変更されない
-        expect(baseQuestionList.questions).toHaveLength(1);
-        expect(baseQuestionList.updatedAt).toEqual(originalList.updatedAt);
-      });
+      expect(result.answeredBy).toBe('user123');
+      expect(result.answeredAt).toBeUndefined();
+      expect(result.updatedAt).toEqual(mockDate);
     });
   });
 
-  describe('removeQuestionFromList', () => {
-    const createQuestionListWithMultipleQuestions = (): QuestionList => ({
-      id: 'list1',
-      title: 'テスト質問リスト',
-      nurseryName: 'テスト保育園',
-      visitDate: undefined,
-      questions: [
-        {
-          id: 'q1',
-          text: '質問1',
-          answer: undefined,
-          isAnswered: false,
-        } as Question,
-        {
-          id: 'q2',
-          text: '質問2',
-          answer: undefined,
-          isAnswered: false,
-        } as Question,
-        {
-          id: 'q3',
-          text: '質問3',
-          answer: undefined,
-          isAnswered: false,
-        } as Question,
-      ],
-      sharedWith: [],
-      createdAt: new Date('2023-01-01'),
-      updatedAt: new Date('2023-01-01'),
-      isTemplate: false,
-    });
+  describe('既に回答済みの質問を更新する場合', () => {
+    it('既存の回答を新しい回答で上書きする', () => {
+      const answeredQuestion: Question = {
+        ...baseQuestion,
+        answer: '旧回答',
+        isAnswered: true,
+        answeredBy: 'oldUser',
+        answeredAt: new Date('2023-12-15T00:00:00.000Z'),
+      };
 
-    describe('存在する質問を削除する時', () => {
-      test('指定した質問が削除される', () => {
-        // Given: 3つの質問がある質問リスト
-        const questionList = createQuestionListWithMultipleQuestions();
+      const result = answerQuestion(answeredQuestion, '新回答', 'newUser');
 
-        // When: 中間の質問を削除する
-        const updatedList = removeQuestionFromList(questionList, 'q2');
-
-        // Then: 指定した質問が削除される
-        expect(updatedList.questions).toHaveLength(2);
-        expect(
-          updatedList.questions.find((q) => q.id === 'q2')
-        ).toBeUndefined();
-        expect(updatedList.questions[0].id).toBe('q1');
-        expect(updatedList.questions[1].id).toBe('q3');
+      expect(result).toEqual({
+        ...answeredQuestion,
+        answer: '新回答',
+        isAnswered: true,
+        answeredBy: 'newUser',
+        answeredAt: mockDate,
+        updatedAt: mockDate,
       });
     });
 
-    describe('存在しない質問IDを指定して削除する時', () => {
-      test('質問リストは変更されない', () => {
-        // Given: 3つの質問がある質問リスト
-        const questionList = createQuestionListWithMultipleQuestions();
-        const originalQuestionsLength = questionList.questions.length;
+    it('回答を空にすると未回答状態に戻る', () => {
+      const answeredQuestion: Question = {
+        ...baseQuestion,
+        answer: '既存回答',
+        isAnswered: true,
+        answeredBy: 'user123',
+        answeredAt: new Date('2023-12-15T00:00:00.000Z'),
+      };
 
-        // When: 存在しない質問IDで削除を試行する
-        const updatedList = removeQuestionFromList(
-          questionList,
-          'non-existent-id'
-        );
+      const result = answerQuestion(answeredQuestion, '');
 
-        // Then: 質問リストは変更されない
-        expect(updatedList.questions).toHaveLength(originalQuestionsLength);
-        expect(updatedList.questions.map((q) => q.id)).toEqual([
-          'q1',
-          'q2',
-          'q3',
-        ]);
-      });
-    });
-
-    describe('最後の質問を削除する時', () => {
-      test('空の質問リストになる', () => {
-        // Given: 1つの質問がある質問リスト
-        const questionList = {
-          ...createQuestionListWithMultipleQuestions(),
-          questions: [createQuestionListWithMultipleQuestions().questions[0]],
-        };
-
-        // When: 最後の質問を削除する
-        const updatedList = removeQuestionFromList(questionList, 'q1');
-
-        // Then: 空の質問リストになる
-        expect(updatedList.questions).toHaveLength(0);
-      });
-    });
-
-    describe('タイムスタンプが更新されることを確認する時', () => {
-      test('updatedAtが現在時刻に更新される', () => {
-        // Given: 質問リスト
-        const questionList = createQuestionListWithMultipleQuestions();
-
-        // When: 質問を削除する
-        const updatedList = removeQuestionFromList(questionList, 'q2');
-
-        // Then: updatedAtが現在時刻に更新される
-        expect(updatedList.updatedAt).toEqual(mockDate);
-      });
-    });
-
-    describe('元の質問リストが変更されないことを確認する時', () => {
-      test('元の質問リストオブジェクトは変更されない', () => {
-        // Given: 質問リスト
-        const questionList = createQuestionListWithMultipleQuestions();
-        const originalQuestionsLength = questionList.questions.length;
-
-        // When: 質問を削除する
-        removeQuestionFromList(questionList, 'q2');
-
-        // Then: 元のオブジェクトは変更されない
-        expect(questionList.questions).toHaveLength(originalQuestionsLength);
+      expect(result).toEqual({
+        ...answeredQuestion,
+        answer: '',
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        updatedAt: mockDate,
       });
     });
   });
+});
 
-  describe('updateQuestionInList', () => {
-    const createQuestionListForUpdate = (): QuestionList => ({
-      id: 'list1',
-      title: 'テスト質問リスト',
-      nurseryName: 'テスト保育園',
-      visitDate: undefined,
-      questions: [
-        createQuestionMock({
-          id: 'q1',
-          text: '元の質問1',
-          answer: undefined,
-          isAnswered: false,
-          answeredBy: undefined,
-          answeredAt: undefined,
-        }),
-        createQuestionMock({
-          id: 'q2',
-          text: '元の質問2',
-          answer: undefined,
-          isAnswered: false,
-          answeredBy: undefined,
-          answeredAt: undefined,
-        }),
-      ],
-      sharedWith: [],
-      createdAt: new Date('2023-01-01'),
-      updatedAt: new Date('2023-01-01'),
-      isTemplate: false,
+describe('addQuestionToQuestionsArray', () => {
+  describe('正常系', () => {
+    it('空の配列に質問を追加する', () => {
+      const existingQuestions: Question[] = [];
+      const newQuestion: Question = {
+        id: 'new-id',
+        text: '新しい質問',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const result = addQuestionToQuestionsArray(
+        existingQuestions,
+        newQuestion
+      );
+
+      expect(result).toEqual([newQuestion]);
+      expect(result.length).toBe(1);
     });
 
-    describe('存在する質問を更新する時', () => {
-      test('指定した質問が更新される', () => {
-        // Given: 質問リストと更新後の質問オブジェクト
-        const questionList = createQuestionListForUpdate();
-        const updatedQuestion = createQuestionMock({
-          id: 'q1',
-          text: '更新された質問1',
-          answer: '更新された回答',
-          isAnswered: true,
-          answeredBy: 'user123',
-          answeredAt: mockDate,
-        });
+    it('既存の質問がある配列の先頭に新しい質問を追加する', () => {
+      const existingQuestion: Question = {
+        id: 'existing-id',
+        text: '既存の質問',
+        answer: '既存の回答',
+        isAnswered: true,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date('2023-12-01T00:00:00.000Z'),
+        updatedAt: new Date('2023-12-01T00:00:00.000Z'),
+      };
 
-        // When: 質問を更新する
-        const updatedList = updateQuestionInList(
-          questionList,
-          'q1',
-          updatedQuestion
-        );
+      const newQuestion: Question = {
+        id: 'new-id',
+        text: '新しい質問',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+      };
 
-        // Then: 指定した質問が更新される
-        const targetQuestion = updatedList.questions.find((q) => q.id === 'q1');
-        expect(targetQuestion).toEqual(updatedQuestion);
-      });
+      const existingQuestions = [existingQuestion];
+      const result = addQuestionToQuestionsArray(
+        existingQuestions,
+        newQuestion
+      );
+
+      expect(result).toEqual([newQuestion, existingQuestion]);
+      expect(result[0]).toEqual(newQuestion);
+      expect(result[1]).toEqual(existingQuestion);
+      expect(result.length).toBe(2);
     });
 
-    describe('他の質問は変更されないことを確認する時', () => {
-      test('更新対象以外の質問は元の値を維持する', () => {
-        // Given: 質問リストと更新後の質問オブジェクト
-        const questionList = createQuestionListForUpdate();
-        const originalQ2 = { ...questionList.questions[1] };
-        const updatedQuestion: Question = {
-          ...questionList.questions[0],
-          text: '更新された質問1',
-        };
+    it('複数の既存質問がある配列の先頭に新しい質問を追加する', () => {
+      const question1: Question = {
+        id: 'id-1',
+        text: '質問1',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date('2023-11-01T00:00:00.000Z'),
+        updatedAt: new Date('2023-11-01T00:00:00.000Z'),
+      };
 
-        // When: 質問を更新する
-        const updatedList = updateQuestionInList(
-          questionList,
-          'q1',
-          updatedQuestion
-        );
+      const question2: Question = {
+        id: 'id-2',
+        text: '質問2',
+        answer: '回答2',
+        isAnswered: true,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date('2023-12-01T00:00:00.000Z'),
+        updatedAt: new Date('2023-12-01T00:00:00.000Z'),
+      };
 
-        // Then: 他の質問は変更されない
-        const q2 = updatedList.questions.find((q) => q.id === 'q2');
-        expect(q2).toEqual(originalQ2);
-      });
+      const newQuestion: Question = {
+        id: 'new-id',
+        text: '新しい質問',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+      };
+
+      const existingQuestions = [question1, question2];
+      const result = addQuestionToQuestionsArray(
+        existingQuestions,
+        newQuestion
+      );
+
+      expect(result).toEqual([newQuestion, question1, question2]);
+      expect(result.length).toBe(3);
     });
 
-    describe('存在しない質問IDを指定して更新する時', () => {
-      test('質問リストは変更されない', () => {
-        // Given: 質問リストと更新用の質問オブジェクト
-        const questionList = createQuestionListForUpdate();
-        const originalQuestions = [...questionList.questions];
-        const updatedQuestion = createQuestionMock({
-          id: 'non-existent-id',
-          text: '存在しない質問',
-          answer: undefined,
-          isAnswered: false,
-        });
+    it('元の配列を変更しない（イミュータブル）', () => {
+      const existingQuestion: Question = {
+        id: 'existing-id',
+        text: '既存の質問',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-        // When: 存在しない質問IDで更新を試行する
-        const updatedList = updateQuestionInList(
-          questionList,
-          'non-existent-id',
-          updatedQuestion
-        );
+      const newQuestion: Question = {
+        id: 'new-id',
+        text: '新しい質問',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-        // Then: 質問リストは変更されない
-        expect(updatedList.questions).toEqual(originalQuestions);
-      });
+      const originalQuestions = [existingQuestion];
+      const result = addQuestionToQuestionsArray(
+        originalQuestions,
+        newQuestion
+      );
+
+      expect(originalQuestions).toEqual([existingQuestion]);
+      expect(originalQuestions.length).toBe(1);
+      expect(result).not.toBe(originalQuestions);
     });
 
-    describe('タイムスタンプが更新されることを確認する時', () => {
-      test('updatedAtが現在時刻に更新される', () => {
-        // Given: 質問リストと更新後の質問オブジェクト
-        const questionList = createQuestionListForUpdate();
-        const updatedQuestion: Question = {
-          ...questionList.questions[0],
-          text: '更新された質問',
-        };
+    it('質問オブジェクトの参照を保持する', () => {
+      const existingQuestion: Question = {
+        id: 'existing-id',
+        text: '既存の質問',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-        // When: 質問を更新する
-        const updatedList = updateQuestionInList(
-          questionList,
-          'q1',
-          updatedQuestion
-        );
+      const newQuestion: Question = {
+        id: 'new-id',
+        text: '新しい質問',
+        answer: undefined,
+        isAnswered: false,
+        answeredBy: undefined,
+        answeredAt: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-        // Then: updatedAtが現在時刻に更新される
-        expect(updatedList.updatedAt).toEqual(mockDate);
-      });
-    });
+      const existingQuestions = [existingQuestion];
+      const result = addQuestionToQuestionsArray(
+        existingQuestions,
+        newQuestion
+      );
 
-    describe('元の質問リストが変更されないことを確認する時', () => {
-      test('元の質問リストオブジェクトは変更されない', () => {
-        // Given: 質問リスト
-        const questionList = createQuestionListForUpdate();
-        const originalFirstQuestion = { ...questionList.questions[0] };
-        const updatedQuestion: Question = {
-          ...questionList.questions[0],
-          text: '更新された質問',
-        };
-
-        // When: 質問を更新する
-        updateQuestionInList(questionList, 'q1', updatedQuestion);
-
-        // Then: 元のオブジェクトは変更されない
-        expect(questionList.questions[0]).toEqual(originalFirstQuestion);
-      });
-    });
-  });
-
-  describe('getQuestionListStats', () => {
-    describe('質問が存在しない質問リストの統計を取得する時', () => {
-      test('全ての値が0またはデフォルト値になる', () => {
-        // Given: 質問が存在しない質問リスト
-        const emptyQuestionList: QuestionList = {
-          id: 'list1',
-          title: 'テスト質問リスト',
-          questions: [],
-          createdAt: mockDate,
-          updatedAt: mockDate,
-          isTemplate: false,
-          sharedWith: [],
-        };
-
-        // When: 統計情報を取得する
-        const stats = getQuestionListStats(emptyQuestionList);
-
-        // Then: 全ての値が0またはデフォルト値になる
-        expect(stats).toEqual({
-          total: 0,
-          answered: 0,
-          unanswered: 0,
-          progress: 0,
-        });
-      });
-    });
-
-    describe('全て未回答の質問リストの統計を取得する時', () => {
-      test('answered=0、unanswered=total、progress=0になる', () => {
-        // Given: 全て未回答の質問リスト
-        const unansweredQuestionList: QuestionList = {
-          id: 'list1',
-          title: 'テスト質問リスト',
-          questions: [
-            { id: 'q1', isAnswered: false } as Question,
-            { id: 'q2', isAnswered: false } as Question,
-            { id: 'q3', isAnswered: false } as Question,
-          ],
-          createdAt: mockDate,
-          updatedAt: mockDate,
-          isTemplate: false,
-          sharedWith: [],
-        };
-
-        // When: 統計情報を取得する
-        const stats = getQuestionListStats(unansweredQuestionList);
-
-        // Then: answered=0、unanswered=total、progress=0になる
-        expect(stats).toEqual({
-          total: 3,
-          answered: 0,
-          unanswered: 3,
-          progress: 0,
-        });
-      });
-    });
-
-    describe('全て回答済みの質問リストの統計を取得する時', () => {
-      test('answered=total、unanswered=0、progress=100になる', () => {
-        // Given: 全て回答済みの質問リスト
-        const answeredQuestionList: QuestionList = {
-          id: 'list1',
-          title: 'テスト質問リスト',
-          questions: [
-            { id: 'q1', isAnswered: true } as Question,
-            { id: 'q2', isAnswered: true } as Question,
-          ],
-          createdAt: mockDate,
-          updatedAt: mockDate,
-          isTemplate: false,
-          sharedWith: [],
-        };
-
-        // When: 統計情報を取得する
-        const stats = getQuestionListStats(answeredQuestionList);
-
-        // Then: answered=total、unanswered=0、progress=100になる
-        expect(stats).toEqual({
-          total: 2,
-          answered: 2,
-          unanswered: 0,
-          progress: 100,
-        });
-      });
-    });
-
-    describe('一部回答済みの質問リストの統計を取得する時', () => {
-      test('正確な統計値と進捗率が計算される', () => {
-        // Given: 5つ中3つが回答済みの質問リスト
-        const mixedQuestionList: QuestionList = {
-          id: 'list1',
-          title: 'テスト質問リスト',
-          questions: [
-            { id: 'q1', isAnswered: true } as Question,
-            { id: 'q2', isAnswered: false } as Question,
-            { id: 'q3', isAnswered: true } as Question,
-            { id: 'q4', isAnswered: false } as Question,
-            { id: 'q5', isAnswered: true } as Question,
-          ],
-          createdAt: mockDate,
-          updatedAt: mockDate,
-          isTemplate: false,
-          sharedWith: [],
-        };
-
-        // When: 統計情報を取得する
-        const stats = getQuestionListStats(mixedQuestionList);
-
-        // Then: 正確な統計値が計算される（3/5 = 60%）
-        expect(stats).toEqual({
-          total: 5,
-          answered: 3,
-          unanswered: 2,
-          progress: 60,
-        });
-      });
-    });
-
-    describe('進捗率の端数処理を確認する時', () => {
-      test('進捗率が四捨五入される', () => {
-        // Given: 3つ中1つが回答済みの質問リスト（33.33...%）
-        const questionList: QuestionList = {
-          id: 'list1',
-          title: 'テスト質問リスト',
-          questions: [
-            { id: 'q1', isAnswered: true } as Question,
-            { id: 'q2', isAnswered: false } as Question,
-            { id: 'q3', isAnswered: false } as Question,
-          ],
-          createdAt: mockDate,
-          updatedAt: mockDate,
-          isTemplate: false,
-          sharedWith: [],
-        };
-
-        // When: 統計情報を取得する
-        const stats = getQuestionListStats(questionList);
-
-        // Then: 進捗率が四捨五入される（33.33... → 33）
-        expect(stats.progress).toBe(33);
-      });
-    });
-  });
-
-  describe('createQuestionListFromTemplate', () => {
-    const createTemplateQuestionList = (): QuestionList => ({
-      id: 'template-1',
-      title: 'テンプレート質問リスト',
-      nurseryName: 'テンプレート保育園',
-      questions: [
-        createQuestionMock({
-          id: 'tq1',
-          text: 'テンプレート質問1',
-          answer: 'テンプレート回答1',
-          isAnswered: true,
-          answeredBy: 'template-user',
-          answeredAt: new Date('2023-01-01'),
-        }),
-        createQuestionMock({
-          id: 'tq2',
-          text: 'テンプレート質問2',
-          answer: undefined,
-          isAnswered: false,
-          answeredBy: undefined,
-          answeredAt: undefined,
-        }),
-      ],
-      createdAt: new Date('2023-01-01'),
-      updatedAt: new Date('2023-01-01'),
-      isTemplate: true,
-      sharedWith: [],
-    });
-
-    describe('テンプレートから質問リストを作成する時', () => {
-      test('カスタマイズした情報で新しい質問リストが作成される', () => {
-        // Given: テンプレート質問リストとカスタマイズ情報
-        const template = createTemplateQuestionList();
-        const customizations: CreateQuestionListInput = {
-          title: '新しい質問リスト',
-          nurseryName: '新しい保育園',
-          visitDate: new Date('2023-12-15'),
-          isTemplate: false,
-        };
-
-        // When: テンプレートから質問リストを作成する
-        const newQuestionList = createQuestionListFromTemplate(
-          template,
-          customizations
-        );
-
-        // Then: カスタマイズした情報で新しい質問リストが作成される
-        expect(newQuestionList.id).toBe('mock-uuid-123');
-        expect(newQuestionList.title).toBe('新しい質問リスト');
-        expect(newQuestionList.nurseryName).toBe('新しい保育園');
-        expect(newQuestionList.visitDate).toEqual(new Date('2023-12-15'));
-        expect(newQuestionList.isTemplate).toBe(false);
-        expect(newQuestionList.createdAt).toEqual(mockDate);
-        expect(newQuestionList.updatedAt).toEqual(mockDate);
-      });
-    });
-
-    describe('テンプレートの質問がコピーされることを確認する時', () => {
-      test('質問のテキストと基本情報はコピーされる', () => {
-        // Given: テンプレート質問リスト
-        const template = createTemplateQuestionList();
-        const customizations: CreateQuestionListInput = {
-          title: '新しい質問リスト',
-        };
-
-        // When: テンプレートから質問リストを作成する
-        const newQuestionList = createQuestionListFromTemplate(
-          template,
-          customizations
-        );
-
-        // Then: 質問のテキストがコピーされる
-        expect(newQuestionList.questions).toHaveLength(2);
-        expect(newQuestionList.questions[0].text).toBe('テンプレート質問1');
-        expect(newQuestionList.questions[1].text).toBe('テンプレート質問2');
-      });
-    });
-
-    describe('回答関連の情報がリセットされることを確認する時', () => {
-      test('answer、isAnswered、answeredBy、answeredAtがリセットされる', () => {
-        // Given: 回答済みの質問を含むテンプレート
-        const template = createTemplateQuestionList();
-        const customizations: CreateQuestionListInput = {
-          title: '新しい質問リスト',
-        };
-
-        // When: テンプレートから質問リストを作成する
-        const newQuestionList = createQuestionListFromTemplate(
-          template,
-          customizations
-        );
-
-        // Then: 回答関連の情報がリセットされる
-        newQuestionList.questions.forEach((question) => {
-          expect(question.answer).toBeUndefined();
-          expect(question.isAnswered).toBe(false);
-          expect(question.answeredBy).toBeUndefined();
-          expect(question.answeredAt).toBeUndefined();
-        });
-      });
-    });
-
-    describe('新しいIDが生成されることを確認する時', () => {
-      test('質問リストと各質問に新しいIDが生成される', () => {
-        // Given: テンプレート質問リスト
-        const template = createTemplateQuestionList();
-        const customizations: CreateQuestionListInput = {
-          title: '新しい質問リスト',
-        };
-
-        // モックを2回目、3回目の呼び出し用に設定
-        mockGenerateId
-          .mockReturnValueOnce('new-list-id')
-          .mockReturnValueOnce('new-question-id-1')
-          .mockReturnValueOnce('new-question-id-2');
-
-        // When: テンプレートから質問リストを作成する
-        const newQuestionList = createQuestionListFromTemplate(
-          template,
-          customizations
-        );
-
-        // Then: 新しいIDが生成される
-        expect(newQuestionList.id).toBe('new-list-id');
-        expect(newQuestionList.questions[0].id).toBe('new-question-id-1');
-        expect(newQuestionList.questions[1].id).toBe('new-question-id-2');
-
-        // 元のテンプレートのIDと異なることを確認
-        expect(newQuestionList.id).not.toBe(template.id);
-        expect(newQuestionList.questions[0].id).not.toBe(
-          template.questions[0].id
-        );
-        expect(newQuestionList.questions[1].id).not.toBe(
-          template.questions[1].id
-        );
-      });
-    });
-
-    describe('空の質問を持つテンプレートから作成する時', () => {
-      test('空の質問リストが作成される', () => {
-        // Given: 質問が空のテンプレート
-        const emptyTemplate = {
-          ...createTemplateQuestionList(),
-          questions: [],
-        };
-        const customizations: CreateQuestionListInput = {
-          title: '新しい質問リスト',
-        };
-
-        // When: テンプレートから質問リストを作成する
-        const newQuestionList = createQuestionListFromTemplate(
-          emptyTemplate,
-          customizations
-        );
-
-        // Then: 空の質問リストが作成される
-        expect(newQuestionList.questions).toHaveLength(0);
-      });
-    });
-
-    describe('元のテンプレートが変更されないことを確認する時', () => {
-      test('元のテンプレートオブジェクトは変更されない', () => {
-        // Given: テンプレート質問リスト
-        const template = createTemplateQuestionList();
-        const originalTemplateId = template.id;
-        const originalQuestionsLength = template.questions.length;
-        const originalFirstQuestionId = template.questions[0]?.id;
-        const customizations: CreateQuestionListInput = {
-          title: '新しい質問リスト',
-        };
-
-        // When: テンプレートから質問リストを作成する
-        createQuestionListFromTemplate(template, customizations);
-
-        // Then: 元のテンプレートの主要プロパティは変更されない
-        expect(template.id).toBe(originalTemplateId);
-        expect(template.questions).toHaveLength(originalQuestionsLength);
-        expect(template.questions[0]?.id).toBe(originalFirstQuestionId);
-      });
+      expect(result[0]).toBe(newQuestion);
+      expect(result[1]).toBe(existingQuestion);
     });
   });
 });

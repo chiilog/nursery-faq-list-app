@@ -30,6 +30,3 @@ export type { ValidationResult } from '../utils/validation';
 
 // ストア関連型
 export type { AppError, LoadingState } from '../stores/nurseryStore';
-
-// サービス関連型
-export { DataStoreError } from '../services/dataStore';

@@ -13,18 +13,9 @@ import type {
   Question,
   CreateQuestionInput,
   UpdateQuestionInput,
-  QuestionList,
-  CreateQuestionListInput,
-  UpdateQuestionListInput,
 } from '../types/data';
 import { generatePrefixedId } from '../utils/id';
 import { addQuestionToQuestionsArray } from '../utils/data';
-import {
-  migrateAllQuestionLists,
-  convertNurseryToQuestionList,
-  convertCreateQuestionListInput,
-} from '../utils/dataConversion';
-import { dataStore } from './dataStore';
 
 // シリアライズされたデータの型定義（JSON形式）
 interface SerializedNursery {
@@ -75,7 +66,6 @@ export class NurseryDataStoreError extends Error {
 
 // ローカルストレージキー
 const NURSERIES_STORAGE_KEY = 'nursery-app-nurseries';
-const MIGRATION_FLAG_KEY = 'nursery-migration-completed';
 
 // ユーティリティ関数
 
@@ -201,16 +191,11 @@ class NurseryDataStore {
     });
   }
 
-  async getAllNurseries(options?: {
-    forceMigration?: boolean;
-  }): Promise<Nursery[]> {
+  async getAllNurseries(): Promise<Nursery[]> {
     try {
-      // QuestionListデータからの自動移行を試行
-      await this.migrateFromQuestionListsIfNeeded(options?.forceMigration);
-
       const nurseriesData = localStorage.getItem(NURSERIES_STORAGE_KEY);
       if (!nurseriesData) {
-        return [];
+        return Promise.resolve([]);
       }
 
       const serializedNurseries = JSON.parse(nurseriesData) as Record<
@@ -264,7 +249,7 @@ class NurseryDataStore {
         }
       );
 
-      return nurseries;
+      return Promise.resolve(nurseries);
     } catch (error) {
       if (error instanceof Error) {
         throw new NurseryDataStoreError(
@@ -742,185 +727,6 @@ class NurseryDataStore {
         }
       }
     });
-  }
-
-  // === QuestionList データの自動移行機能 ===
-
-  /**
-   * QuestionListデータからの自動移行を必要に応じて実行
-   */
-  private async migrateFromQuestionListsIfNeeded(
-    forceMigration = false
-  ): Promise<void> {
-    // 強制移行でない場合、移行済みフラグをチェック
-    if (!forceMigration) {
-      const migrationCompleted = localStorage.getItem(MIGRATION_FLAG_KEY);
-      if (migrationCompleted === 'true') {
-        return; // 既に移行済み
-      }
-    }
-
-    try {
-      // 既存のQuestionListデータを取得
-      const questionLists = await dataStore.getAllQuestionLists();
-
-      if (!questionLists || questionLists.length === 0) {
-        // 移行するデータがない場合もフラグを設定
-        localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
-        return;
-      }
-
-      // QuestionListデータをNursery/VisitSession構造に変換
-      const migrationResult = migrateAllQuestionLists(questionLists);
-
-      // 変換されたデータをNursery形式で保存
-      const serializedNurseries: Record<string, SerializedNursery> = {};
-
-      for (const [nurseryId, nursery] of migrationResult.nurseries) {
-        serializedNurseries[nurseryId] = {
-          ...nursery,
-          createdAt: nursery.createdAt.toISOString(),
-          updatedAt: nursery.updatedAt.toISOString(),
-          visitSessions: nursery.visitSessions.map((session: VisitSession) => ({
-            ...session,
-            visitDate: session.visitDate?.toISOString() || null,
-            createdAt: session.createdAt.toISOString(),
-            updatedAt: session.updatedAt.toISOString(),
-            questions: session.questions.map((question) => ({
-              ...question,
-              answeredAt: question.answeredAt?.toISOString(),
-              createdAt: question.createdAt.toISOString(),
-              updatedAt: question.updatedAt.toISOString(),
-            })),
-          })),
-        };
-      }
-
-      // localStorage に保存
-      localStorage.setItem(
-        NURSERIES_STORAGE_KEY,
-        JSON.stringify(serializedNurseries)
-      );
-
-      // 移行完了フラグを設定
-      localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
-    } catch (error) {
-      console.error('QuestionList migration failed:', error);
-      // 移行に失敗しても処理を続行（既存のNurseryデータがあるかもしれない）
-    }
-  }
-
-  // === 後方互換性API（QuestionList形式でのアクセス） ===
-
-  /**
-   * QuestionList形式でデータを取得（後方互換性）
-   */
-  async getAllQuestionListsCompat(): Promise<QuestionList[]> {
-    const nurseries = await this.getAllNurseries();
-    const questionLists: QuestionList[] = [];
-
-    for (const nursery of nurseries) {
-      for (const visitSession of nursery.visitSessions) {
-        const questionList = convertNurseryToQuestionList(
-          nursery,
-          visitSession
-        );
-        questionLists.push(questionList);
-      }
-    }
-
-    return questionLists;
-  }
-
-  /**
-   * QuestionList形式でデータを作成（後方互換性）
-   */
-  async createQuestionListCompat(
-    input: CreateQuestionListInput
-  ): Promise<string> {
-    const { nurseryInput, visitSessionInput } =
-      convertCreateQuestionListInput(input);
-
-    // 同じ名前の保育園が既に存在するかチェック
-    const existingNurseries = await this.getAllNurseries();
-    const existingNursery = existingNurseries.find(
-      (n) => n.name === nurseryInput.name
-    );
-
-    if (existingNursery) {
-      // 既存の保育園に新しいVisitSessionを追加
-      const sessionId = await this.createVisitSession(
-        existingNursery.id,
-        visitSessionInput
-      );
-      return sessionId;
-    } else {
-      // 新しい保育園を作成
-      const nurseryId = await this.createNursery(nurseryInput);
-
-      // createNurseryで作成されたデフォルトの空セッションを削除
-      const nursery = await this.getNursery(nurseryId);
-      if (
-        nursery &&
-        nursery.visitSessions.length === 1 &&
-        nursery.visitSessions[0].questions.length === 0
-      ) {
-        await this.deleteVisitSession(nursery.visitSessions[0].id);
-      }
-
-      // 新しいセッションを作成
-      const sessionId = await this.createVisitSession(
-        nurseryId,
-        visitSessionInput
-      );
-      return sessionId;
-    }
-  }
-
-  /**
-   * QuestionList形式でデータを更新（後方互換性）
-   */
-  async updateQuestionListCompat(
-    sessionId: string,
-    updates: UpdateQuestionListInput
-  ): Promise<void> {
-    // VisitSessionを検索
-    const nurseries = await this.getAllNurseries();
-    let targetNursery: Nursery | null = null;
-    let targetSession: VisitSession | null = null;
-
-    for (const nursery of nurseries) {
-      const session = nursery.visitSessions.find((s) => s.id === sessionId);
-      if (session) {
-        targetNursery = nursery;
-        targetSession = session;
-        break;
-      }
-    }
-
-    if (!targetNursery || !targetSession) {
-      throw new NurseryDataStoreError(
-        'セッションが見つかりません',
-        'SESSION_NOT_FOUND'
-      );
-    }
-
-    // 保育園名の更新
-    if (updates.nurseryName && updates.nurseryName !== targetNursery.name) {
-      await this.updateNursery(targetNursery.id, {
-        name: updates.nurseryName,
-      });
-    }
-
-    // VisitSessionの更新
-    const sessionUpdates: UpdateVisitSessionInput = {};
-    if (updates.visitDate !== undefined) {
-      sessionUpdates.visitDate = updates.visitDate;
-    }
-
-    if (Object.keys(sessionUpdates).length > 0) {
-      await this.updateVisitSession(sessionId, sessionUpdates);
-    }
   }
 }
 

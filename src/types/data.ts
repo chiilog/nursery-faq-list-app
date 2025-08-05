@@ -57,24 +57,6 @@ export interface QuestionTemplate {
   updatedAt: Date;
 }
 
-/**
- * @deprecated 旧設計の型定義 - 保育園中心設計への移行後に削除予定
- * NOTE: この型は後方互換性のために一時的に残しています。
- * 新規実装では使用せず、Nursery/VisitSession/Questionの構造を使用してください。
- * 削除予定: 全てのコンポーネントが新設計に移行完了後
- */
-export interface QuestionList {
-  id: string;
-  title: string;
-  nurseryName?: string;
-  visitDate?: Date;
-  questions: Question[];
-  sharedWith?: string[]; // 共有相手のID
-  createdAt: Date;
-  updatedAt: Date;
-  isTemplate: boolean;
-}
-
 export interface SyncState {
   isOnline: boolean;
   lastSyncAt?: Date;
@@ -139,31 +121,6 @@ export interface CreateQuestionTemplateInput {
   >[];
 }
 
-/**
- * @deprecated 旧設計の入力型 - 保育園中心設計への移行後に削除予定
- * NOTE: 既存のコンポーネントとの互換性のため一時的に残しています。
- * 新規実装では CreateNurseryInput/CreateVisitSessionInput を使用してください。
- */
-export interface CreateQuestionListInput {
-  title: string;
-  nurseryName?: string;
-  visitDate?: Date;
-  questions?: CreateQuestionInput[];
-  sharedWith?: string[];
-  isTemplate?: boolean;
-}
-
-/**
- * @deprecated 旧設計の更新型 - 保育園中心設計への移行後に削除予定
- * NOTE: 既存のコンポーネントとの互換性のため一時的に残しています。
- * 新規実装では UpdateNurseryInput/UpdateVisitSessionInput を使用してください。
- */
-export interface UpdateQuestionListInput {
-  title?: string;
-  nurseryName?: string;
-  visitDate?: Date;
-}
-
 // 見学セッションの統計情報型
 export interface VisitSessionStats {
   total: number;
@@ -181,16 +138,4 @@ export interface NurseryStats {
   totalQuestions: number;
   totalAnsweredQuestions: number;
   overallProgress: number;
-}
-
-/**
- * @deprecated 旧設計の統計型 - 保育園中心設計への移行後に削除予定
- * NOTE: 既存のコンポーネントとの互換性のため一時的に残しています。
- * 新規実装では VisitSessionStats/NurseryStats を使用してください。
- */
-export interface QuestionListStats {
-  total: number;
-  answered: number;
-  unanswered: number;
-  progress: number;
 }
