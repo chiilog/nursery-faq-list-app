@@ -13,16 +13,9 @@ import type {
   Question,
   CreateQuestionInput,
   UpdateQuestionInput,
-  QuestionList,
-  CreateQuestionListInput,
-  UpdateQuestionListInput,
 } from '../types/data';
 import { generatePrefixedId } from '../utils/id';
 import { addQuestionToQuestionsArray } from '../utils/data';
-import {
-  convertNurseryToQuestionList,
-  convertCreateQuestionListInput,
-} from '../utils/dataConversion';
 
 // シリアライズされたデータの型定義（JSON形式）
 interface SerializedNursery {
@@ -734,119 +727,6 @@ class NurseryDataStore {
         }
       }
     });
-  }
-
-  // === 後方互換性API（QuestionList形式でのアクセス） ===
-
-  /**
-   * QuestionList形式でデータを取得（後方互換性）
-   */
-  async getAllQuestionListsCompat(): Promise<QuestionList[]> {
-    const nurseries = await this.getAllNurseries();
-    const questionLists: QuestionList[] = [];
-
-    for (const nursery of nurseries) {
-      for (const visitSession of nursery.visitSessions) {
-        const questionList = convertNurseryToQuestionList(
-          nursery,
-          visitSession
-        );
-        questionLists.push(questionList);
-      }
-    }
-
-    return questionLists;
-  }
-
-  /**
-   * QuestionList形式でデータを作成（後方互換性）
-   */
-  async createQuestionListCompat(
-    input: CreateQuestionListInput
-  ): Promise<string> {
-    const { nurseryInput, visitSessionInput } =
-      convertCreateQuestionListInput(input);
-
-    // 同じ名前の保育園が既に存在するかチェック
-    const existingNurseries = await this.getAllNurseries();
-    const existingNursery = existingNurseries.find(
-      (n) => n.name === nurseryInput.name
-    );
-
-    if (existingNursery) {
-      // 既存の保育園に新しいVisitSessionを追加
-      const sessionId = await this.createVisitSession(
-        existingNursery.id,
-        visitSessionInput
-      );
-      return sessionId;
-    } else {
-      // 新しい保育園を作成
-      const nurseryId = await this.createNursery(nurseryInput);
-
-      // createNurseryで作成されたデフォルトの空セッションを削除
-      const nursery = await this.getNursery(nurseryId);
-      if (
-        nursery &&
-        nursery.visitSessions.length === 1 &&
-        nursery.visitSessions[0].questions.length === 0
-      ) {
-        await this.deleteVisitSession(nursery.visitSessions[0].id);
-      }
-
-      // 新しいセッションを作成
-      const sessionId = await this.createVisitSession(
-        nurseryId,
-        visitSessionInput
-      );
-      return sessionId;
-    }
-  }
-
-  /**
-   * QuestionList形式でデータを更新（後方互換性）
-   */
-  async updateQuestionListCompat(
-    sessionId: string,
-    updates: UpdateQuestionListInput
-  ): Promise<void> {
-    // VisitSessionを検索
-    const nurseries = await this.getAllNurseries();
-    let targetNursery: Nursery | null = null;
-    let targetSession: VisitSession | null = null;
-
-    for (const nursery of nurseries) {
-      const session = nursery.visitSessions.find((s) => s.id === sessionId);
-      if (session) {
-        targetNursery = nursery;
-        targetSession = session;
-        break;
-      }
-    }
-
-    if (!targetNursery || !targetSession) {
-      throw new NurseryDataStoreError(
-        'セッションが見つかりません',
-        'SESSION_NOT_FOUND'
-      );
-    }
-
-    // 保育園名の更新
-    if (updates.nurseryName && updates.nurseryName !== targetNursery.name) {
-      await this.updateNursery(targetNursery.id, {
-        name: updates.nurseryName,
-      });
-    }
-
-    // VisitSessionの更新
-    const sessionUpdates: UpdateVisitSessionInput = {};
-    if (updates.visitDate !== undefined) {
-      sessionUpdates.visitDate = updates.visitDate;
-    }
-
-    if (Object.keys(sessionUpdates).length > 0) {
-      await this.updateVisitSession(sessionId, sessionUpdates);
-    }
   }
 }
 
