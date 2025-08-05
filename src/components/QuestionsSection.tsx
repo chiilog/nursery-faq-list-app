@@ -68,7 +68,7 @@ const QuestionEditForm = ({
   </VStack>
 );
 
-interface QuestionListProps {
+interface QuestionsSectionProps {
   questions: Question[];
   editingQuestionId: string | null;
   editingQuestionText: string;
@@ -85,7 +85,7 @@ interface QuestionListProps {
   onDeleteQuestion?: (questionId: string) => void;
 }
 
-export const QuestionList = ({
+export const QuestionsSection = ({
   questions,
   editingQuestionId,
   editingQuestionText,
@@ -96,7 +96,7 @@ export const QuestionList = ({
   onSaveAnswer,
   onCancelEdit,
   onDeleteQuestion,
-}: QuestionListProps) => {
+}: QuestionsSectionProps) => {
   if (questions.length === 0) {
     return (
       <Box textAlign="center" py={8} color="gray.500">

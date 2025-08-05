@@ -3,7 +3,7 @@
  * エラーの重要度や再試行可能性を判定
  */
 
-import type { AppError } from '../stores/questionListStore';
+import type { AppError } from '../stores/nurseryStore';
 
 /**
  * エラー重要度の型定義
