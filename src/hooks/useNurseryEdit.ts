@@ -1,12 +1,16 @@
 /**
  * 保育園編集フック
- * TDD Green Phase: テストを通す最小限の実装
+ * 保育園情報の編集状態管理とバリデーション機能を提供
+ *
+ * @param currentNursery - 編集対象の保育園データ
+ * @param updateNursery - 保育園データ更新関数
+ * @returns 編集状態と操作関数
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { showToast } from '../utils/toaster';
 import { generateId } from '../utils/id';
-import type { Nursery } from '../types/data';
+import type { Nursery, VisitSession } from '../types/data';
 
 export interface UseNurseryEditReturn {
   // 状態
@@ -25,6 +29,9 @@ export interface UseNurseryEditReturn {
   setNewVisitDate: (value: string) => void;
 }
 
+// 定数
+const NURSERY_NAME_MAX_LENGTH = 100;
+
 export function useNurseryEdit(
   currentNursery: Nursery | null,
   updateNursery: (id: string, updates: Partial<Nursery>) => Promise<void>
@@ -35,8 +42,27 @@ export function useNurseryEdit(
   const [hasNameError, setHasNameError] = useState(false);
   const [newVisitDate, setNewVisitDate] = useState('');
 
+  // ヘルパー関数: 日付を文字列に変換
+  const formatDateForInput = useCallback((date: Date | null): string => {
+    if (!date) return '';
+    try {
+      return date.toISOString().split('T')[0];
+    } catch {
+      console.warn('Invalid visit date:', date);
+      return '';
+    }
+  }, []);
+
+  // ヘルパー関数: バリデーション
+  const validateNurseryName = useCallback((name: string): boolean => {
+    const trimmedName = name.trim();
+    return (
+      trimmedName.length > 0 && trimmedName.length <= NURSERY_NAME_MAX_LENGTH
+    );
+  }, []);
+
   // 編集開始処理
-  const handleEditNursery = () => {
+  const handleEditNursery = useCallback(() => {
     if (!currentNursery) return;
 
     setEditingNurseryName(currentNursery.name);
@@ -45,32 +71,50 @@ export function useNurseryEdit(
 
     // 見学日も編集可能にする
     const session = currentNursery.visitSessions[0];
-    if (session && session.visitDate) {
-      try {
-        const dateStr = session.visitDate.toISOString().split('T')[0];
-        setNewVisitDate(dateStr);
-      } catch {
-        console.warn('Invalid visit date:', session.visitDate);
-        setNewVisitDate('');
+    const dateString = formatDateForInput(session?.visitDate || null);
+    setNewVisitDate(dateString);
+  }, [currentNursery, formatDateForInput]);
+
+  // ヘルパー関数: 見学セッション作成/更新
+  const createOrUpdateSession = useCallback(
+    (
+      existingSession: VisitSession | undefined,
+      visitDate: Date
+    ): VisitSession => {
+      if (existingSession) {
+        return {
+          ...existingSession,
+          visitDate,
+        };
       }
-    } else {
-      // 見学セッションが存在しないか、見学日が未定の場合は空文字列で初期化
-      setNewVisitDate('');
-    }
-  };
+
+      return {
+        id: `session-${generateId()}`,
+        visitDate,
+        status: 'planned' as const,
+        questions: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    },
+    []
+  );
 
   // 保存処理
-  const handleSaveNursery = async () => {
+  const handleSaveNursery = useCallback(async () => {
     if (!currentNursery) return;
 
     // バリデーション
     const trimmedName = editingNurseryName.trim();
-    if (!trimmedName) {
-      showToast.error('入力エラー', '保育園名を入力してください');
-      return;
-    }
-    if (trimmedName.length > 100) {
-      showToast.error('入力エラー', '保育園名は100文字以内で入力してください');
+    if (!validateNurseryName(editingNurseryName)) {
+      if (!trimmedName) {
+        showToast.error('入力エラー', '保育園名を入力してください');
+      } else {
+        showToast.error(
+          '入力エラー',
+          `保育園名は${NURSERY_NAME_MAX_LENGTH}文字以内で入力してください`
+        );
+      }
       return;
     }
 
@@ -85,24 +129,16 @@ export function useNurseryEdit(
           return;
         }
 
-        if (updatedSessions[0]) {
-          // 既存の見学セッションを更新
-          updatedSessions[0] = {
-            ...updatedSessions[0],
-            visitDate,
-          };
+        const existingSession = updatedSessions[0];
+        const updatedSession = createOrUpdateSession(
+          existingSession,
+          visitDate
+        );
+
+        if (existingSession) {
+          updatedSessions[0] = updatedSession;
         } else {
-          // 見学セッションが存在しない場合は新しく作成
-          updatedSessions = [
-            {
-              id: `session-${generateId()}`,
-              visitDate,
-              status: 'planned' as const,
-              questions: [],
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          ];
+          updatedSessions = [updatedSession];
         }
       } catch (error) {
         showToast.error('エラー', '日付の処理中にエラーが発生しました');
@@ -118,37 +154,55 @@ export function useNurseryEdit(
 
     showToast.success('保存完了', '保育園情報を更新しました');
     setIsEditingNursery(false);
-  };
+  }, [
+    currentNursery,
+    editingNurseryName,
+    newVisitDate,
+    validateNurseryName,
+    createOrUpdateSession,
+    updateNursery,
+  ]);
 
   // キャンセル処理
-  const handleCancelEditNursery = () => {
+  const handleCancelEditNursery = useCallback(() => {
     setIsEditingNursery(false);
     setEditingNurseryName('');
     setNewVisitDate('');
     setHasNameError(false);
-  };
+  }, []);
 
   // 保育園名の変更ハンドラー
-  const handleNurseryNameChange = (value: string) => {
+  const handleNurseryNameChange = useCallback((value: string) => {
     setEditingNurseryName(value);
     // 空文字の場合はエラー表示
     setHasNameError(!value.trim());
-  };
+  }, []);
 
-  // 変更があるかどうかを判定
-  const currentSession = currentNursery?.visitSessions[0];
-  const currentDateString = currentSession?.visitDate
-    ? currentSession.visitDate.toISOString().split('T')[0]
-    : '';
+  // 変更があるかどうかを判定（メモ化）
+  const hasChanges = useMemo(() => {
+    if (!currentNursery || !isEditingNursery) return false;
 
-  const hasChanges =
-    currentNursery &&
-    isEditingNursery &&
-    (editingNurseryName.trim() !== currentNursery.name ||
-      newVisitDate !== currentDateString);
+    const currentSession = currentNursery.visitSessions[0];
+    const currentDateString = formatDateForInput(
+      currentSession?.visitDate || null
+    );
 
-  // 保存ボタンの無効化状態
-  const isSaveDisabled = !editingNurseryName.trim() || !hasChanges;
+    return (
+      editingNurseryName.trim() !== currentNursery.name ||
+      newVisitDate !== currentDateString
+    );
+  }, [
+    currentNursery,
+    isEditingNursery,
+    editingNurseryName,
+    newVisitDate,
+    formatDateForInput,
+  ]);
+
+  // 保存ボタンの無効化状態（メモ化）
+  const isSaveDisabled = useMemo(() => {
+    return !editingNurseryName.trim() || !hasChanges;
+  }, [editingNurseryName, hasChanges]);
 
   return {
     // 状態
