@@ -52,7 +52,7 @@ export const NurseryDetailPage = () => {
   const [newQuestionText, setNewQuestionText] = useState('');
 
   // 保育園編集フックを使用
-  const nurseryEditHook = useNurseryEdit(currentNursery, updateNursery);
+  const nurseryEdit = useNurseryEdit(currentNursery, updateNursery);
 
   // URLパラメータから保育園IDを取得してロード
   useEffect(() => {
@@ -213,16 +213,16 @@ export const NurseryDetailPage = () => {
           {/* 編集・保存・キャンセルボタン */}
           <HStack justify="space-between" align="center">
             <Box /> {/* 左側のスペーサー */}
-            {nurseryEditHook.isEditingNursery ? (
+            {nurseryEdit.isEditingNursery ? (
               <HStack gap={2}>
                 <Button
                   size="sm"
                   colorScheme="brand"
-                  onClick={() => void nurseryEditHook.handleSaveNursery()}
-                  disabled={nurseryEditHook.isSaveDisabled}
-                  opacity={nurseryEditHook.isSaveDisabled ? 0.4 : 1}
+                  onClick={() => void nurseryEdit.handleSaveNursery()}
+                  disabled={nurseryEdit.isSaveDisabled}
+                  opacity={nurseryEdit.isSaveDisabled ? 0.4 : 1}
                   cursor={
-                    nurseryEditHook.isSaveDisabled ? 'not-allowed' : 'pointer'
+                    nurseryEdit.isSaveDisabled ? 'not-allowed' : 'pointer'
                   }
                 >
                   保存
@@ -230,7 +230,7 @@ export const NurseryDetailPage = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={nurseryEditHook.handleCancelEditNursery}
+                  onClick={nurseryEdit.handleCancelEditNursery}
                 >
                   キャンセル
                 </Button>
@@ -240,7 +240,7 @@ export const NurseryDetailPage = () => {
                 size="sm"
                 variant="outline"
                 colorScheme="brand"
-                onClick={nurseryEditHook.handleEditNursery}
+                onClick={nurseryEdit.handleEditNursery}
               >
                 編集
               </Button>
@@ -252,12 +252,12 @@ export const NurseryDetailPage = () => {
             nurseryName={currentNursery.name}
             visitDate={session?.visitDate || null}
             questions={questions}
-            isEditing={nurseryEditHook.isEditingNursery}
-            editingName={nurseryEditHook.editingNurseryName}
-            newVisitDate={nurseryEditHook.newVisitDate}
-            hasNameError={nurseryEditHook.hasNameError}
-            onNameChange={nurseryEditHook.handleNurseryNameChange}
-            onVisitDateChange={nurseryEditHook.setNewVisitDate}
+            isEditing={nurseryEdit.isEditingNursery}
+            editingName={nurseryEdit.editingNurseryName}
+            newVisitDate={nurseryEdit.newVisitDate}
+            hasNameError={nurseryEdit.hasNameError}
+            onNameChange={nurseryEdit.handleNurseryNameChange}
+            onVisitDateChange={nurseryEdit.setNewVisitDate}
           />
 
           {/* 保育園情報と質問エリアの区切り */}
