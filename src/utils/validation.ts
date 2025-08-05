@@ -5,11 +5,8 @@
 
 import type {
   CreateQuestionInput,
-  CreateQuestionListInput,
   UpdateQuestionInput,
-  UpdateQuestionListInput,
   Question,
-  QuestionList,
 } from '../types/data';
 
 // エラーメッセージの型定義
@@ -46,26 +43,6 @@ export function validateAnswerText(answer: string): ValidationResult {
 
   if (answer.trim().length > 1000) {
     errors.push('回答は1000文字以内で入力してください');
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-/**
- * 質問リストタイトルのバリデーション
- */
-export function validateQuestionListTitle(title: string): ValidationResult {
-  const errors: string[] = [];
-
-  if (!title || title.trim().length === 0) {
-    errors.push('質問リストのタイトルを入力してください');
-  }
-
-  if (title.trim().length > 100) {
-    errors.push('タイトルは100文字以内で入力してください');
   }
 
   return {
@@ -152,62 +129,6 @@ export function validateUpdateQuestionInput(
 }
 
 /**
- * 質問リスト作成入力のバリデーション
- */
-export function validateCreateQuestionListInput(
-  input: CreateQuestionListInput
-): ValidationResult {
-  const errors: string[] = [];
-
-  const titleValidation = validateQuestionListTitle(input.title);
-  errors.push(...titleValidation.errors);
-
-  if (input.nurseryName) {
-    const nurseryValidation = validateNurseryName(input.nurseryName);
-    errors.push(...nurseryValidation.errors);
-  }
-
-  if (input.visitDate) {
-    const dateValidation = validateVisitDate(input.visitDate);
-    errors.push(...dateValidation.errors);
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-/**
- * 質問リスト更新入力のバリデーション
- */
-export function validateUpdateQuestionListInput(
-  input: UpdateQuestionListInput
-): ValidationResult {
-  const errors: string[] = [];
-
-  if (input.title !== undefined) {
-    const titleValidation = validateQuestionListTitle(input.title);
-    errors.push(...titleValidation.errors);
-  }
-
-  if (input.nurseryName !== undefined) {
-    const nurseryValidation = validateNurseryName(input.nurseryName);
-    errors.push(...nurseryValidation.errors);
-  }
-
-  if (input.visitDate !== undefined) {
-    const dateValidation = validateVisitDate(input.visitDate);
-    errors.push(...dateValidation.errors);
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-/**
  * 質問オブジェクト全体のバリデーション
  */
 export function validateQuestion(question: Question): ValidationResult {
@@ -220,41 +141,6 @@ export function validateQuestion(question: Question): ValidationResult {
     const answerValidation = validateAnswerText(question.answer);
     errors.push(...answerValidation.errors);
   }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-/**
- * 質問リストオブジェクト全体のバリデーション
- */
-export function validateQuestionList(
-  questionList: QuestionList
-): ValidationResult {
-  const errors: string[] = [];
-
-  const titleValidation = validateQuestionListTitle(questionList.title);
-  errors.push(...titleValidation.errors);
-
-  if (questionList.nurseryName) {
-    const nurseryValidation = validateNurseryName(questionList.nurseryName);
-    errors.push(...nurseryValidation.errors);
-  }
-
-  if (questionList.visitDate) {
-    const dateValidation = validateVisitDate(questionList.visitDate);
-    errors.push(...dateValidation.errors);
-  }
-
-  // 各質問のバリデーション
-  questionList.questions.forEach((question, index) => {
-    const questionValidation = validateQuestion(question);
-    if (!questionValidation.isValid) {
-      errors.push(`質問${index + 1}: ${questionValidation.errors.join(', ')}`);
-    }
-  });
 
   return {
     isValid: errors.length === 0,
