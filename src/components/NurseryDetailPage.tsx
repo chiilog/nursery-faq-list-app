@@ -19,7 +19,7 @@ import { Layout } from './Layout';
 import { NurseryHeader } from './NurseryHeader';
 import { NurseryInfoCard } from './NurseryInfoCard';
 import { QuestionAddForm } from './QuestionAddForm';
-import { QuestionList } from './QuestionList';
+import { QuestionsSection } from './QuestionsSection';
 import { NotesSection } from './NotesSection';
 import { showToast } from '../utils/toaster';
 import { generateId } from '../utils/id';
@@ -397,14 +397,18 @@ export const NurseryDetailPage = () => {
           </Box>
 
           {/* 質問リスト */}
-          <QuestionList
+          <QuestionsSection
             questions={questions}
             editingQuestionId={editingQuestionId}
             editingAnswer={editingAnswer}
             editingQuestionText={editingQuestionText}
             onQuestionClick={handleQuestionClick}
             onSaveAnswer={() => void handleSaveAnswer()}
-            onCancelEdit={() => setEditingQuestionId(null)}
+            onCancelEdit={() => {
+              setEditingQuestionId(null);
+              setEditingAnswer('');
+              setEditingQuestionText('');
+            }}
             onEditingAnswerChange={setEditingAnswer}
             onEditingQuestionTextChange={setEditingQuestionText}
             onDeleteQuestion={(questionId) =>

@@ -5,21 +5,31 @@
 
 // データモデル型
 export type {
+  // 基本型（両アーキテクチャで共通）
   Question,
-  QuestionList,
-  QuestionListStats,
   SyncState,
   CreateQuestionInput,
-  CreateQuestionListInput,
   UpdateQuestionInput,
-  UpdateQuestionListInput,
+} from './data';
+
+// Nursery中心設計の型
+export type {
+  Nursery,
+  VisitSession,
+  VisitSessionStatus,
+  CreateNurseryInput,
+  UpdateNurseryInput,
+  CreateVisitSessionInput,
+  UpdateVisitSessionInput,
+  NurseryStats,
+  VisitSessionStats,
 } from './data';
 
 // バリデーション関連型
 export type { ValidationResult } from '../utils/validation';
 
 // ストア関連型
-export type { AppError, LoadingState } from '../stores/questionListStore';
+export type { AppError, LoadingState } from '../stores/nurseryStore';
 
 // サービス関連型
 export { DataStoreError } from '../services/dataStore';

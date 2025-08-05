@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
-import { QuestionList } from './QuestionList';
+import { QuestionsSection } from './QuestionsSection';
 import { renderWithProviders, testUtils } from '../test/test-utils';
 import type { Question } from '../types';
 
@@ -37,14 +37,14 @@ const defaultProps = {
   onCancelEdit: vi.fn(),
 };
 
-describe('QuestionList', () => {
+describe('QuestionsSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('質問の表示', () => {
     test('すべての質問が表示される', () => {
-      renderWithProviders(<QuestionList {...defaultProps} />);
+      renderWithProviders(<QuestionsSection {...defaultProps} />);
 
       mockQuestions.forEach((question) => {
         expect(screen.getByText(question.text)).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe('QuestionList', () => {
     });
 
     test('回答済みの質問には回答が表示される', () => {
-      renderWithProviders(<QuestionList {...defaultProps} />);
+      renderWithProviders(<QuestionsSection {...defaultProps} />);
 
       expect(
         screen.getByText('完全給食、アレルギー個別対応可能')
@@ -60,7 +60,9 @@ describe('QuestionList', () => {
     });
 
     test('質問がない場合は適切なメッセージが表示される', () => {
-      renderWithProviders(<QuestionList {...defaultProps} questions={[]} />);
+      renderWithProviders(
+        <QuestionsSection {...defaultProps} questions={[]} />
+      );
 
       expect(screen.getByText(/質問がありません/)).toBeInTheDocument();
     });
@@ -69,7 +71,7 @@ describe('QuestionList', () => {
   describe('質問クリック', () => {
     test('質問をクリックすると onQuestionClick が呼ばれる', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<QuestionList {...defaultProps} />);
+      renderWithProviders(<QuestionsSection {...defaultProps} />);
 
       const firstQuestion = screen.getByRole('button', {
         name: /質問: 保育時間は何時から何時までですか？/,
@@ -93,7 +95,7 @@ describe('QuestionList', () => {
         editingAnswer: '編集中の回答',
       };
 
-      renderWithProviders(<QuestionList {...editingProps} />);
+      renderWithProviders(<QuestionsSection {...editingProps} />);
 
       expect(screen.getByDisplayValue('編集中の質問文')).toBeInTheDocument();
       expect(screen.getByDisplayValue('編集中の回答')).toBeInTheDocument();
@@ -112,7 +114,7 @@ describe('QuestionList', () => {
         editingAnswer: '編集中の回答',
       };
 
-      renderWithProviders(<QuestionList {...editingProps} />);
+      renderWithProviders(<QuestionsSection {...editingProps} />);
 
       const saveButton = screen.getByRole('button', { name: /保存/ });
       await user.click(saveButton);
@@ -129,7 +131,7 @@ describe('QuestionList', () => {
         editingAnswer: '編集中の回答',
       };
 
-      renderWithProviders(<QuestionList {...editingProps} />);
+      renderWithProviders(<QuestionsSection {...editingProps} />);
 
       const cancelButton = screen.getByRole('button', { name: /キャンセル/ });
       await user.click(cancelButton);

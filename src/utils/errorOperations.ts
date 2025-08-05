@@ -3,7 +3,7 @@
  * 共通のエラーハンドリング処理を提供
  */
 
-import type { AppError } from '../stores/questionListStore';
+import type { AppError } from '../stores/nurseryStore';
 import { isRetryable } from './errorClassification';
 
 /**
