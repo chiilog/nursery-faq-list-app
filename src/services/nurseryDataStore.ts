@@ -20,11 +20,9 @@ import type {
 import { generatePrefixedId } from '../utils/id';
 import { addQuestionToQuestionsArray } from '../utils/data';
 import {
-  migrateAllQuestionLists,
   convertNurseryToQuestionList,
   convertCreateQuestionListInput,
 } from '../utils/dataConversion';
-import { dataStore } from './dataStore';
 
 // シリアライズされたデータの型定義（JSON形式）
 interface SerializedNursery {
@@ -75,7 +73,6 @@ export class NurseryDataStoreError extends Error {
 
 // ローカルストレージキー
 const NURSERIES_STORAGE_KEY = 'nursery-app-nurseries';
-const MIGRATION_FLAG_KEY = 'nursery-migration-completed';
 
 // ユーティリティ関数
 
@@ -201,16 +198,11 @@ class NurseryDataStore {
     });
   }
 
-  async getAllNurseries(options?: {
-    forceMigration?: boolean;
-  }): Promise<Nursery[]> {
+  async getAllNurseries(): Promise<Nursery[]> {
     try {
-      // QuestionListデータからの自動移行を試行
-      await this.migrateFromQuestionListsIfNeeded(options?.forceMigration);
-
       const nurseriesData = localStorage.getItem(NURSERIES_STORAGE_KEY);
       if (!nurseriesData) {
-        return [];
+        return Promise.resolve([]);
       }
 
       const serializedNurseries = JSON.parse(nurseriesData) as Record<
@@ -264,7 +256,7 @@ class NurseryDataStore {
         }
       );
 
-      return nurseries;
+      return Promise.resolve(nurseries);
     } catch (error) {
       if (error instanceof Error) {
         throw new NurseryDataStoreError(
@@ -742,72 +734,6 @@ class NurseryDataStore {
         }
       }
     });
-  }
-
-  // === QuestionList データの自動移行機能 ===
-
-  /**
-   * QuestionListデータからの自動移行を必要に応じて実行
-   */
-  private async migrateFromQuestionListsIfNeeded(
-    forceMigration = false
-  ): Promise<void> {
-    // 強制移行でない場合、移行済みフラグをチェック
-    if (!forceMigration) {
-      const migrationCompleted = localStorage.getItem(MIGRATION_FLAG_KEY);
-      if (migrationCompleted === 'true') {
-        return; // 既に移行済み
-      }
-    }
-
-    try {
-      // 既存のQuestionListデータを取得
-      const questionLists = await dataStore.getAllQuestionLists();
-
-      if (!questionLists || questionLists.length === 0) {
-        // 移行するデータがない場合もフラグを設定
-        localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
-        return;
-      }
-
-      // QuestionListデータをNursery/VisitSession構造に変換
-      const migrationResult = migrateAllQuestionLists(questionLists);
-
-      // 変換されたデータをNursery形式で保存
-      const serializedNurseries: Record<string, SerializedNursery> = {};
-
-      for (const [nurseryId, nursery] of migrationResult.nurseries) {
-        serializedNurseries[nurseryId] = {
-          ...nursery,
-          createdAt: nursery.createdAt.toISOString(),
-          updatedAt: nursery.updatedAt.toISOString(),
-          visitSessions: nursery.visitSessions.map((session: VisitSession) => ({
-            ...session,
-            visitDate: session.visitDate?.toISOString() || null,
-            createdAt: session.createdAt.toISOString(),
-            updatedAt: session.updatedAt.toISOString(),
-            questions: session.questions.map((question) => ({
-              ...question,
-              answeredAt: question.answeredAt?.toISOString(),
-              createdAt: question.createdAt.toISOString(),
-              updatedAt: question.updatedAt.toISOString(),
-            })),
-          })),
-        };
-      }
-
-      // localStorage に保存
-      localStorage.setItem(
-        NURSERIES_STORAGE_KEY,
-        JSON.stringify(serializedNurseries)
-      );
-
-      // 移行完了フラグを設定
-      localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
-    } catch (error) {
-      console.error('QuestionList migration failed:', error);
-      // 移行に失敗しても処理を続行（既存のNurseryデータがあるかもしれない）
-    }
   }
 
   // === 後方互換性API（QuestionList形式でのアクセス） ===
