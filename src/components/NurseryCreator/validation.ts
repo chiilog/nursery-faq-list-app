@@ -18,7 +18,8 @@ const isValidDateString = (dateString: string): boolean => {
   const [year, month, day] = dateString.split('-').map(Number);
 
   // 極端に大きな年や小さな年の検出
-  if (year < 1000 || year > 9999) {
+  // より現実的な範囲に制限（1900-2100年）
+  if (year < 1900 || year > 2100) {
     return false;
   }
 

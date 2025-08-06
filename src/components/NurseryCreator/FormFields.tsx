@@ -62,6 +62,16 @@ export const FormFields = ({
           value={formData.visitDate}
           onChange={onInputChange('visitDate')}
           onBlur={onDateBlur}
+          onKeyDown={(e) => {
+            // 数字キーの入力を制限
+            const key = e.key;
+            const currentValue = (e.target as HTMLInputElement).value;
+
+            // 年の部分が5桁以上にならないように制限
+            if (currentValue.length >= 10 && key >= '0' && key <= '9') {
+              e.preventDefault();
+            }
+          }}
           disabled={isDisabled}
           size="lg"
           borderRadius="md"

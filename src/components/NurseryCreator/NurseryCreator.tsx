@@ -56,18 +56,26 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
       }));
 
       // 日付フィールドの場合、入力時にもバリデーションを実行
-      if (field === 'visitDate' && value) {
-        const tempErrors = validateNurseryForm({
-          ...formData,
-          visitDate: value,
-        });
+      if (field === 'visitDate') {
+        if (value) {
+          const tempErrors = validateNurseryForm({
+            ...formData,
+            visitDate: value,
+          });
 
-        if (tempErrors.visitDate) {
-          setValidationErrors((prev) => ({
-            ...prev,
-            visitDate: tempErrors.visitDate,
-          }));
+          if (tempErrors.visitDate) {
+            setValidationErrors((prev) => ({
+              ...prev,
+              visitDate: tempErrors.visitDate,
+            }));
+          } else {
+            setValidationErrors((prev) => ({
+              ...prev,
+              visitDate: undefined,
+            }));
+          }
         } else {
+          // 値が空の場合はエラーをクリア
           setValidationErrors((prev) => ({
             ...prev,
             visitDate: undefined,
