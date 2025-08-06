@@ -50,7 +50,7 @@ describe('useNurseryEdit', () => {
 
       expect(result.current.isEditingNursery).toBe(false);
       expect(result.current.editingNurseryName).toBe('');
-      expect(result.current.newVisitDate).toBe('');
+      expect(result.current.newVisitDate).toBe(null);
       expect(result.current.hasNameError).toBe(false);
       expect(result.current.hasChanges).toBe(false);
       expect(result.current.isSaveDisabled).toBe(true);
@@ -79,7 +79,7 @@ describe('useNurseryEdit', () => {
 
       expect(result.current.isEditingNursery).toBe(true);
       expect(result.current.editingNurseryName).toBe('テスト保育園');
-      expect(result.current.newVisitDate).toBe('2025-12-31');
+      expect(result.current.newVisitDate).toEqual(new Date('2025-12-31'));
       expect(result.current.hasNameError).toBe(false);
     });
 
@@ -102,7 +102,7 @@ describe('useNurseryEdit', () => {
         result.current.handleEditNursery();
       });
 
-      expect(result.current.newVisitDate).toBe('');
+      expect(result.current.newVisitDate).toBe(null);
     });
 
     it('見学セッションが存在しない場合は空文字で初期化される', () => {
@@ -119,7 +119,7 @@ describe('useNurseryEdit', () => {
         result.current.handleEditNursery();
       });
 
-      expect(result.current.newVisitDate).toBe('');
+      expect(result.current.newVisitDate).toBe(null);
     });
   });
 
@@ -201,7 +201,7 @@ describe('useNurseryEdit', () => {
       });
 
       act(() => {
-        result.current.setNewVisitDate('2026-01-01');
+        result.current.setNewVisitDate(new Date('2026-01-01'));
       });
 
       expect(result.current.hasChanges).toBe(true);
@@ -316,7 +316,7 @@ describe('useNurseryEdit', () => {
       });
 
       act(() => {
-        result.current.setNewVisitDate('2026-01-01');
+        result.current.setNewVisitDate(new Date('2026-01-01'));
       });
 
       await act(async () => {
@@ -351,7 +351,7 @@ describe('useNurseryEdit', () => {
       });
 
       act(() => {
-        result.current.setNewVisitDate('2026-01-01');
+        result.current.setNewVisitDate(new Date('2026-01-01'));
       });
 
       await act(async () => {
@@ -421,7 +421,7 @@ describe('useNurseryEdit', () => {
       });
 
       act(() => {
-        result.current.setNewVisitDate('invalid-date');
+        result.current.setNewVisitDate(new Date('invalid-date'));
       });
 
       await act(async () => {
@@ -447,7 +447,7 @@ describe('useNurseryEdit', () => {
       });
 
       act(() => {
-        result.current.setNewVisitDate('2026-01-01');
+        result.current.setNewVisitDate(new Date('2026-01-01'));
       });
 
       act(() => {
@@ -456,7 +456,7 @@ describe('useNurseryEdit', () => {
 
       expect(result.current.isEditingNursery).toBe(false);
       expect(result.current.editingNurseryName).toBe('');
-      expect(result.current.newVisitDate).toBe('');
+      expect(result.current.newVisitDate).toBe(null);
       expect(result.current.hasNameError).toBe(false);
     });
   });

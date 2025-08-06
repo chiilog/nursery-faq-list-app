@@ -13,6 +13,7 @@ import { LoadingDisplay } from './LoadingDisplay';
 import { FormFields } from './FormFields';
 import { FormActions } from './FormActions';
 import { validateNurseryForm, hasValidationErrors } from './validation';
+import { validateVisitDate } from '../common/dateValidation';
 import { focusFirstErrorField } from './focusUtils';
 import type { NurseryCreatorProps, FormData, ValidationErrors } from './types';
 
@@ -24,7 +25,7 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    visitDate: '',
+    visitDate: null,
   });
 
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
@@ -33,7 +34,6 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
 
   // フォーカス管理用のref
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const visitDateInputRef = useRef<HTMLInputElement>(null);
 
   const validateForm = (): boolean => {
     const errors = validateNurseryForm(formData);
@@ -41,27 +41,40 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
 
     // エラーがある場合は最初のエラーフィールドにフォーカス
     if (hasValidationErrors(errors)) {
-      focusFirstErrorField(errors, nameInputRef, visitDateInputRef);
+      focusFirstErrorField(errors, nameInputRef, null);
     }
 
     return !hasValidationErrors(errors);
   };
 
-  const handleInputChange =
-    (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: e.target.value,
-      }));
+  const handleNameChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: value,
+    }));
 
-      // リアルタイムでエラーをクリア
-      if (validationErrors[field as keyof ValidationErrors]) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          [field]: undefined,
-        }));
-      }
-    };
+    // バリデーションエラーをクリア
+    if (validationErrors.name) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        name: undefined,
+      }));
+    }
+  };
+
+  const handleDateChange = (date: Date | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      visitDate: date,
+    }));
+
+    // 日付バリデーションのみ実行
+    const dateError = validateVisitDate(date);
+    setValidationErrors((prev) => ({
+      ...prev,
+      visitDate: dateError,
+    }));
+  };
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -71,9 +84,7 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
     try {
       const nurseryData: CreateNurseryInput = {
         name: formData.name.trim(),
-        visitDate: formData.visitDate.trim()
-          ? new Date(formData.visitDate)
-          : undefined,
+        visitDate: formData.visitDate || undefined,
       };
 
       const result = await createNursery(nurseryData);
@@ -106,10 +117,10 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
         <FormFields
           formData={formData}
           validationErrors={validationErrors}
-          onInputChange={handleInputChange}
+          onNameChange={handleNameChange}
+          onDateChange={handleDateChange}
           isDisabled={loading.isLoading}
           nameInputRef={nameInputRef}
-          visitDateInputRef={visitDateInputRef}
         />
       </Box>
 

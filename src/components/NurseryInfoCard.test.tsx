@@ -38,7 +38,7 @@ describe('NurseryInfoCard コンポーネント', () => {
       expect(screen.getByText('見学日: 2025/2/15')).toBeInTheDocument();
     });
 
-    test('見学日が未設定の場合「未設定」と表示される', () => {
+    test('見学日が未設定の場合「未定」と表示される', () => {
       const mockQuestion = testUtils.createMockQuestion();
 
       renderWithProviders(
@@ -49,7 +49,7 @@ describe('NurseryInfoCard コンポーネント', () => {
         />
       );
 
-      expect(screen.getByText('見学日: 未設定')).toBeInTheDocument();
+      expect(screen.getByText('見学日: 未定')).toBeInTheDocument();
     });
 
     test('質問進捗が正しく表示される', () => {
@@ -97,13 +97,12 @@ describe('NurseryInfoCard コンポーネント', () => {
           visitDate={new Date('2025-02-15')}
           questions={[]}
           isEditing={true}
-          newVisitDate="2025-02-20"
+          newVisitDate={new Date('2025-02-20')}
         />
       );
 
-      const dateInput = screen.getByDisplayValue('2025-02-20');
+      const dateInput = screen.getByDisplayValue('2025/02/20');
       expect(dateInput).toBeInTheDocument();
-      expect(dateInput).toHaveAttribute('type', 'date');
     });
 
     test('保育園名入力時にonNameChangeが呼ばれる', async () => {
@@ -128,26 +127,19 @@ describe('NurseryInfoCard コンポーネント', () => {
       expect(mockOnNameChange).toHaveBeenCalledWith('新');
     });
 
-    test('見学日入力時にonVisitDateChangeが呼ばれる', async () => {
-      const user = userEvent.setup();
-      const mockOnVisitDateChange = vi.fn() as (value: string) => void;
-
+    test('見学日の日付ピッカーが表示される', () => {
       renderWithProviders(
         <NurseryInfoCard
           nurseryName="テスト保育園"
           visitDate={new Date('2025-02-15')}
           questions={[]}
           isEditing={true}
-          newVisitDate=""
-          onVisitDateChange={mockOnVisitDateChange}
+          newVisitDate={null}
         />
       );
 
-      const dateInput = screen.getByLabelText('見学日を選択してください');
-      await user.type(dateInput, '2025-02-20');
-
-      // onVisitDateChangeが呼ばれることを確認
-      expect(mockOnVisitDateChange).toHaveBeenCalled();
+      const dateInput = screen.getByPlaceholderText('見学日を選択してください');
+      expect(dateInput).toBeInTheDocument();
     });
   });
 
@@ -211,11 +203,11 @@ describe('NurseryInfoCard コンポーネント', () => {
           visitDate={null}
           questions={[]}
           isEditing={true}
-          newVisitDate=""
+          newVisitDate={null}
         />
       );
 
-      const dateInput = screen.getByRole('textbox');
+      const dateInput = screen.getByPlaceholderText('見学日を選択してください');
       expect(dateInput).toBeInTheDocument();
       expect(dateInput).toHaveValue('');
     });

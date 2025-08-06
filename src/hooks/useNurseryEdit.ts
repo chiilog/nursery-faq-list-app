@@ -10,13 +10,14 @@
 import { useState, useCallback, useMemo } from 'react';
 import { showToast } from '../utils/toaster';
 import { generateId } from '../utils/id';
+import { validateVisitDate } from '../components/common/dateValidation';
 import type { Nursery, VisitSession } from '../types/data';
 
 export interface UseNurseryEditReturn {
   // 状態
   isEditingNursery: boolean;
   editingNurseryName: string;
-  newVisitDate: string;
+  newVisitDate: Date | null;
   hasNameError: boolean;
   hasChanges: boolean;
   isSaveDisabled: boolean;
@@ -26,7 +27,7 @@ export interface UseNurseryEditReturn {
   handleSaveNursery: () => Promise<void>;
   handleCancelEditNursery: () => void;
   handleNurseryNameChange: (value: string) => void;
-  setNewVisitDate: (value: string) => void;
+  setNewVisitDate: (date: Date | null) => void;
 }
 
 // 定数
@@ -40,18 +41,7 @@ export function useNurseryEdit(
   const [isEditingNursery, setIsEditingNursery] = useState(false);
   const [editingNurseryName, setEditingNurseryName] = useState('');
   const [hasNameError, setHasNameError] = useState(false);
-  const [newVisitDate, setNewVisitDate] = useState('');
-
-  // ヘルパー関数: 日付を文字列に変換
-  const formatDateForInput = useCallback((date: Date | null): string => {
-    if (!date) return '';
-    try {
-      return date.toISOString().split('T')[0];
-    } catch {
-      console.warn('Invalid visit date:', date);
-      return '';
-    }
-  }, []);
+  const [newVisitDate, setNewVisitDate] = useState<Date | null>(null);
 
   // ヘルパー関数: バリデーション
   const validateNurseryName = useCallback((name: string): boolean => {
@@ -71,9 +61,8 @@ export function useNurseryEdit(
 
     // 見学日も編集可能にする
     const session = currentNursery.visitSessions[0];
-    const dateString = formatDateForInput(session?.visitDate || null);
-    setNewVisitDate(dateString);
-  }, [currentNursery, formatDateForInput]);
+    setNewVisitDate(session?.visitDate || null);
+  }, [currentNursery]);
 
   // ヘルパー関数: 見学セッション作成/更新
   const createOrUpdateSession = useCallback(
@@ -118,33 +107,30 @@ export function useNurseryEdit(
       return;
     }
 
-    // 見学日が入力されている場合のみ見学セッションを更新/作成
+    // 見学日の処理
     let updatedSessions = [...currentNursery.visitSessions];
     if (newVisitDate) {
-      try {
-        const visitDate = new Date(newVisitDate);
-        // 無効な日付をチェック
-        if (isNaN(visitDate.getTime())) {
-          showToast.error('入力エラー', '有効な日付を入力してください');
-          return;
-        }
-
-        const existingSession = updatedSessions[0];
-        const updatedSession = createOrUpdateSession(
-          existingSession,
-          visitDate
-        );
-
-        if (existingSession) {
-          updatedSessions[0] = updatedSession;
-        } else {
-          updatedSessions = [updatedSession];
-        }
-      } catch (error) {
-        showToast.error('エラー', '日付の処理中にエラーが発生しました');
-        console.error('Date parsing error:', error);
+      // 見学日が入力されている場合：バリデーションして見学セッションを更新/作成
+      const visitDateError = validateVisitDate(newVisitDate);
+      if (visitDateError) {
+        showToast.error('入力エラー', visitDateError);
         return;
       }
+
+      const existingSession = updatedSessions[0];
+      const updatedSession = createOrUpdateSession(
+        existingSession,
+        newVisitDate
+      );
+
+      if (existingSession) {
+        updatedSessions[0] = updatedSession;
+      } else {
+        updatedSessions = [updatedSession];
+      }
+    } else {
+      // 見学日が削除された場合：見学セッションも削除
+      updatedSessions = [];
     }
 
     await updateNursery(currentNursery.id, {
@@ -167,7 +153,7 @@ export function useNurseryEdit(
   const handleCancelEditNursery = useCallback(() => {
     setIsEditingNursery(false);
     setEditingNurseryName('');
-    setNewVisitDate('');
+    setNewVisitDate(null);
     setHasNameError(false);
   }, []);
 
@@ -183,21 +169,23 @@ export function useNurseryEdit(
     if (!currentNursery || !isEditingNursery) return false;
 
     const currentSession = currentNursery.visitSessions[0];
-    const currentDateString = formatDateForInput(
-      currentSession?.visitDate || null
-    );
+    const currentDate = currentSession?.visitDate || null;
 
-    return (
-      editingNurseryName.trim() !== currentNursery.name ||
-      newVisitDate !== currentDateString
-    );
-  }, [
-    currentNursery,
-    isEditingNursery,
-    editingNurseryName,
-    newVisitDate,
-    formatDateForInput,
-  ]);
+    // 日付の比較（時間を除く）
+    const dateChanged = (() => {
+      if (!currentDate && !newVisitDate) return false;
+      if (!currentDate || !newVisitDate) return true;
+
+      const current = new Date(currentDate);
+      const newDate = new Date(newVisitDate);
+      current.setHours(0, 0, 0, 0);
+      newDate.setHours(0, 0, 0, 0);
+
+      return current.getTime() !== newDate.getTime();
+    })();
+
+    return editingNurseryName.trim() !== currentNursery.name || dateChanged;
+  }, [currentNursery, isEditingNursery, editingNurseryName, newVisitDate]);
 
   // 保存ボタンの無効化状態（メモ化）
   const isSaveDisabled = useMemo(() => {
