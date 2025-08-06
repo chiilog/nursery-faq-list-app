@@ -11,6 +11,7 @@ interface FormFieldsProps {
   onInputChange: (
     field: keyof FormData
   ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDateBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   isDisabled: boolean;
   nameInputRef: React.RefObject<HTMLInputElement | null>;
   visitDateInputRef: React.RefObject<HTMLInputElement | null>;
@@ -20,6 +21,7 @@ export const FormFields = ({
   formData,
   validationErrors,
   onInputChange,
+  onDateBlur,
   isDisabled,
   nameInputRef,
   visitDateInputRef,
@@ -59,9 +61,12 @@ export const FormFields = ({
           type="date"
           value={formData.visitDate}
           onChange={onInputChange('visitDate')}
+          onBlur={onDateBlur}
           disabled={isDisabled}
           size="lg"
           borderRadius="md"
+          min="1900-01-01"
+          max="2100-12-31"
         />
         <Field.HelperText mt={1} color="gray.600" fontSize="sm">
           見学日が未定の場合は空欄のまま保存してください

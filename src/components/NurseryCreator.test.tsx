@@ -476,6 +476,55 @@ describe('NurseryCreator コンポーネント', () => {
     });
   });
 
+  describe('onBlurバリデーション', () => {
+    test('バリデーション関数が不正な日付値を正しく検出する', async () => {
+      // バリデーション関数を直接インポートしてテスト
+      const { validateNurseryForm } = await import(
+        './NurseryCreator/validation'
+      );
+
+      // 極端に大きな年の場合
+      const result1 = validateNurseryForm({
+        name: 'テスト保育園',
+        visitDate: '99999-09-31',
+      });
+      expect(result1.visitDate).toBe('有効な日付を入力してください');
+
+      // 存在しない日付の場合
+      const result2 = validateNurseryForm({
+        name: 'テスト保育園',
+        visitDate: '2025-02-30',
+      });
+      expect(result2.visitDate).toBe('有効な日付を入力してください');
+
+      // 月が無効な場合
+      const result3 = validateNurseryForm({
+        name: 'テスト保育園',
+        visitDate: '2025-13-01',
+      });
+      expect(result3.visitDate).toBe('有効な日付を入力してください');
+    });
+
+    test('見学日フィールドでblur時に過去の日付のエラーが表示される', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
+
+      const nameInput = screen.getByLabelText('保育園名');
+      const visitDateInput = screen.getByLabelText('見学日');
+
+      await user.type(nameInput, 'テスト保育園');
+      await user.type(visitDateInput, '2020-01-01');
+
+      await user.tab(); // blur
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('見学日は今日以降の日付を入力してください')
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('統合テスト', () => {
     test('保存成功後にonCancelコールバックが呼ばれる', async () => {
       const user = userEvent.setup();

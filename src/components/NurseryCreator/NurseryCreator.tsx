@@ -49,19 +49,75 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
 
   const handleInputChange =
     (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
       setFormData((prev) => ({
         ...prev,
-        [field]: e.target.value,
+        [field]: value,
       }));
 
-      // リアルタイムでエラーをクリア
-      if (validationErrors[field as keyof ValidationErrors]) {
+      // 日付フィールドの場合、入力時にもバリデーションを実行
+      if (field === 'visitDate' && value) {
+        const tempErrors = validateNurseryForm({
+          ...formData,
+          visitDate: value,
+        });
+
+        if (tempErrors.visitDate) {
+          setValidationErrors((prev) => ({
+            ...prev,
+            visitDate: tempErrors.visitDate,
+          }));
+        } else {
+          setValidationErrors((prev) => ({
+            ...prev,
+            visitDate: undefined,
+          }));
+        }
+      } else if (validationErrors[field as keyof ValidationErrors]) {
+        // その他のフィールドはエラーをクリア
         setValidationErrors((prev) => ({
           ...prev,
           [field]: undefined,
         }));
       }
     };
+
+  // 日付フィールド専用のblurハンドラー
+  const handleDateBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const inputElement = e.target as HTMLInputElement;
+    const value = inputElement.value;
+
+    // ブラウザが無効な値を表示している場合を検出
+    // validity.badInputはブラウザが無効と判断した値を示す
+    if (inputElement.validity && inputElement.validity.badInput) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        visitDate: '有効な日付を入力してください',
+      }));
+      return;
+    }
+
+    // 通常のバリデーション
+    if (value) {
+      const tempErrors = validateNurseryForm({
+        ...formData,
+        visitDate: value,
+      });
+
+      if (tempErrors.visitDate) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          visitDate: tempErrors.visitDate,
+        }));
+      } else {
+        // エラーがない場合はクリア
+        setValidationErrors((prev) => ({
+          ...prev,
+          visitDate: undefined,
+        }));
+      }
+    }
+  };
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -107,6 +163,7 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
           formData={formData}
           validationErrors={validationErrors}
           onInputChange={handleInputChange}
+          onDateBlur={handleDateBlur}
           isDisabled={loading.isLoading}
           nameInputRef={nameInputRef}
           visitDateInputRef={visitDateInputRef}
