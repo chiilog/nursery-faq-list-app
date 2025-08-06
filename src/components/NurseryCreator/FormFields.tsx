@@ -2,89 +2,54 @@
  * フォームフィールドコンポーネント
  */
 
-import { Input, Field } from '@chakra-ui/react';
+import { VisitDatePicker } from '../common/VisitDatePicker';
+import { NurseryNameInput } from '../common/NurseryNameInput';
 import type { FormData, ValidationErrors } from './types';
 
 interface FormFieldsProps {
   formData: FormData;
   validationErrors: ValidationErrors;
-  onInputChange: (
-    field: keyof FormData
-  ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onDateBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onNameChange: (value: string) => void;
+  onDateChange: (date: Date | null) => void;
   isDisabled: boolean;
   nameInputRef: React.RefObject<HTMLInputElement | null>;
-  visitDateInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 export const FormFields = ({
   formData,
   validationErrors,
-  onInputChange,
-  onDateBlur,
+  onNameChange,
+  onDateChange,
   isDisabled,
   nameInputRef,
-  visitDateInputRef,
 }: FormFieldsProps) => {
   return (
     <div>
       {/* 保育園名 */}
-      <Field.Root invalid={!!validationErrors.name} mb={5}>
-        <Field.Label htmlFor="nursery-name" mb={1}>
-          保育園名
-          <Field.RequiredIndicator />
-        </Field.Label>
-        <Input
-          id="nursery-name"
-          ref={nameInputRef}
-          value={formData.name}
-          onChange={onInputChange('name')}
-          placeholder="保育園名を入力してください"
-          disabled={isDisabled}
-          required
-          size="lg"
-          borderRadius="md"
-        />
-        {validationErrors.name && (
-          <Field.ErrorText mt={2}>{validationErrors.name}</Field.ErrorText>
-        )}
-      </Field.Root>
+      <NurseryNameInput
+        value={formData.name}
+        onChange={onNameChange}
+        label="保育園名"
+        isRequired={true}
+        disabled={isDisabled}
+        isInvalid={!!validationErrors.name}
+        errorMessage={validationErrors.name}
+        id="nursery-name"
+        ref={nameInputRef}
+      />
 
       {/* 見学日 */}
-      <Field.Root invalid={!!validationErrors.visitDate}>
-        <Field.Label htmlFor="nursery-visit-date" mb={1}>
-          見学日
-        </Field.Label>
-        <Input
-          id="nursery-visit-date"
-          ref={visitDateInputRef}
-          type="date"
-          value={formData.visitDate}
-          onChange={onInputChange('visitDate')}
-          onBlur={onDateBlur}
-          onKeyDown={(e) => {
-            // 数字キーの入力を制限
-            const key = e.key;
-            const currentValue = (e.target as HTMLInputElement).value;
-
-            // 年の部分が5桁以上にならないように制限
-            if (currentValue.length >= 10 && key >= '0' && key <= '9') {
-              e.preventDefault();
-            }
-          }}
-          disabled={isDisabled}
-          size="lg"
-          borderRadius="md"
-          min="1900-01-01"
-          max="2100-12-31"
-        />
-        <Field.HelperText mt={1} color="gray.600" fontSize="sm">
-          見学日が未定の場合は空欄のまま保存してください
-        </Field.HelperText>
-        {validationErrors.visitDate && (
-          <Field.ErrorText mt={2}>{validationErrors.visitDate}</Field.ErrorText>
-        )}
-      </Field.Root>
+      <VisitDatePicker
+        selectedDate={formData.visitDate}
+        onChange={onDateChange}
+        label="見学日"
+        placeholder="見学日を選択してください"
+        disabled={isDisabled}
+        isInvalid={!!validationErrors.visitDate}
+        errorMessage={validationErrors.visitDate}
+        helperText="見学日が未定の場合は空欄のまま保存してください"
+        id="nursery-visit-date"
+      />
     </div>
   );
 };

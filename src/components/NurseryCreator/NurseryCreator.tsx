@@ -24,7 +24,7 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    visitDate: '',
+    visitDate: null,
   });
 
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
@@ -33,7 +33,6 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
 
   // フォーカス管理用のref
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const visitDateInputRef = useRef<HTMLInputElement>(null);
 
   const validateForm = (): boolean => {
     const errors = validateNurseryForm(formData);
@@ -41,89 +40,49 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
 
     // エラーがある場合は最初のエラーフィールドにフォーカス
     if (hasValidationErrors(errors)) {
-      focusFirstErrorField(errors, nameInputRef, visitDateInputRef);
+      focusFirstErrorField(errors, nameInputRef, null);
     }
 
     return !hasValidationErrors(errors);
   };
 
-  const handleInputChange =
-    (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setFormData((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
+  const handleNameChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: value,
+    }));
 
-      // 日付フィールドの場合、入力時にもバリデーションを実行
-      if (field === 'visitDate') {
-        if (value) {
-          const tempErrors = validateNurseryForm({
-            ...formData,
-            visitDate: value,
-          });
-
-          if (tempErrors.visitDate) {
-            setValidationErrors((prev) => ({
-              ...prev,
-              visitDate: tempErrors.visitDate,
-            }));
-          } else {
-            setValidationErrors((prev) => ({
-              ...prev,
-              visitDate: undefined,
-            }));
-          }
-        } else {
-          // 値が空の場合はエラーをクリア
-          setValidationErrors((prev) => ({
-            ...prev,
-            visitDate: undefined,
-          }));
-        }
-      } else if (validationErrors[field as keyof ValidationErrors]) {
-        // その他のフィールドはエラーをクリア
-        setValidationErrors((prev) => ({
-          ...prev,
-          [field]: undefined,
-        }));
-      }
-    };
-
-  // 日付フィールド専用のblurハンドラー
-  const handleDateBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const inputElement = e.target as HTMLInputElement;
-    const value = inputElement.value;
-
-    // ブラウザが無効な値を表示している場合を検出
-    // validity.badInputはブラウザが無効と判断した値を示す
-    if (inputElement.validity && inputElement.validity.badInput) {
+    // バリデーションエラーをクリア
+    if (validationErrors.name) {
       setValidationErrors((prev) => ({
         ...prev,
-        visitDate: '有効な日付を入力してください',
+        name: undefined,
       }));
-      return;
     }
+  };
 
-    // 通常のバリデーション
-    if (value) {
-      const tempErrors = validateNurseryForm({
-        ...formData,
-        visitDate: value,
-      });
+  const handleDateChange = (date: Date | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      visitDate: date,
+    }));
 
-      if (tempErrors.visitDate) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          visitDate: tempErrors.visitDate,
-        }));
-      } else {
-        // エラーがない場合はクリア
-        setValidationErrors((prev) => ({
-          ...prev,
-          visitDate: undefined,
-        }));
-      }
+    // 日付変更時にバリデーション実行
+    const tempErrors = validateNurseryForm({
+      ...formData,
+      visitDate: date,
+    });
+
+    if (tempErrors.visitDate) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        visitDate: tempErrors.visitDate,
+      }));
+    } else {
+      setValidationErrors((prev) => ({
+        ...prev,
+        visitDate: undefined,
+      }));
     }
   };
 
@@ -135,9 +94,7 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
     try {
       const nurseryData: CreateNurseryInput = {
         name: formData.name.trim(),
-        visitDate: formData.visitDate.trim()
-          ? new Date(formData.visitDate)
-          : undefined,
+        visitDate: formData.visitDate || undefined,
       };
 
       const result = await createNursery(nurseryData);
@@ -170,11 +127,10 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
         <FormFields
           formData={formData}
           validationErrors={validationErrors}
-          onInputChange={handleInputChange}
-          onDateBlur={handleDateBlur}
+          onNameChange={handleNameChange}
+          onDateChange={handleDateChange}
           isDisabled={loading.isLoading}
           nameInputRef={nameInputRef}
-          visitDateInputRef={visitDateInputRef}
         />
       </Box>
 

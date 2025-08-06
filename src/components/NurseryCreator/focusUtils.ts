@@ -7,12 +7,12 @@ import type { ValidationErrors } from './types';
 export const focusFirstErrorField = (
   errors: ValidationErrors,
   nameInputRef: React.RefObject<HTMLInputElement | null>,
-  visitDateInputRef: React.RefObject<HTMLInputElement | null>
+  visitDateInputRef?: React.RefObject<HTMLInputElement | null> | null
 ) => {
   try {
     if (errors.name && nameInputRef.current) {
       nameInputRef.current.focus();
-    } else if (errors.visitDate && visitDateInputRef.current) {
+    } else if (errors.visitDate && visitDateInputRef?.current) {
       visitDateInputRef.current.focus();
     }
   } catch {

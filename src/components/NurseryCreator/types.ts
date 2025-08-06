@@ -4,7 +4,7 @@
 
 export interface FormData {
   name: string;
-  visitDate: string;
+  visitDate: Date | null;
 }
 
 export interface ValidationErrors {

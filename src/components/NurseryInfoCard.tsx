@@ -3,8 +3,10 @@
  * ホームページのNurseryCardデザインを統合した編集可能なカード
  */
 
-import { Box, Text, VStack, Input } from '@chakra-ui/react';
+import { Box, Text, VStack } from '@chakra-ui/react';
 import { useMemo } from 'react';
+import { VisitDatePicker } from './common/VisitDatePicker';
+import { NurseryNameInput } from './common/NurseryNameInput';
 import type { Question } from '../types/data';
 import { formatDate } from '../utils/dateFormat';
 
@@ -14,10 +16,10 @@ interface NurseryInfoCardProps {
   questions: Question[];
   isEditing?: boolean;
   editingName?: string;
-  newVisitDate?: string;
+  newVisitDate?: Date | null;
   hasNameError?: boolean;
   onNameChange?: (value: string) => void;
-  onVisitDateChange?: (value: string) => void;
+  onVisitDateChange?: (date: Date | null) => void;
 }
 
 /**
@@ -41,7 +43,7 @@ export const NurseryInfoCard = ({
   questions,
   isEditing = false,
   editingName = '',
-  newVisitDate = '',
+  newVisitDate = null,
   hasNameError = false,
   onNameChange,
   onVisitDateChange,
@@ -67,28 +69,14 @@ export const NurseryInfoCard = ({
       <VStack align="stretch" gap={3}>
         {/* 保育園名 */}
         {isEditing ? (
-          <VStack align="stretch" gap={1}>
-            <Input
-              size="lg"
-              value={editingName}
-              onChange={(e) => onNameChange?.(e.target.value)}
-              placeholder="保育園名を入力してください"
-              fontSize="lg"
-              fontWeight="bold"
-              bg="white"
-              borderColor={hasNameError ? 'red.500' : 'brand.300'}
-              _focus={{
-                borderColor: hasNameError ? 'red.500' : 'brand.500',
-                shadow: hasNameError ? '0 0 0 1px red.500' : 'outline',
-              }}
-              data-error={hasNameError}
-            />
-            {hasNameError && (
-              <Text color="red.500" fontSize="sm">
-                保育園名を入力してください
-              </Text>
-            )}
-          </VStack>
+          <NurseryNameInput
+            value={editingName}
+            onChange={(value) => onNameChange?.(value)}
+            isInvalid={hasNameError}
+            errorMessage={
+              hasNameError ? '保育園名を入力してください' : undefined
+            }
+          />
         ) : (
           <Text
             fontWeight="bold"
@@ -105,23 +93,17 @@ export const NurseryInfoCard = ({
         <VStack align="stretch" gap={1}>
           {isEditing ? (
             <VStack align="stretch" gap={1}>
-              <Text color="gray.600" fontSize="sm" fontWeight="medium">
-                見学日
-              </Text>
-              <Input
-                type="date"
-                value={newVisitDate}
-                onChange={(e) => onVisitDateChange?.(e.target.value)}
-                size="lg"
-                bg="white"
-                borderColor="brand.300"
-                _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
-                aria-label="見学日を選択してください"
+              <VisitDatePicker
+                selectedDate={newVisitDate}
+                onChange={onVisitDateChange!}
+                label="見学日"
+                placeholder="見学日を選択してください"
+                disabled={false}
               />
             </VStack>
           ) : (
             <Text color="gray.600" fontSize="sm" textAlign="left">
-              見学日: {visitDate ? formatDate(visitDate) : '未設定'}
+              見学日: {visitDate ? formatDate(visitDate) : '未定'}
             </Text>
           )}
 
