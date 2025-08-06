@@ -95,7 +95,7 @@ export const NurseryInfoCard = ({
             <VStack align="stretch" gap={1}>
               <VisitDatePicker
                 selectedDate={newVisitDate}
-                onChange={onVisitDateChange!}
+                onChange={(date) => onVisitDateChange?.(date)}
                 label="見学日"
                 placeholder="見学日を選択してください"
                 disabled={false}

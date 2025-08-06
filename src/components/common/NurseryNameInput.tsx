@@ -16,7 +16,6 @@ interface NurseryNameInputProps {
   placeholder?: string;
   label?: string;
   id?: string;
-  ref?: React.RefObject<HTMLInputElement>;
 }
 
 export const NurseryNameInput = React.forwardRef<

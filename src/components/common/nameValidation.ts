@@ -10,15 +10,11 @@
 export const validateNurseryName = (name: string): string | undefined => {
   const trimmedName = name.trim();
 
-  if (!name) {
+  if (trimmedName.length === 0) {
     return '保育園名は必須です';
   }
 
-  if (trimmedName.length === 0) {
-    return '保育園名は1文字以上で入力してください';
-  }
-
-  if (name.length > 100) {
+  if (trimmedName.length > 100) {
     return '保育園名は100文字以内で入力してください';
   }
 
@@ -33,12 +29,14 @@ export const validateNurseryName = (name: string): string | undefined => {
 export const validateNurseryNameOptional = (
   name: string
 ): string | undefined => {
+  const trimmedName = name.trim();
+
   // 空文字列は許可（任意項目のため）
-  if (!name || name.trim().length === 0) {
+  if (trimmedName.length === 0) {
     return undefined;
   }
 
-  if (name.length > 100) {
+  if (trimmedName.length > 100) {
     return '保育園名は100文字以内で入力してください';
   }
 

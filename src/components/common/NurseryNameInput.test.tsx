@@ -114,7 +114,9 @@ describe('NurseryNameInput コンポーネント', () => {
       // 絵文字や記号を含む文字列の入力を確認
       const expectedText = '🌸さくら保育園☆（本店）';
       // userEvent.typeは1文字ずつ入力するため、文字数分の呼び出しがある
-      expect(mockOnChange).toHaveBeenCalledTimes(expectedText.length);
+      expect(mockOnChange).toHaveBeenCalledTimes(
+        Array.from(expectedText).length
+      );
       // 最後の文字が入力されることを確認
       expect(mockOnChange).toHaveBeenLastCalledWith('）');
     });

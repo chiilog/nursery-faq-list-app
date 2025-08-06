@@ -53,6 +53,16 @@ export const VisitDatePicker = ({
       placeholder={placeholder}
       disabled={disabled}
       readOnly
+      tabIndex={0}
+      aria-label={placeholder ?? '日付を選択'}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          // キーボードイベントの場合は直接クリックイベントを作成
+          const clickEvent = new MouseEvent('click', { bubbles: true });
+          e.currentTarget.dispatchEvent(clickEvent);
+        }
+      }}
       borderColor={isInvalid ? 'red.500' : undefined}
       _focus={{
         borderColor: isInvalid ? 'red.500' : undefined,

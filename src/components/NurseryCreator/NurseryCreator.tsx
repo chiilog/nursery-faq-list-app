@@ -13,6 +13,7 @@ import { LoadingDisplay } from './LoadingDisplay';
 import { FormFields } from './FormFields';
 import { FormActions } from './FormActions';
 import { validateNurseryForm, hasValidationErrors } from './validation';
+import { validateVisitDate } from '../common/dateValidation';
 import { focusFirstErrorField } from './focusUtils';
 import type { NurseryCreatorProps, FormData, ValidationErrors } from './types';
 
@@ -67,23 +68,12 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
       visitDate: date,
     }));
 
-    // 日付変更時にバリデーション実行
-    const tempErrors = validateNurseryForm({
-      ...formData,
-      visitDate: date,
-    });
-
-    if (tempErrors.visitDate) {
-      setValidationErrors((prev) => ({
-        ...prev,
-        visitDate: tempErrors.visitDate,
-      }));
-    } else {
-      setValidationErrors((prev) => ({
-        ...prev,
-        visitDate: undefined,
-      }));
-    }
+    // 日付バリデーションのみ実行
+    const dateError = validateVisitDate(date);
+    setValidationErrors((prev) => ({
+      ...prev,
+      visitDate: dateError,
+    }));
   };
 
   const handleSave = async () => {
