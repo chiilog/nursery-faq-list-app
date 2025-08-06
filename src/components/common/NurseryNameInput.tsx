@@ -81,11 +81,6 @@ export const NurseryNameInput = React.forwardRef<
           fontSize="lg"
           fontWeight="bold"
           bg="white"
-          borderColor={isInvalid ? 'red.500' : undefined}
-          _focus={{
-            borderColor: isInvalid ? 'red.500' : undefined,
-            shadow: isInvalid ? '0 0 0 1px red.500' : undefined,
-          }}
           data-error={isInvalid}
         />
         {isInvalid && errorMessage && (

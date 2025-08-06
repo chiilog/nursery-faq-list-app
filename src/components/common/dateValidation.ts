@@ -29,30 +29,3 @@ export const validateVisitDate = (
 
   return undefined;
 };
-
-/**
- * 見学日のバリデーション（utils/validation.ts互換版）
- * 1年制限付き、「選択してください」文言版
- */
-export const validateVisitDateLegacy = (
-  visitDate: Date
-): string | undefined => {
-  // Dateオブジェクトが有効かチェック
-  if (isNaN(visitDate.getTime())) {
-    return '有効な日付を入力してください';
-  }
-
-  const now = new Date();
-  const oneYearFromNow = new Date();
-  oneYearFromNow.setFullYear(now.getFullYear() + 1);
-
-  if (visitDate < now) {
-    return '見学日は今日以降の日付を選択してください';
-  }
-
-  if (visitDate > oneYearFromNow) {
-    return '見学日は1年以内の日付を選択してください';
-  }
-
-  return undefined;
-};
