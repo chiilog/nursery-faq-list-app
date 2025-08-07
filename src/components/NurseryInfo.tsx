@@ -2,9 +2,10 @@
  * 保育園情報表示コンポーネント
  */
 
-import { Box, Text, VStack, HStack, Input, Button } from '@chakra-ui/react';
+import { Box, Text, VStack, Input } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import type { Question } from '../types/data';
+import { FormActions } from './NurseryCreator/FormActions';
 
 interface NurseryInfoProps {
   visitDate: Date | null;
@@ -88,14 +89,12 @@ export const NurseryInfo = ({
                 size="lg"
                 bg="white"
               />
-              <HStack>
-                <Button size="sm" colorScheme="brand" onClick={onSaveVisitDate}>
-                  保存
-                </Button>
-                <Button size="sm" variant="ghost" onClick={onCancelVisitDate}>
-                  キャンセル
-                </Button>
-              </HStack>
+              <FormActions
+                size="sm"
+                variant="inline"
+                onSave={onSaveVisitDate}
+                onCancel={onCancelVisitDate}
+              />
             </VStack>
           ) : (
             <Text

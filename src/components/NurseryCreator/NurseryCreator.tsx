@@ -89,11 +89,7 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
   };
 
   return (
-    <Box p={6} maxW="md" mx="auto">
-      <Box mb={6}>
-        <h2>新しい保育園を追加</h2>
-      </Box>
-
+    <Box maxW="md" mx="auto">
       <Box mb={4}>
         <ErrorDisplay error={error} onClearError={clearError} />
       </Box>
@@ -116,8 +112,8 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
       <FormActions
         onSave={() => void handleSave()}
         onCancel={onCancel}
-        isSaveDisabled={loading.isLoading}
-        isCancelDisabled={false}
+        isDisabled={loading.isLoading}
+        layout="vertical"
       />
     </Box>
   );

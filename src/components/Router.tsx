@@ -5,13 +5,16 @@ import { useState, useEffect } from 'react';
 import { NurseryCard } from './NurseryCard';
 import { useNurseryStore } from '../stores/nurseryStore';
 import type { Nursery } from '../types/data';
-import { NurseryCreator } from './NurseryCreator';
+import { NurseryCreatorPage } from './NurseryCreatorPage';
 import { NurseryDetailPage } from './NurseryDetailPage';
 
 // ホームページコンポーネント（保育園カード一覧）
-const HomePage = () => {
+interface HomePageProps {
+  onCreateNew: () => void;
+}
+
+const HomePage = ({ onCreateNew }: HomePageProps) => {
   const navigate = useNavigate();
-  const [isCreating, setIsCreating] = useState(false);
   const {
     nurseries,
     loading,
@@ -25,14 +28,6 @@ const HomePage = () => {
     void loadNurseries();
   }, [loadNurseries]);
 
-  const handleCreateNew = () => {
-    setIsCreating(true);
-  };
-
-  const handleCreateCancel = () => {
-    setIsCreating(false);
-  };
-
   const handleNurseryClick = async (nursery: Nursery) => {
     try {
       await setCurrentNursery(nursery.id);
@@ -41,10 +36,6 @@ const HomePage = () => {
       console.error('保育園選択エラー:', error);
     }
   };
-
-  if (isCreating) {
-    return <NurseryCreator onCancel={handleCreateCancel} />;
-  }
 
   return (
     <Box>
@@ -72,7 +63,7 @@ const HomePage = () => {
           <Button
             colorScheme="brand"
             size="lg"
-            onClick={handleCreateNew}
+            onClick={onCreateNew}
             disabled={loading.isLoading}
             borderRadius="full"
             px={8}
@@ -130,10 +121,23 @@ const NotFoundPage = () => (
 );
 
 export const AppRouter = () => {
+  const [isCreating, setIsCreating] = useState(false);
+
   return (
     <Routes>
+      <Route
+        path="/"
+        element={
+          isCreating ? (
+            <NurseryCreatorPage onCancel={() => setIsCreating(false)} />
+          ) : (
+            <Layout>
+              <HomePage onCreateNew={() => setIsCreating(true)} />
+            </Layout>
+          )
+        }
+      />
       <Route element={<Layout />}>
-        <Route path="/" element={<HomePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
       {/* NurseryDetailPageは独自のLayoutを使用するため、別ルートに */}
