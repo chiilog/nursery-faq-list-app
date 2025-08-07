@@ -1,24 +1,64 @@
 /**
- * 保育園詳細ページヘッダーコンポーネント
+ * 共通ヘッダーコンポーネント（Chakra UI v3対応）
  */
 
-import { Button, Heading, Spacer } from '@chakra-ui/react';
+import { Box, Button, Heading, HStack, IconButton } from '@chakra-ui/react';
+import type { HeaderButton, HeaderVariant } from '../types/header';
 
 interface NurseryHeaderProps {
-  onBack: () => void;
+  title: string;
+  leftButton?: HeaderButton;
+  rightButton?: HeaderButton;
+  variant?: HeaderVariant;
 }
 
-export const NurseryHeader = ({ onBack }: NurseryHeaderProps) => {
-  return (
-    <>
-      <Button
-        variant="ghost"
-        onClick={onBack}
-        size={{ base: 'sm', md: 'md' }}
-        px={0}
+export const NurseryHeader = ({
+  title,
+  leftButton,
+  rightButton,
+  variant = 'with-buttons',
+}: NurseryHeaderProps) => {
+  if (variant === 'centered') {
+    return (
+      <Heading
+        as="h1"
+        size={{ base: 'md', md: 'lg' }}
+        color="teal.600"
+        textAlign="center"
       >
-        ← 戻る
-      </Button>
+        {title}
+      </Heading>
+    );
+  }
+
+  return (
+    <HStack justify="space-between" align="center" w="full">
+      {leftButton ? (
+        leftButton.icon ? (
+          <IconButton
+            onClick={leftButton.onClick}
+            variant={leftButton.variant || 'ghost'}
+            aria-label={leftButton['aria-label'] || 'Action button'}
+            size={{ base: 'sm', md: 'md' }}
+            borderRadius="full"
+            _hover={{ bg: 'gray.100' }}
+          >
+            {leftButton.icon}
+          </IconButton>
+        ) : (
+          <Button
+            variant={leftButton.variant || 'ghost'}
+            onClick={leftButton.onClick}
+            size={{ base: 'sm', md: 'md' }}
+            px={0}
+          >
+            {leftButton.text}
+          </Button>
+        )
+      ) : (
+        <Box w="40px" />
+      )}
+
       <Heading
         as="h1"
         size={{ base: 'md', md: 'lg' }}
@@ -26,9 +66,33 @@ export const NurseryHeader = ({ onBack }: NurseryHeaderProps) => {
         flex={1}
         textAlign="center"
       >
-        保育園詳細
+        {title}
       </Heading>
-      <Spacer />
-    </>
+
+      {rightButton ? (
+        rightButton.icon ? (
+          <IconButton
+            onClick={rightButton.onClick}
+            variant={rightButton.variant || 'ghost'}
+            aria-label={rightButton['aria-label'] || 'Action button'}
+            size={{ base: 'sm', md: 'md' }}
+            borderRadius="full"
+            _hover={{ bg: 'gray.100' }}
+          >
+            {rightButton.icon}
+          </IconButton>
+        ) : (
+          <Button
+            variant={rightButton.variant || 'ghost'}
+            onClick={rightButton.onClick}
+            size={{ base: 'sm', md: 'md' }}
+          >
+            {rightButton.text}
+          </Button>
+        )
+      ) : (
+        <Box w="40px" />
+      )}
+    </HStack>
   );
 };

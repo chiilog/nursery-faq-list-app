@@ -2,6 +2,7 @@
  * 保育園詳細画面コンポーネント
  * リファクタリング: 責務別にコンポーネントを分割
  */
+import { IoChevronBack } from 'react-icons/io5';
 
 import {
   Box,
@@ -16,7 +17,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { Layout } from './Layout';
-import { NurseryHeader } from './NurseryHeader';
 import { NurseryInfoCard } from './NurseryInfoCard';
 import { QuestionAddForm } from './QuestionAddForm';
 import { QuestionsSection } from './QuestionsSection';
@@ -155,7 +155,7 @@ export const NurseryDetailPage = () => {
   // ローディング状態
   if (loading.isLoading || (nurseryId && !currentNursery && !error)) {
     return (
-      <Layout headerContent={<Box />} showDefaultTitle={false}>
+      <Layout showDefaultTitle={false}>
         <Box textAlign="center" py={8}>
           <Spinner size="lg" color="brand.500" />
           <Text mt={4} color="gray.600">
@@ -169,7 +169,7 @@ export const NurseryDetailPage = () => {
   // エラー状態
   if (error || (!currentNursery && nurseryId)) {
     return (
-      <Layout headerContent={<Box />} showDefaultTitle={false}>
+      <Layout showDefaultTitle={false}>
         <Box textAlign="center" py={8}>
           <Text color="red.500" fontSize="lg" mb={4}>
             {error?.message || '保育園が見つかりません'}
@@ -190,7 +190,7 @@ export const NurseryDetailPage = () => {
   // nurseryIdがないか、currentNurseryがない場合は404扱い
   if (!nurseryId || !currentNursery) {
     return (
-      <Layout headerContent={<Box />} showDefaultTitle={false}>
+      <Layout showDefaultTitle={false}>
         <Box textAlign="center" py={8}>
           <Text color="red.500" fontSize="lg" mb={4}>
             保育園が見つかりません
@@ -206,7 +206,13 @@ export const NurseryDetailPage = () => {
 
   return (
     <Layout
-      headerContent={<NurseryHeader onBack={handleBack} />}
+      headerTitle="保育園詳細"
+      headerVariant="with-buttons"
+      leftButton={{
+        icon: <IoChevronBack />,
+        onClick: handleBack,
+        variant: 'ghost',
+      }}
       showDefaultTitle={false}
     >
       <Box p={0} maxW="4xl" mx="auto">
