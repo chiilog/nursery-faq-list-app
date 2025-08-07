@@ -2,7 +2,7 @@
  * 共通ヘッダーコンポーネント（Chakra UI v3対応）
  */
 
-import { Button, Heading, HStack, IconButton } from '@chakra-ui/react';
+import { Box, Button, Heading, HStack, IconButton } from '@chakra-ui/react';
 import type { HeaderButton, HeaderVariant } from '../types/header';
 
 interface NurseryHeaderProps {
@@ -39,7 +39,7 @@ export const NurseryHeader = ({
             onClick={leftButton.onClick}
             variant={leftButton.variant || 'ghost'}
             aria-label={leftButton['aria-label'] || 'Action button'}
-            size={{ base: 'xs', md: 'md' }}
+            size={{ base: 'sm', md: 'md' }}
             borderRadius="full"
             _hover={{ bg: 'gray.100' }}
           >
@@ -56,7 +56,7 @@ export const NurseryHeader = ({
           </Button>
         )
       ) : (
-        <div style={{ width: '40px' }} /> // スペーサー
+        <Box w="40px" />
       )}
 
       <Heading
@@ -91,7 +91,7 @@ export const NurseryHeader = ({
           </Button>
         )
       ) : (
-        <div style={{ width: '40px' }} /> // スペーサー
+        <Box w="40px" />
       )}
     </HStack>
   );
