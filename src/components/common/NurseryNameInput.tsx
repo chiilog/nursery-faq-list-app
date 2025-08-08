@@ -62,11 +62,9 @@ export const NurseryNameInput = React.forwardRef<
       'data-error': isInvalid,
     };
 
-    // Inputコンポーネントを一度だけ定義
-    const inputElement = label ? (
-      <Input {...inputProps} />
-    ) : (
-      <Input {...inputWithoutLabelProps} />
+    // Inputコンポーネントを一度だけ定義（より簡潔に）
+    const inputElement = (
+      <Input {...(label ? inputProps : inputWithoutLabelProps)} />
     );
 
     if (label) {

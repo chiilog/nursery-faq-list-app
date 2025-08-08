@@ -81,12 +81,12 @@ export function validateNurseryName(
 /**
  * 保育園名のシンプルバリデーション（エラーメッセージのみ返す）
  * @param name 保育園名
- * @param required 必須項目かどうか
+ * @param required 必須項目かどうか（デフォルト: false - 元の関数と一貫性を保つため）
  * @returns エラーメッセージ（エラーがない場合はundefined）
  */
 export function validateNurseryNameSimple(
   name: string,
-  required: boolean = true
+  required: boolean = false
 ): string | undefined {
   const result = validateNurseryName(name, required);
   return result.errors[0];
