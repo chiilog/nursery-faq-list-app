@@ -1,22 +1,188 @@
 /**
  * フォームアクションコンポーネント（ボタン類）
+ * KISS原則に従い、用途別のシンプルなコンポーネントに分割
  */
 
-import { Button, HStack, VStack, type ButtonProps } from '@chakra-ui/react';
+import { Button, HStack, VStack } from '@chakra-ui/react';
 
-interface FormActionsProps {
+// 共通のボタンスタイル
+const commonButtonStyles = {
+  borderRadius: 'md',
+};
+
+const primarySaveButtonStyles = {
+  ...commonButtonStyles,
+  flex: 2,
+  py: 6,
+  fontWeight: 'bold',
+  shadow: 'sm',
+  _hover: {
+    shadow: 'md',
+    transform: 'translateY(-1px)',
+  },
+  _active: {
+    transform: 'translateY(0)',
+    shadow: 'sm',
+  },
+};
+
+const primaryCancelButtonStyles = {
+  ...commonButtonStyles,
+  flex: 1,
+  py: 6,
+  color: 'gray.600',
+  _hover: {
+    bg: 'gray.50',
+    color: 'gray.800',
+  },
+  _active: {
+    bg: 'gray.100',
+  },
+};
+
+// 基本的なProps型
+interface BaseFormActionsProps {
   onSave: () => void;
   onCancel: () => void;
   isDisabled?: boolean;
+  saveLabel?: string;
+  cancelLabel?: string;
+}
 
-  // 汎用化のための新しいProps
+/**
+ * プライマリフォーム用アクション（メインフォーム用）
+ */
+export const PrimaryFormActions = ({
+  onSave,
+  onCancel,
+  isDisabled = false,
+  saveLabel = '保存',
+  cancelLabel = 'キャンセル',
+}: BaseFormActionsProps) => {
+  return (
+    <HStack gap={4} justify="stretch">
+      <Button
+        onClick={onCancel}
+        variant="outline"
+        size="lg"
+        {...primaryCancelButtonStyles}
+      >
+        {cancelLabel}
+      </Button>
+      <Button
+        onClick={onSave}
+        disabled={isDisabled}
+        colorScheme="brand"
+        size="lg"
+        {...primarySaveButtonStyles}
+      >
+        {saveLabel}
+      </Button>
+    </HStack>
+  );
+};
+
+/**
+ * インライン編集用アクション（小さめ、横並び）
+ */
+export const InlineFormActions = ({
+  onSave,
+  onCancel,
+  isDisabled = false,
+  saveLabel = '保存',
+  cancelLabel = 'キャンセル',
+}: BaseFormActionsProps) => {
+  return (
+    <HStack gap={2}>
+      <Button
+        onClick={onCancel}
+        variant="ghost"
+        size="sm"
+        {...commonButtonStyles}
+      >
+        {cancelLabel}
+      </Button>
+      <Button
+        onClick={onSave}
+        disabled={isDisabled}
+        colorScheme="brand"
+        size="sm"
+        {...commonButtonStyles}
+      >
+        {saveLabel}
+      </Button>
+    </HStack>
+  );
+};
+
+/**
+ * 縦並びフォーム用アクション（モバイル用）
+ */
+export const VerticalFormActions = ({
+  onSave,
+  onCancel,
+  isDisabled = false,
+  saveLabel = '保存',
+  cancelLabel = 'キャンセル',
+}: BaseFormActionsProps) => {
+  return (
+    <VStack gap={3} align="stretch" w="full">
+      <Button
+        onClick={onSave}
+        disabled={isDisabled}
+        colorScheme="brand"
+        size="lg"
+        w="full"
+        py={6}
+        fontWeight="bold"
+        shadow="sm"
+        {...commonButtonStyles}
+        _hover={{
+          shadow: 'md',
+          transform: 'translateY(-1px)',
+        }}
+        _active={{
+          transform: 'translateY(0)',
+          shadow: 'sm',
+        }}
+      >
+        {saveLabel}
+      </Button>
+      <Button
+        onClick={onCancel}
+        variant="outline"
+        size="lg"
+        w="full"
+        py={4}
+        color="gray.600"
+        {...commonButtonStyles}
+        _hover={{
+          bg: 'gray.50',
+          color: 'gray.800',
+        }}
+        _active={{
+          bg: 'gray.100',
+        }}
+      >
+        {cancelLabel}
+      </Button>
+    </VStack>
+  );
+};
+
+/**
+ * 後方互換性のための汎用FormActions
+ * 新規コードでは用途別のコンポーネントを直接使用することを推奨
+ */
+interface FormActionsProps extends BaseFormActionsProps {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'inline';
   layout?: 'horizontal' | 'vertical';
   saveLabel?: string;
   cancelLabel?: string;
-  saveButtonProps?: Partial<ButtonProps>;
-  cancelButtonProps?: Partial<ButtonProps>;
+  // 後方互換性のため残す（使用しない）
+  saveButtonProps?: Record<string, unknown>;
+  cancelButtonProps?: Record<string, unknown>;
 }
 
 export const FormActions = ({
@@ -26,137 +192,43 @@ export const FormActions = ({
   size = 'lg',
   variant = 'primary',
   layout = 'horizontal',
-  saveLabel = '保存',
-  cancelLabel = 'キャンセル',
-  saveButtonProps,
-  cancelButtonProps,
+  saveLabel,
+  cancelLabel,
 }: FormActionsProps) => {
-  // バリエーション別のスタイル定義
-  const isPrimary = variant === 'primary';
-  const isLarge = size === 'lg';
-  const isVertical = layout === 'vertical';
+  // レイアウトを優先的に判定
+  if (layout === 'vertical') {
+    return (
+      <VerticalFormActions
+        onSave={onSave}
+        onCancel={onCancel}
+        isDisabled={isDisabled}
+        saveLabel={saveLabel}
+        cancelLabel={cancelLabel}
+      />
+    );
+  }
 
-  const saveButtonStyles: Partial<ButtonProps> = {
-    ...(isPrimary && !isVertical
-      ? {
-          flex: 2,
-          py: isLarge ? 6 : undefined,
-          fontWeight: 'bold',
-          shadow: 'sm',
-          _hover: {
-            shadow: 'md',
-            transform: 'translateY(-1px)',
-          },
-          _active: {
-            transform: 'translateY(0)',
-            shadow: 'sm',
-          },
-        }
-      : {}),
-    ...(isVertical
-      ? {
-          w: 'full',
-          py: isLarge ? 6 : 4,
-          fontWeight: 'bold',
-          shadow: 'sm',
-          _hover: {
-            shadow: 'md',
-            transform: 'translateY(-1px)',
-          },
-          _active: {
-            transform: 'translateY(0)',
-            shadow: 'sm',
-          },
-        }
-      : {}),
-  };
+  // バリアントで判定
+  if (variant === 'inline' || size === 'sm') {
+    return (
+      <InlineFormActions
+        onSave={onSave}
+        onCancel={onCancel}
+        isDisabled={isDisabled}
+        saveLabel={saveLabel}
+        cancelLabel={cancelLabel}
+      />
+    );
+  }
 
-  const cancelButtonStyles: Partial<ButtonProps> = {
-    ...(isPrimary && !isVertical
-      ? {
-          flex: 1,
-          py: isLarge ? 6 : undefined,
-          color: 'gray.600',
-          _hover: {
-            bg: 'gray.50',
-            color: 'gray.800',
-          },
-          _active: {
-            bg: 'gray.100',
-          },
-        }
-      : {}),
-    ...(isVertical
-      ? {
-          w: 'full',
-          py: isLarge ? 4 : 3,
-          color: 'gray.600',
-          _hover: {
-            bg: 'gray.50',
-            color: 'gray.800',
-          },
-          _active: {
-            bg: 'gray.100',
-          },
-        }
-      : {}),
-  };
-
-  const Container = isVertical ? VStack : HStack;
-  const containerProps = isVertical
-    ? { gap: 3, align: 'stretch', w: 'full' }
-    : { gap: isPrimary ? 4 : 2, justify: isPrimary ? 'stretch' : 'flex-start' };
-
-  // 縦並びの場合は保存ボタンを上に、横並びの場合はキャンセルボタンを左に
-  const buttons = isVertical ? (
-    <>
-      <Button
-        onClick={onSave}
-        disabled={isDisabled}
-        colorScheme="brand"
-        size={size}
-        borderRadius="md"
-        {...saveButtonStyles}
-        {...saveButtonProps}
-      >
-        {saveLabel}
-      </Button>
-      <Button
-        onClick={onCancel}
-        variant="ghost"
-        size={size}
-        borderRadius="md"
-        {...cancelButtonStyles}
-        {...cancelButtonProps}
-      >
-        {cancelLabel}
-      </Button>
-    </>
-  ) : (
-    <>
-      <Button
-        onClick={onCancel}
-        variant="ghost"
-        size={size}
-        borderRadius="md"
-        {...cancelButtonStyles}
-        {...cancelButtonProps}
-      >
-        {cancelLabel}
-      </Button>
-      <Button
-        onClick={onSave}
-        disabled={isDisabled}
-        colorScheme="brand"
-        size={size}
-        borderRadius="md"
-        {...saveButtonStyles}
-        {...saveButtonProps}
-      >
-        {saveLabel}
-      </Button>
-    </>
+  // デフォルトはプライマリ
+  return (
+    <PrimaryFormActions
+      onSave={onSave}
+      onCancel={onCancel}
+      isDisabled={isDisabled}
+      saveLabel={saveLabel}
+      cancelLabel={cancelLabel}
+    />
   );
-
-  return <Container {...containerProps}>{buttons}</Container>;
 };
