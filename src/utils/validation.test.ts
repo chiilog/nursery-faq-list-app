@@ -202,7 +202,7 @@ describe('validateVisitDate', () => {
       const result = validateVisitDate(yesterday);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        '見学日は今日以降の日付を選択してください'
+        '見学日は今日以降の日付を入力してください'
       );
     });
 
@@ -223,7 +223,7 @@ describe('validateVisitDate', () => {
       const result = validateVisitDate(pastYear);
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain(
-        '見学日は今日以降の日付を選択してください'
+        '見学日は今日以降の日付を入力してください'
       );
     });
   });

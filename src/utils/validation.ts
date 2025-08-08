@@ -53,11 +53,22 @@ export function validateAnswerText(answer: string): ValidationResult {
 
 /**
  * 保育園名のバリデーション
+ * @param name 保育園名
+ * @param required 必須項目かどうか（デフォルト: false）
+ * @returns ValidationResult
  */
-export function validateNurseryName(name: string): ValidationResult {
+export function validateNurseryName(
+  name: string,
+  required: boolean = false
+): ValidationResult {
   const errors: string[] = [];
+  const trimmedName = name.trim();
 
-  if (name && name.trim().length > 100) {
+  if (required && trimmedName.length === 0) {
+    errors.push('保育園名は必須です');
+  }
+
+  if (trimmedName.length > 100) {
     errors.push('保育園名は100文字以内で入力してください');
   }
 
@@ -68,19 +79,64 @@ export function validateNurseryName(name: string): ValidationResult {
 }
 
 /**
- * 見学日のバリデーション
+ * 保育園名のシンプルバリデーション（エラーメッセージのみ返す）
+ * @param name 保育園名
+ * @param required 必須項目かどうか
+ * @returns エラーメッセージ（エラーがない場合はundefined）
  */
-export function validateVisitDate(date: Date): ValidationResult {
-  const errors: string[] = [];
-  const now = new Date();
-  const oneYearFromNow = new Date();
-  oneYearFromNow.setFullYear(now.getFullYear() + 1);
+export function validateNurseryNameSimple(
+  name: string,
+  required: boolean = true
+): string | undefined {
+  const result = validateNurseryName(name, required);
+  return result.errors[0];
+}
 
-  if (date < now) {
-    errors.push('見学日は今日以降の日付を選択してください');
+/**
+ * 見学日のバリデーション
+ * @param date 見学日（nullの場合は任意項目として扱う）
+ * @param required 必須項目かどうか（デフォルト: false）
+ * @returns ValidationResult
+ */
+export function validateVisitDate(
+  date: Date | null,
+  required: boolean = false
+): ValidationResult {
+  const errors: string[] = [];
+
+  // nullチェック
+  if (!date) {
+    if (required) {
+      errors.push('見学日は必須です');
+    }
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
   }
 
-  if (date > oneYearFromNow) {
+  // Dateオブジェクトの有効性チェック
+  if (isNaN(date.getTime())) {
+    errors.push('有効な日付を入力してください');
+    return {
+      isValid: false,
+      errors,
+    };
+  }
+
+  // 日付範囲のチェック
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dateValue = new Date(date);
+  dateValue.setHours(0, 0, 0, 0);
+
+  if (dateValue < today) {
+    errors.push('見学日は今日以降の日付を入力してください');
+  }
+
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(today.getFullYear() + 1);
+  if (dateValue > oneYearFromNow) {
     errors.push('見学日は1年以内の日付を選択してください');
   }
 
@@ -88,6 +144,20 @@ export function validateVisitDate(date: Date): ValidationResult {
     isValid: errors.length === 0,
     errors,
   };
+}
+
+/**
+ * 見学日のシンプルバリデーション（エラーメッセージのみ返す）
+ * @param date 見学日
+ * @param required 必須項目かどうか
+ * @returns エラーメッセージ（エラーがない場合はundefined）
+ */
+export function validateVisitDateSimple(
+  date: Date | null,
+  required: boolean = false
+): string | undefined {
+  const result = validateVisitDate(date, required);
+  return result.errors[0];
 }
 
 /**
