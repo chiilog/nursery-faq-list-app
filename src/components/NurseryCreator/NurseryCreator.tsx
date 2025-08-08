@@ -13,7 +13,7 @@ import { LoadingDisplay } from './LoadingDisplay';
 import { FormFields } from './FormFields';
 import { FormActions } from './FormActions';
 import { validateNurseryForm, hasValidationErrors } from './validation';
-import { validateVisitDate } from '../common/dateValidation';
+import { validateVisitDateSimple } from '../../utils/validation';
 import { focusFirstErrorField } from './focusUtils';
 import type { NurseryCreatorProps, FormData, ValidationErrors } from './types';
 
@@ -69,7 +69,7 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
     }));
 
     // 日付バリデーションのみ実行
-    const dateError = validateVisitDate(date);
+    const dateError = validateVisitDateSimple(date, false);
     setValidationErrors((prev) => ({
       ...prev,
       visitDate: dateError,
