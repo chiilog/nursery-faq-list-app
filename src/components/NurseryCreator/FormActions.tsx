@@ -132,19 +132,9 @@ export const VerticalFormActions = ({
         disabled={isDisabled}
         colorScheme="brand"
         size="lg"
+        {...primarySaveButtonStyles}
+        flex={undefined} // flex設定をリセット
         w="full"
-        py={6}
-        fontWeight="bold"
-        shadow="sm"
-        {...commonButtonStyles}
-        _hover={{
-          shadow: 'md',
-          transform: 'translateY(-1px)',
-        }}
-        _active={{
-          transform: 'translateY(0)',
-          shadow: 'sm',
-        }}
       >
         {saveLabel}
       </Button>
@@ -152,17 +142,10 @@ export const VerticalFormActions = ({
         onClick={onCancel}
         variant="outline"
         size="lg"
+        {...primaryCancelButtonStyles}
+        flex={undefined} // flex設定をリセット
         w="full"
-        py={4}
-        color="gray.600"
-        {...commonButtonStyles}
-        _hover={{
-          bg: 'gray.50',
-          color: 'gray.800',
-        }}
-        _active={{
-          bg: 'gray.100',
-        }}
+        py={4} // 縦並びでは異なるパディングを維持
       >
         {cancelLabel}
       </Button>

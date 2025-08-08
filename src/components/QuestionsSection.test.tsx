@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { QuestionsSection } from './QuestionsSection';
 import { renderWithProviders, testUtils } from '../test/test-utils';
-import type { Question } from '../types';
+import type { Question } from '../types/data';
 
 // テスト用のモックデータ
 const mockQuestions: Question[] = [
