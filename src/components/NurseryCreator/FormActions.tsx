@@ -47,6 +47,7 @@ interface BaseFormActionsProps {
   isDisabled?: boolean;
   saveLabel?: string;
   cancelLabel?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 /**
@@ -58,13 +59,14 @@ export const PrimaryFormActions = ({
   isDisabled = false,
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
+  size = 'lg',
 }: BaseFormActionsProps) => {
   return (
     <HStack gap={4} justify="stretch">
       <Button
         onClick={onCancel}
         variant="outline"
-        size="lg"
+        size={size}
         {...primaryCancelButtonStyles}
       >
         {cancelLabel}
@@ -73,7 +75,7 @@ export const PrimaryFormActions = ({
         onClick={onSave}
         disabled={isDisabled}
         colorScheme="brand"
-        size="lg"
+        size={size}
         {...primarySaveButtonStyles}
       >
         {saveLabel}
@@ -91,13 +93,14 @@ export const InlineFormActions = ({
   isDisabled = false,
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
+  size = 'sm',
 }: BaseFormActionsProps) => {
   return (
     <HStack gap={2}>
       <Button
         onClick={onCancel}
         variant="ghost"
-        size="sm"
+        size={size}
         {...commonButtonStyles}
       >
         {cancelLabel}
@@ -106,7 +109,7 @@ export const InlineFormActions = ({
         onClick={onSave}
         disabled={isDisabled}
         colorScheme="brand"
-        size="sm"
+        size={size}
         {...commonButtonStyles}
       >
         {saveLabel}
@@ -124,6 +127,7 @@ export const VerticalFormActions = ({
   isDisabled = false,
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
+  size = 'lg',
 }: BaseFormActionsProps) => {
   return (
     <VStack gap={3} align="stretch" w="full">
@@ -131,7 +135,7 @@ export const VerticalFormActions = ({
         onClick={onSave}
         disabled={isDisabled}
         colorScheme="brand"
-        size="lg"
+        size={size}
         {...primarySaveButtonStyles}
         flex={undefined} // flex設定をリセット
         w="full"
@@ -141,7 +145,7 @@ export const VerticalFormActions = ({
       <Button
         onClick={onCancel}
         variant="outline"
-        size="lg"
+        size={size}
         {...primaryCancelButtonStyles}
         flex={undefined} // flex設定をリセット
         w="full"
@@ -187,6 +191,7 @@ export const FormActions = ({
         isDisabled={isDisabled}
         saveLabel={saveLabel}
         cancelLabel={cancelLabel}
+        size={size}
       />
     );
   }
@@ -200,6 +205,7 @@ export const FormActions = ({
         isDisabled={isDisabled}
         saveLabel={saveLabel}
         cancelLabel={cancelLabel}
+        size={size}
       />
     );
   }
@@ -212,6 +218,7 @@ export const FormActions = ({
       isDisabled={isDisabled}
       saveLabel={saveLabel}
       cancelLabel={cancelLabel}
+      size={size}
     />
   );
 };
