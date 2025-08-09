@@ -10,4 +10,8 @@ export { NurseryCreator } from './NurseryCreator/NurseryCreator';
 export { ErrorDisplay } from './NurseryCreator/ErrorDisplay';
 export { LoadingDisplay } from './NurseryCreator/LoadingDisplay';
 export { FormFields } from './NurseryCreator/FormFields';
-export { FormActions } from './NurseryCreator/FormActions';
+export {
+  PrimaryFormActions,
+  InlineFormActions,
+  VerticalFormActions,
+} from './NurseryCreator/FormActions';

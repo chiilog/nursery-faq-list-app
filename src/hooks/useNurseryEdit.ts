@@ -10,7 +10,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { showToast } from '../utils/toaster';
 import { generateId } from '../utils/id';
-import { validateVisitDate } from '../components/common/dateValidation';
+import { validateVisitDateSimple } from '../utils/validation';
 import type { Nursery, VisitSession } from '../types/data';
 
 export interface UseNurseryEditReturn {
@@ -111,7 +111,7 @@ export function useNurseryEdit(
     let updatedSessions = [...currentNursery.visitSessions];
     if (newVisitDate) {
       // 見学日が入力されている場合：バリデーションして見学セッションを更新/作成
-      const visitDateError = validateVisitDate(newVisitDate);
+      const visitDateError = validateVisitDateSimple(newVisitDate, false);
       if (visitDateError) {
         showToast.error('入力エラー', visitDateError);
         return;

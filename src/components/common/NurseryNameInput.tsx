@@ -40,6 +40,33 @@ export const NurseryNameInput = React.forwardRef<
       onChange(e.target.value);
     };
 
+    // 共通のInputプロパティを定義（DRY原則）
+    const inputProps = {
+      id,
+      ref,
+      value,
+      onChange: handleChange,
+      placeholder,
+      disabled,
+      required: isRequired,
+      size: 'lg' as const,
+      borderRadius: 'md',
+    };
+
+    // ラベルなしの場合の追加プロパティ
+    const inputWithoutLabelProps = {
+      ...inputProps,
+      fontSize: 'lg',
+      fontWeight: 'bold',
+      bg: 'white',
+      'data-error': isInvalid,
+    };
+
+    // Inputコンポーネントを一度だけ定義（より簡潔に）
+    const inputElement = (
+      <Input {...(label ? inputProps : inputWithoutLabelProps)} />
+    );
+
     if (label) {
       // ラベル付きの場合はField.Rootでラップ
       return (
@@ -48,17 +75,7 @@ export const NurseryNameInput = React.forwardRef<
             {label}
             {isRequired && <Field.RequiredIndicator />}
           </Field.Label>
-          <Input
-            id={id}
-            ref={ref}
-            value={value}
-            onChange={handleChange}
-            placeholder={placeholder}
-            disabled={disabled}
-            required={isRequired}
-            size="lg"
-            borderRadius="md"
-          />
+          {inputElement}
           {errorMessage && (
             <Field.ErrorText mt={2}>{errorMessage}</Field.ErrorText>
           )}
@@ -69,20 +86,7 @@ export const NurseryNameInput = React.forwardRef<
     // ラベルなしの場合は直接Input + エラー表示
     return (
       <>
-        <Input
-          id={id}
-          ref={ref}
-          value={value}
-          onChange={handleChange}
-          placeholder={placeholder}
-          disabled={disabled}
-          required={isRequired}
-          size="lg"
-          fontSize="lg"
-          fontWeight="bold"
-          bg="white"
-          data-error={isInvalid}
-        />
+        {inputElement}
         {isInvalid && errorMessage && (
           <Text color="red.500" fontSize="sm" mt={1}>
             {errorMessage}

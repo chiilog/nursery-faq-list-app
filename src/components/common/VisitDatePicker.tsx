@@ -72,6 +72,23 @@ export const VisitDatePicker = ({
     />
   ));
 
+  // 共通のDatePicker設定を定義（DRY原則）
+  const datePickerProps = {
+    selected: selectedDate,
+    onChange,
+    dateFormat: 'yyyy/MM/dd',
+    minDate: new Date(),
+    maxDate: new Date(2100, 11, 31),
+    customInput: <CustomDateInput />,
+    isClearable: true,
+    disabled,
+    locale: 'ja',
+    id,
+  };
+
+  // DatePickerコンポーネントを一度だけ定義
+  const datePickerElement = <DatePicker {...datePickerProps} />;
+
   if (label) {
     // ラベル付きの場合はField.Rootでラップ
     return (
@@ -80,18 +97,7 @@ export const VisitDatePicker = ({
           {label}
           {isRequired && <Field.RequiredIndicator />}
         </Field.Label>
-        <DatePicker
-          selected={selectedDate}
-          onChange={onChange}
-          dateFormat="yyyy/MM/dd"
-          minDate={new Date()}
-          maxDate={new Date(2100, 11, 31)}
-          customInput={<CustomDateInput />}
-          isClearable
-          disabled={disabled}
-          locale="ja"
-          id={id}
-        />
+        {datePickerElement}
         {helperText && (
           <Field.HelperText mt={1} color="gray.600" fontSize="sm">
             {helperText}
@@ -105,18 +111,5 @@ export const VisitDatePicker = ({
   }
 
   // ラベルなしの場合はDatePickerのみ
-  return (
-    <DatePicker
-      selected={selectedDate}
-      onChange={onChange}
-      dateFormat="yyyy/MM/dd"
-      minDate={new Date()}
-      maxDate={new Date(2100, 11, 31)}
-      customInput={<CustomDateInput />}
-      isClearable
-      disabled={disabled}
-      locale="ja"
-      id={id}
-    />
-  );
+  return datePickerElement;
 };
