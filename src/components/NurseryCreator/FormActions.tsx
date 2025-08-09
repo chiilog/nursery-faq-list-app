@@ -4,6 +4,7 @@
  */
 
 import { Button, HStack, VStack } from '@chakra-ui/react';
+import type { ButtonProps } from '@chakra-ui/react';
 
 // 共通のボタンスタイル
 const commonButtonStyles = {
@@ -13,7 +14,6 @@ const commonButtonStyles = {
 const primarySaveButtonStyles = {
   ...commonButtonStyles,
   flex: 2,
-  py: 6,
   fontWeight: 'bold',
   shadow: 'sm',
   _hover: {
@@ -29,7 +29,6 @@ const primarySaveButtonStyles = {
 const primaryCancelButtonStyles = {
   ...commonButtonStyles,
   flex: 1,
-  py: 6,
   color: 'gray.600',
   _hover: {
     bg: 'gray.50',
@@ -47,7 +46,7 @@ interface FormActionsProps {
   isDisabled?: boolean;
   saveLabel?: string;
   cancelLabel?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: ButtonProps['size'];
 }
 
 /**
@@ -62,11 +61,12 @@ export const PrimaryFormActions = ({
   size = 'lg',
 }: FormActionsProps) => {
   return (
-    <HStack gap={4} justify="stretch">
+    <HStack gap={4} justify="space-between">
       <Button
         onClick={onCancel}
         variant="outline"
         size={size}
+        data-size={size}
         {...primaryCancelButtonStyles}
       >
         {cancelLabel}
@@ -76,6 +76,7 @@ export const PrimaryFormActions = ({
         disabled={isDisabled}
         colorScheme="brand"
         size={size}
+        data-size={size}
         {...primarySaveButtonStyles}
       >
         {saveLabel}
@@ -101,6 +102,7 @@ export const InlineFormActions = ({
         onClick={onCancel}
         variant="ghost"
         size={size}
+        data-size={size}
         {...commonButtonStyles}
       >
         {cancelLabel}
@@ -110,6 +112,7 @@ export const InlineFormActions = ({
         disabled={isDisabled}
         colorScheme="brand"
         size={size}
+        data-size={size}
         {...commonButtonStyles}
       >
         {saveLabel}
@@ -136,6 +139,7 @@ export const VerticalFormActions = ({
         disabled={isDisabled}
         colorScheme="brand"
         size={size}
+        data-size={size}
         {...primarySaveButtonStyles}
         flex={undefined} // flex設定をリセット
         w="full"
@@ -146,10 +150,11 @@ export const VerticalFormActions = ({
         onClick={onCancel}
         variant="outline"
         size={size}
+        data-size={size}
         {...primaryCancelButtonStyles}
         flex={undefined} // flex設定をリセット
         w="full"
-        py={4} // 縦並びでは異なるパディングを維持
+        py={3} // 縦並びでは異なるパディングを維持
       >
         {cancelLabel}
       </Button>
