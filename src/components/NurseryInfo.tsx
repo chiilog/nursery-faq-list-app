@@ -5,7 +5,7 @@
 import { Box, Text, VStack, Input } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import type { Question } from '../types/data';
-import { FormActions } from './NurseryCreator/FormActions';
+import { InlineFormActions } from './NurseryCreator/FormActions';
 
 interface NurseryInfoProps {
   visitDate: Date | null;
@@ -89,9 +89,8 @@ export const NurseryInfo = ({
                 size="lg"
                 bg="white"
               />
-              <FormActions
+              <InlineFormActions
                 size="sm"
-                variant="inline"
                 onSave={onSaveVisitDate}
                 onCancel={onCancelVisitDate}
               />

@@ -11,7 +11,7 @@ import type { CreateNurseryInput } from '../../types/data';
 import { ErrorDisplay } from './ErrorDisplay';
 import { LoadingDisplay } from './LoadingDisplay';
 import { FormFields } from './FormFields';
-import { FormActions } from './FormActions';
+import { VerticalFormActions } from './FormActions';
 import { validateNurseryForm, hasValidationErrors } from './validation';
 import { validateVisitDateSimple } from '../../utils/validation';
 import { focusFirstErrorField } from './focusUtils';
@@ -120,11 +120,10 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
         />
       </Box>
 
-      <FormActions
+      <VerticalFormActions
         onSave={() => void handleSave()}
         onCancel={onCancel}
         isDisabled={loading.isLoading}
-        layout="vertical"
       />
     </Box>
   );

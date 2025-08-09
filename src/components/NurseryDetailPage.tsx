@@ -21,7 +21,7 @@ import { NurseryInfoCard } from './NurseryInfoCard';
 import { QuestionAddForm } from './QuestionAddForm';
 import { QuestionsSection } from './QuestionsSection';
 import { NotesSection } from './NotesSection';
-import { FormActions } from './NurseryCreator/FormActions';
+import { InlineFormActions } from './NurseryCreator/FormActions';
 import { showToast } from '../utils/toaster';
 import { useNurseryEdit } from '../hooks/useNurseryEdit';
 
@@ -221,18 +221,11 @@ export const NurseryDetailPage = () => {
           <HStack justify="space-between" align="center">
             <Box /> {/* 左側のスペーサー */}
             {nurseryEdit.isEditingNursery ? (
-              <FormActions
+              <InlineFormActions
                 size="sm"
-                variant="inline"
                 onSave={() => void nurseryEdit.handleSaveNursery()}
                 onCancel={nurseryEdit.handleCancelEditNursery}
                 isDisabled={nurseryEdit.isSaveDisabled}
-                saveButtonProps={{
-                  opacity: nurseryEdit.isSaveDisabled ? 0.4 : 1,
-                  cursor: nurseryEdit.isSaveDisabled
-                    ? 'not-allowed'
-                    : 'pointer',
-                }}
               />
             ) : (
               <Button
