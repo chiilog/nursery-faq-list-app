@@ -96,7 +96,9 @@ describe('FormActionsコンポーネント群', () => {
       );
 
       const saveButton = screen.getByText('保存');
-      expect(saveButton).toHaveClass('sm');
+      const cancelButton = screen.getByText('キャンセル');
+      expect(saveButton).toHaveAttribute('data-size', 'sm');
+      expect(cancelButton).toHaveAttribute('data-size', 'sm');
 
       rerender(
         <PrimaryFormActions
@@ -106,7 +108,8 @@ describe('FormActionsコンポーネント群', () => {
         />
       );
 
-      expect(saveButton).toHaveClass('lg');
+      expect(saveButton).toHaveAttribute('data-size', 'lg');
+      expect(cancelButton).toHaveAttribute('data-size', 'lg');
     });
   });
 
@@ -167,7 +170,9 @@ describe('FormActionsコンポーネント群', () => {
       );
 
       const saveButton = screen.getByText('保存');
-      expect(saveButton).toHaveClass('sm');
+      const cancelButton = screen.getByText('キャンセル');
+      expect(saveButton).toHaveAttribute('data-size', 'sm');
+      expect(cancelButton).toHaveAttribute('data-size', 'sm');
     });
   });
 
@@ -228,7 +233,9 @@ describe('FormActionsコンポーネント群', () => {
       );
 
       const saveButton = screen.getByText('保存');
-      expect(saveButton).toHaveClass('lg');
+      const cancelButton = screen.getByText('キャンセル');
+      expect(saveButton).toHaveAttribute('data-size', 'lg');
+      expect(cancelButton).toHaveAttribute('data-size', 'lg');
     });
   });
 });
