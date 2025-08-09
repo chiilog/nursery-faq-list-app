@@ -41,7 +41,7 @@ const primaryCancelButtonStyles = {
 };
 
 // 基本的なProps型
-interface BaseFormActionsProps {
+interface FormActionsProps {
   onSave: () => void;
   onCancel: () => void;
   isDisabled?: boolean;
@@ -60,7 +60,7 @@ export const PrimaryFormActions = ({
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
   size = 'lg',
-}: BaseFormActionsProps) => {
+}: FormActionsProps) => {
   return (
     <HStack gap={4} justify="stretch">
       <Button
@@ -94,7 +94,7 @@ export const InlineFormActions = ({
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
   size = 'sm',
-}: BaseFormActionsProps) => {
+}: FormActionsProps) => {
   return (
     <HStack gap={2}>
       <Button
@@ -128,7 +128,7 @@ export const VerticalFormActions = ({
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
   size = 'lg',
-}: BaseFormActionsProps) => {
+}: FormActionsProps) => {
   return (
     <VStack gap={3} align="stretch" w="full">
       <Button
