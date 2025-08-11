@@ -18,35 +18,26 @@ import { generatePrefixedId } from '../utils/id';
 import { addQuestionToQuestionsArray } from '../utils/data';
 
 // シリアライズされたデータの型定義（JSON形式）
-interface SerializedNursery {
-  id: string;
-  name: string;
-  address?: string;
-  phoneNumber?: string;
-  website?: string;
+interface SerializedNursery
+  extends Omit<Nursery, 'visitSessions' | 'createdAt' | 'updatedAt'> {
   visitSessions: SerializedVisitSession[];
-  notes?: string;
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
 }
 
-interface SerializedVisitSession {
-  id: string;
+interface SerializedVisitSession
+  extends Omit<
+    VisitSession,
+    'visitDate' | 'questions' | 'createdAt' | 'updatedAt'
+  > {
   visitDate: string | null; // ISO date string or null for 未定
-  status: 'planned' | 'completed' | 'cancelled';
   questions: SerializedQuestion[];
-  notes?: string;
-  sharedWith?: string[];
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
 }
 
-interface SerializedQuestion {
-  id: string;
-  text: string;
-  answer?: string;
-  isAnswered: boolean;
-  answeredBy?: string;
+interface SerializedQuestion
+  extends Omit<Question, 'answeredAt' | 'createdAt' | 'updatedAt'> {
   answeredAt?: string; // ISO date string
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string

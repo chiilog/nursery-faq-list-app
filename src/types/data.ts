@@ -34,9 +34,6 @@ export interface VisitSession {
 export interface Nursery {
   id: string;
   name: string;
-  address?: string;
-  phoneNumber?: string;
-  website?: string;
   visitSessions: VisitSession[];
   notes?: string;
   createdAt: Date;
@@ -73,9 +70,6 @@ export interface CreateNurseryInput {
 // 保育園更新時の入力データ型
 export interface UpdateNurseryInput {
   name?: string;
-  address?: string;
-  phoneNumber?: string;
-  website?: string;
   notes?: string;
   visitSessions?: VisitSession[];
 }
