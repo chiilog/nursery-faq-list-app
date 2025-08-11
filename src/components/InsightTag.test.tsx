@@ -70,7 +70,7 @@ describe('InsightTag コンポーネント', () => {
       expect(mockOnDelete).toHaveBeenCalledTimes(1);
     });
 
-    test('onDeleteがundefinedでもエラーが発生しない', () => {
+    test('onDeleteがundefinedでもエラーが発生しない', async () => {
       const user = userEvent.setup();
 
       renderWithProviders(
@@ -82,9 +82,7 @@ describe('InsightTag コンポーネント', () => {
       });
 
       // エラーが発生しないことを確認
-      expect(() => {
-        void user.click(deleteButton);
-      }).not.toThrow();
+      await expect(user.click(deleteButton)).resolves.not.toThrow();
     });
   });
 
