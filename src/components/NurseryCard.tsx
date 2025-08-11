@@ -110,7 +110,7 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
               <Flex wrap="wrap" gap={1} mt={1}>
                 {insights.map((insight, index) => (
                   <InsightTag
-                    key={`${insight}-${index}`}
+                    key={`insight-${index}`}
                     text={insight}
                     showDeleteButton={false}
                     isReadOnly={true}

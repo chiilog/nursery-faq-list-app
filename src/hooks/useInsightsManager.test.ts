@@ -4,6 +4,7 @@
 
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import type React from 'react';
 import { useInsightsManager } from './useInsightsManager';
 
 describe('useInsightsManager', () => {
@@ -224,7 +225,7 @@ describe('useInsightsManager', () => {
         result.current.handleKeyDown({
           key: 'Enter',
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown as React.KeyboardEvent<HTMLInputElement>);
       });
 
       expect(mockOnInsightsChange).toHaveBeenCalledWith([
@@ -245,7 +246,7 @@ describe('useInsightsManager', () => {
         result.current.handleKeyDown({
           key: 'Enter',
           preventDefault: mockPreventDefault,
-        } as any);
+        } as unknown as React.KeyboardEvent<HTMLInputElement>);
       });
 
       expect(mockPreventDefault).toHaveBeenCalled();
@@ -263,7 +264,7 @@ describe('useInsightsManager', () => {
         result.current.handleKeyDown({
           key: 'Tab',
           preventDefault: mockPreventDefault,
-        } as any);
+        } as unknown as React.KeyboardEvent<HTMLInputElement>);
       });
 
       expect(mockOnInsightsChange).not.toHaveBeenCalled();
@@ -279,7 +280,7 @@ describe('useInsightsManager', () => {
         result.current.handleKeyDown({
           key: 'Enter',
           preventDefault: vi.fn(),
-        } as any);
+        } as unknown as React.KeyboardEvent<HTMLInputElement>);
       });
 
       expect(mockOnInsightsChange).not.toHaveBeenCalled();
