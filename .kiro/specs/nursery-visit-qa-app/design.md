@@ -86,7 +86,9 @@
 - **VisitSessionForm**: 見学セッション作成・編集フォーム
 - **QuestionItem**: 個別質問表示・編集
 - **AnswerInput**: 回答入力フォーム
-- **NotesSection**: 見学メモ入力（文字数制限・自動保存機能付き）
+- **InsightsSection**: 気づきタグ管理（タグ追加・表示・削除機能付き）
+- **InsightTagInput**: 気づきタグ入力フォーム
+- **InsightTag**: 個別タグ表示・削除コンポーネント
 - **TemplateSelector**: 質問テンプレート選択
 - **SyncIndicator**: 同期状況表示
 - **OfflineIndicator**: オフライン状態表示
@@ -101,7 +103,6 @@ interface Nursery {
   id: string;
   name: string;
   visitSessions: VisitSession[];
-  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -115,7 +116,7 @@ interface VisitSession {
   visitDate: Date;
   status: 'planned' | 'completed' | 'cancelled';
   questions: Question[];
-  notes?: string; // 見学メモ（2000文字制限・自動保存・リアルタイム警告機能付き）
+  insights?: string[]; // 気づきタグの配列（タグ形式で管理）
   sharedWith?: string[]; // 共有相手のID
   createdAt: Date;
   updatedAt: Date;

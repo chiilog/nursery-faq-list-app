@@ -1,6 +1,6 @@
 /**
  * 保育園追加コンポーネントのテスト
- * TDD Red Phase: 失敗するテストを先に作成
+ * フォーム入力、バリデーション、保存処理のテスト
  */
 
 import { screen, waitFor } from '@testing-library/react';
@@ -9,10 +9,12 @@ import { vi } from 'vitest';
 import { renderWithProviders } from '../test/test-utils';
 import { NurseryCreator } from './NurseryCreator';
 import { useNurseryStore } from '../stores/nurseryStore';
+import type { CreateNurseryInput } from '../types/data';
 
 // useNurseryStoreのモック
-const mockCreateNursery = vi.fn();
-const mockClearError = vi.fn();
+const mockCreateNursery =
+  vi.fn<(input: CreateNurseryInput) => Promise<string>>();
+const mockClearError = vi.fn<() => void>();
 
 vi.mock('../stores/nurseryStore', () => ({
   useNurseryStore: vi.fn(),

@@ -29,6 +29,7 @@ const mockNursery: Nursery = {
       visitDate: new Date('2025-12-31'),
       status: 'planned',
       questions: [],
+      insights: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     },

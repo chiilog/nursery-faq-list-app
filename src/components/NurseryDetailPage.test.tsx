@@ -1,6 +1,6 @@
 /**
  * 保育園詳細画面のテスト
- * TDD Red Phase: 失敗するテストを先に作成
+ * 質問管理、回答入力、見学日編集、気づき管理の包括的なテスト
  */
 
 import { screen } from '@testing-library/react';
@@ -50,6 +50,7 @@ const mockCurrentNursery: Nursery = {
           updatedAt: new Date(),
         },
       ],
+      insights: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -675,124 +676,6 @@ describe('NurseryDetailPage コンポーネント', () => {
         const saveButton = screen.getByRole('button', { name: '保存' });
         expect(saveButton).not.toBeDisabled();
       });
-    });
-  });
-
-  describe('自由入力欄（見学メモ）', () => {
-    test('見学メモエリアが質問追加フォームの上に表示される', () => {
-      renderWithProviders(<NurseryDetailPage />);
-
-      const notesSection = screen.getByLabelText('見学メモ');
-      const addQuestionButton = screen.getByText('質問を追加');
-
-      expect(notesSection).toBeInTheDocument();
-      expect(addQuestionButton).toBeInTheDocument();
-
-      // DOMの順序で見学メモが質問追加より前にあることを確認
-      const notesSectionOrder = Array.from(
-        document.body.querySelectorAll('*')
-      ).indexOf(notesSection);
-      const addButtonOrder = Array.from(
-        document.body.querySelectorAll('*')
-      ).indexOf(addQuestionButton);
-      expect(notesSectionOrder).toBeLessThan(addButtonOrder);
-    });
-
-    test('既存の見学メモが表示される', () => {
-      const nurseryWithNotes = {
-        ...mockCurrentNursery,
-        visitSessions: [
-          {
-            ...mockCurrentNursery.visitSessions[0],
-            notes: '既存のメモ内容です',
-          },
-        ],
-      };
-
-      const mockStoreWithNotes = {
-        currentNursery: nurseryWithNotes,
-        loading: { isLoading: false },
-        error: null,
-        updateNursery: mockUpdateNursery,
-        deleteQuestion: mockDeleteQuestion,
-        setCurrentNursery: vi.fn(),
-        clearError: vi.fn(),
-        updateQuestion: vi.fn(),
-        addQuestion: vi.fn(),
-        updateVisitSession: vi.fn(),
-      };
-
-      vi.mocked(useNurseryStore).mockReturnValue(mockStoreWithNotes);
-
-      renderWithProviders(<NurseryDetailPage />);
-
-      const notesTextarea = screen.getByDisplayValue('既存のメモ内容です');
-      expect(notesTextarea).toBeInTheDocument();
-    });
-
-    test('見学メモの入力・変更ができる', async () => {
-      const user = userEvent.setup();
-      const mockUpdateVisitSession = vi.fn();
-
-      const mockStoreWithUpdate = {
-        currentNursery: mockCurrentNursery,
-        loading: { isLoading: false },
-        error: null,
-        updateNursery: mockUpdateNursery,
-        deleteQuestion: mockDeleteQuestion,
-        setCurrentNursery: vi.fn(),
-        clearError: vi.fn(),
-        updateQuestion: vi.fn(),
-        addQuestion: vi.fn(),
-        updateVisitSession: mockUpdateVisitSession,
-      };
-
-      vi.mocked(useNurseryStore).mockReturnValue(mockStoreWithUpdate);
-
-      renderWithProviders(<NurseryDetailPage />);
-
-      const notesTextarea = screen.getByLabelText('見学メモ');
-      await user.type(notesTextarea, '新しいメモです');
-
-      expect(notesTextarea).toHaveValue('新しいメモです');
-    });
-
-    test('見学メモがフォーカス外れ時に自動保存される', async () => {
-      const user = userEvent.setup();
-      const mockUpdateVisitSession = vi.fn();
-
-      const mockStoreForAutoSave = {
-        currentNursery: mockCurrentNursery,
-        loading: { isLoading: false },
-        error: null,
-        updateNursery: mockUpdateNursery,
-        deleteQuestion: mockDeleteQuestion,
-        setCurrentNursery: vi.fn(),
-        clearError: vi.fn(),
-        updateQuestion: vi.fn(),
-        addQuestion: vi.fn(),
-        updateVisitSession: mockUpdateVisitSession,
-      };
-
-      vi.mocked(useNurseryStore).mockReturnValue(mockStoreForAutoSave);
-
-      renderWithProviders(<NurseryDetailPage />);
-
-      const notesTextarea = screen.getByLabelText('見学メモ');
-      await user.type(notesTextarea, 'テスト');
-      await user.tab(); // フォーカスを外す
-
-      expect(mockUpdateVisitSession).toHaveBeenCalledWith('session-1', {
-        notes: 'テスト',
-      });
-    });
-
-    test('プレースホルダーが表示される', () => {
-      renderWithProviders(<NurseryDetailPage />);
-
-      const notesTextarea =
-        screen.getByPlaceholderText('見学中のメモをここに...');
-      expect(notesTextarea).toBeInTheDocument();
     });
   });
 });

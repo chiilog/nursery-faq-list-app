@@ -36,6 +36,11 @@ interface SerializedVisitSession
   updatedAt: string; // ISO date string
 }
 
+// insightsがオプショナルなバージョン
+interface VisitSessionData extends Omit<SerializedVisitSession, 'insights'> {
+  insights?: string[];
+}
+
 interface SerializedQuestion
   extends Omit<Question, 'answeredAt' | 'createdAt' | 'updatedAt'> {
   answeredAt?: string; // ISO date string
@@ -82,6 +87,7 @@ class NurseryDataStore {
           visitDate: input.visitDate || null, // 見学日未指定の場合はnullで「未定」を表現
           status: 'planned',
           questions: [],
+          insights: [], // 気づきタグの初期値として空配列を設定
           createdAt: now,
           updatedAt: now,
         },
@@ -133,8 +139,9 @@ class NurseryDataStore {
         createdAt: new Date(nurseryData.createdAt),
         updatedAt: new Date(nurseryData.updatedAt),
         visitSessions: nurseryData.visitSessions.map(
-          (session: SerializedVisitSession): VisitSession => ({
+          (session: VisitSessionData): VisitSession => ({
             ...session,
+            insights: session.insights ?? [], // insights を空配列で正規化
             visitDate: session.visitDate ? new Date(session.visitDate) : null,
             createdAt: new Date(session.createdAt),
             updatedAt: new Date(session.updatedAt),
@@ -193,6 +200,7 @@ class NurseryDataStore {
                 visitDate: null, // 見学日未定
                 status: 'planned',
                 questions: [],
+                insights: [], // 気づきタグの初期値として空配列を設定
                 createdAt: now.toISOString(),
                 updatedAt: now.toISOString(),
               },
@@ -205,8 +213,9 @@ class NurseryDataStore {
             createdAt: new Date(nurseryData.createdAt),
             updatedAt: new Date(nurseryData.updatedAt),
             visitSessions: visitSessions.map(
-              (session: SerializedVisitSession): VisitSession => ({
+              (session: VisitSessionData): VisitSession => ({
                 ...session,
+                insights: session.insights ?? [], // insights を空配列で正規化
                 visitDate: session.visitDate
                   ? new Date(session.visitDate)
                   : null,
@@ -328,8 +337,8 @@ class NurseryDataStore {
             createdAt: now,
             updatedAt: now,
           })) || [],
-        notes: input.notes,
-        sharedWith: input.sharedWith || [],
+        insights: input.insights ?? [],
+        sharedWith: input.sharedWith ?? [],
         createdAt: now,
         updatedAt: now,
       };

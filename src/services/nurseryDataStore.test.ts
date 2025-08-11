@@ -234,7 +234,6 @@ describe('NurseryDataStore', () => {
       const sessionInput: CreateVisitSessionInput = {
         visitDate: new Date('2024-02-15'),
         status: 'planned',
-        notes: '午前中に見学予定',
       };
       const existingNursery: Nursery = {
         id: 'nursery-1',
@@ -259,14 +258,13 @@ describe('NurseryDataStore', () => {
     test('見学セッションを更新できること', async () => {
       const updates: UpdateVisitSessionInput = {
         status: 'completed',
-        notes: '見学完了。とても良い印象',
       };
       const existingSession: VisitSession = {
         id: 'session-1',
         visitDate: new Date('2024-02-15'),
         status: 'planned',
         questions: [],
-        notes: '午前中に見学予定',
+        insights: [],
         createdAt: new Date('2024-02-01'),
         updatedAt: new Date('2024-02-01'),
       };
@@ -293,6 +291,7 @@ describe('NurseryDataStore', () => {
         visitDate: new Date('2024-02-15'),
         status: 'planned',
         questions: [],
+        insights: [],
         createdAt: new Date('2024-02-01'),
         updatedAt: new Date('2024-02-01'),
       };

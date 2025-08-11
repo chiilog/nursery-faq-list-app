@@ -1,12 +1,10 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
-import { ChakraProvider } from '@chakra-ui/react';
+import { renderWithProviders } from '../test/test-utils';
 import { NurseryDetailPage } from '../components/NurseryDetailPage';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { useNavigate } from 'react-router-dom';
-import system from '../theme';
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -82,13 +80,7 @@ describe('NurseryDetailPage - 削除機能', () => {
   });
 
   const renderPage = () => {
-    return render(
-      <ChakraProvider value={system}>
-        <BrowserRouter>
-          <NurseryDetailPage />
-        </BrowserRouter>
-      </ChakraProvider>
-    );
+    return renderWithProviders(<NurseryDetailPage />);
   };
 
   test('削除ボタンが表示される', () => {

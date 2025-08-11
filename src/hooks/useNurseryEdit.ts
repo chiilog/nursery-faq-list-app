@@ -82,6 +82,7 @@ export function useNurseryEdit(
         visitDate,
         status: 'planned' as const,
         questions: [],
+        insights: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
