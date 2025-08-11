@@ -1,6 +1,6 @@
 /**
  * 保育園追加コンポーネントのテスト
- * TDD Red Phase: 失敗するテストを先に作成
+ * フォーム入力、バリデーション、保存処理のテスト
  */
 
 import { screen, waitFor } from '@testing-library/react';

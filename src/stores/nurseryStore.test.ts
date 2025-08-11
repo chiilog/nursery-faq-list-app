@@ -49,7 +49,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
           id: 'nursery-1',
           name: 'テスト保育園A',
           visitSessions: [],
-          notes: 'アットホームな保育園',
           createdAt: new Date('2024-01-01'),
           updatedAt: new Date('2024-01-01'),
         },
@@ -143,7 +142,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
       const sessionInput: CreateVisitSessionInput = {
         visitDate: new Date('2024-02-15'),
         status: 'planned',
-        notes: '10時から見学予定',
       };
 
       const mockNursery: Nursery = {
@@ -173,7 +171,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
       // Green: 実装されたので成功することが期待される
       const updates: UpdateVisitSessionInput = {
         status: 'completed',
-        notes: '見学完了。とても良い印象でした。',
       };
 
       // 現在の保育園を設定（updateVisitSessionが内部でsetCurrentNurseryを呼ぶため）

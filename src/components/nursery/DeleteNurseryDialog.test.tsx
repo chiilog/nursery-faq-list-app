@@ -1,9 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ChakraProvider } from '@chakra-ui/react';
-import { MemoryRouter } from 'react-router-dom';
-import system from '../../theme';
+import { renderWithProviders } from '../../test/test-utils';
 import { DeleteNurseryDialog } from './DeleteNurseryDialog';
 import type { Nursery } from '../../types';
 
@@ -82,13 +80,7 @@ describe('DeleteNurseryDialog', () => {
   });
 
   const renderDialog = (props: any) => {
-    return render(
-      <MemoryRouter>
-        <ChakraProvider value={system}>
-          <DeleteNurseryDialog {...props} />
-        </ChakraProvider>
-      </MemoryRouter>
-    );
+    return renderWithProviders(<DeleteNurseryDialog {...props} />);
   };
 
   test('削除ダイアログが表示される', () => {
