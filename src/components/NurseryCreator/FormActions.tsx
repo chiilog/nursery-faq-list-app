@@ -74,7 +74,7 @@ export const PrimaryFormActions = ({
       <Button
         onClick={onSave}
         disabled={isDisabled}
-        colorScheme="brand"
+        colorPalette="brand"
         size={size}
         data-size={size}
         {...primarySaveButtonStyles}
@@ -110,7 +110,7 @@ export const InlineFormActions = ({
       <Button
         onClick={onSave}
         disabled={isDisabled}
-        colorScheme="brand"
+        colorPalette="brand"
         size={size}
         data-size={size}
         {...commonButtonStyles}
@@ -137,7 +137,7 @@ export const VerticalFormActions = ({
       <Button
         onClick={onSave}
         disabled={isDisabled}
-        colorScheme="brand"
+        colorPalette="brand"
         size={size}
         data-size={size}
         {...primarySaveButtonStyles}

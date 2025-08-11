@@ -12,6 +12,7 @@ import {
   Button,
   HStack,
   Separator,
+  useDisclosure,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -22,6 +23,7 @@ import { QuestionAddForm } from './QuestionAddForm';
 import { QuestionsSection } from './QuestionsSection';
 import { NotesSection } from './NotesSection';
 import { InlineFormActions } from './NurseryCreator/FormActions';
+import { DeleteNurseryDialog } from './nursery/DeleteNurseryDialog';
 import { showToast } from '../utils/toaster';
 import { useNurseryEdit } from '../hooks/useNurseryEdit';
 
@@ -51,6 +53,13 @@ export const NurseryDetailPage = () => {
   const [editingQuestionText, setEditingQuestionText] = useState('');
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState('');
+
+  // 削除確認ダイアログの状態管理
+  const {
+    open: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose,
+  } = useDisclosure();
 
   // 保育園編集フックを使用
   const nurseryEdit = useNurseryEdit(currentNursery, updateNursery);
@@ -294,8 +303,31 @@ export const NurseryDetailPage = () => {
               void handleDeleteQuestion(questionId)
             }
           />
+
+          {/* 質問エリアと削除ボタンの区切り */}
+          <Separator my={4} />
+
+          {/* 保育園削除ボタン - 質問リストの最下部 */}
+          <Button
+            width="full"
+            colorPalette="red"
+            variant="solid"
+            size="lg"
+            onClick={onDeleteOpen}
+          >
+            保育園を削除
+          </Button>
         </VStack>
       </Box>
+
+      {/* 削除確認ダイアログ */}
+      {currentNursery && (
+        <DeleteNurseryDialog
+          nursery={currentNursery}
+          isOpen={isDeleteOpen}
+          onClose={onDeleteClose}
+        />
+      )}
     </Layout>
   );
 };
