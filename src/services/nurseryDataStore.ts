@@ -337,8 +337,8 @@ class NurseryDataStore {
             createdAt: now,
             updatedAt: now,
           })) || [],
-        insights: input.insights || [],
-        sharedWith: input.sharedWith || [],
+        insights: input.insights ?? [],
+        sharedWith: input.sharedWith ?? [],
         createdAt: now,
         updatedAt: now,
       };

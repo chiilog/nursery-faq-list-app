@@ -81,8 +81,8 @@ describe('InsightTag コンポーネント', () => {
         name: 'テストタグを削除',
       });
 
-      // エラーが発生しない（reject しない）ことを確認
-      await expect(user.click(deleteButton)).resolves.toBeUndefined();
+      // エラーが発生しないことを確認
+      await user.click(deleteButton);
     });
   });
 
