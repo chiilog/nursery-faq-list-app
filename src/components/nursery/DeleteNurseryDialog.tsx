@@ -94,9 +94,9 @@ export const DeleteNurseryDialog = ({
                       • 作成した質問と回答（{totalQuestions}件）
                     </Text>
                   )}
-                  {nursery.visitSessions.some((s) => s.notes) && (
-                    <Text fontSize="sm">• 見学時のメモ</Text>
-                  )}
+                  {nursery.visitSessions.some(
+                    (s) => s.insights && s.insights.length > 0
+                  ) && <Text fontSize="sm">• 気づいたことのタグ</Text>}
                 </VStack>
               </Box>
 

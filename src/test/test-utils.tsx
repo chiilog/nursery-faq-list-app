@@ -30,7 +30,6 @@ export const testUtils = {
     id: 'nursery-1',
     name: 'テスト保育園',
     visitSessions: [],
-    notes: 'テスト用の保育園です',
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     ...overrides,
