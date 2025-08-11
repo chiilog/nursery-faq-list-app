@@ -29,9 +29,6 @@ export const testUtils = {
   createMockNursery: (overrides = {}) => ({
     id: 'nursery-1',
     name: 'テスト保育園',
-    address: '東京都渋谷区1-1-1',
-    phoneNumber: '03-1234-5678',
-    website: 'https://test-nursery.example.com',
     visitSessions: [],
     notes: 'テスト用の保育園です',
     createdAt: new Date('2025-01-01'),
