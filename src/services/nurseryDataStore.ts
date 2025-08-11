@@ -82,6 +82,7 @@ class NurseryDataStore {
           visitDate: input.visitDate || null, // 見学日未指定の場合はnullで「未定」を表現
           status: 'planned',
           questions: [],
+          insights: [], // 気づきタグの初期値として空配列を設定
           createdAt: now,
           updatedAt: now,
         },
@@ -193,6 +194,7 @@ class NurseryDataStore {
                 visitDate: null, // 見学日未定
                 status: 'planned',
                 questions: [],
+                insights: [], // 気づきタグの初期値として空配列を設定
                 createdAt: now.toISOString(),
                 updatedAt: now.toISOString(),
               },
@@ -328,7 +330,7 @@ class NurseryDataStore {
             createdAt: now,
             updatedAt: now,
           })) || [],
-        notes: input.notes,
+        insights: input.insights || [],
         sharedWith: input.sharedWith || [],
         createdAt: now,
         updatedAt: now,
