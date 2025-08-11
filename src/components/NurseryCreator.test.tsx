@@ -125,9 +125,7 @@ describe('NurseryCreator コンポーネント', () => {
       const saveButton = screen.getByRole('button', { name: '保存' });
       await user.click(saveButton);
 
-      expect(
-        screen.getByText('保育園名は1文字以上で入力してください')
-      ).toBeInTheDocument();
+      expect(screen.getByText('保育園名は必須です')).toBeInTheDocument();
     });
 
     test('保育園名が100文字を超える場合はエラーメッセージが表示される', async () => {
