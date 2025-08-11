@@ -1,6 +1,6 @@
 /**
  * 保育園カードコンポーネントのテスト
- * TDD Red Phase: 失敗するテストを先に作成
+ * 表示内容、クリックイベント、見学状況の確認
  */
 
 import { screen } from '@testing-library/react';
@@ -338,6 +338,114 @@ describe('NurseryCard コンポーネント', () => {
 
       const card = screen.getByRole('button');
       expect(card).toHaveAttribute('tabIndex', '0');
+    });
+  });
+
+  describe('気づきタグ表示', () => {
+    test('見学セッションにinsightsがある場合、タグが表示される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          {
+            id: 'session1',
+            visitDate: new Date('2025-01-20'),
+            status: 'planned' as const,
+            questions: [],
+            insights: ['広い園庭', '先生が親切', '設備が充実'],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('広い園庭')).toBeInTheDocument();
+      expect(screen.getByText('先生が親切')).toBeInTheDocument();
+      expect(screen.getByText('設備が充実')).toBeInTheDocument();
+    });
+
+    test('複数セッションのinsightsが重複排除されて最大3つまで表示される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          {
+            id: 'session1',
+            visitDate: new Date('2025-01-20'),
+            status: 'planned' as const,
+            questions: [],
+            insights: ['広い園庭', '先生が親切'],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 'session2',
+            visitDate: new Date('2025-01-25'),
+            status: 'planned' as const,
+            questions: [],
+            insights: [
+              '先生が親切',
+              '設備が充実',
+              '給食美味しそう',
+              '運動場広い',
+            ],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('広い園庭')).toBeInTheDocument();
+      expect(screen.getByText('先生が親切')).toBeInTheDocument();
+      expect(screen.getByText('設備が充実')).toBeInTheDocument();
+
+      // 4つ目以降は表示されない
+      expect(screen.queryByText('給食美味しそう')).not.toBeInTheDocument();
+      expect(screen.queryByText('運動場広い')).not.toBeInTheDocument();
+    });
+
+    test('insightsがない場合はタグが表示されない', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          {
+            id: 'session1',
+            visitDate: new Date('2025-01-20'),
+            status: 'planned' as const,
+            questions: [],
+            insights: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      // タグは表示されない
+      expect(screen.queryByText('広い園庭')).not.toBeInTheDocument();
+    });
+
+    test('空文字や空白のみのinsightsは除外される', () => {
+      const nursery = testUtils.createMockNursery({
+        visitSessions: [
+          {
+            id: 'session1',
+            visitDate: new Date('2025-01-20'),
+            status: 'planned' as const,
+            questions: [],
+            insights: ['', '   ', '広い園庭', '\t\n'],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      });
+
+      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
+
+      expect(screen.getByText('広い園庭')).toBeInTheDocument();
+      // 空白や空文字のタグは表示されない（1つのみ表示される）
+      expect(screen.queryByText('   ')).not.toBeInTheDocument();
+      expect(screen.queryByText('\t\n')).not.toBeInTheDocument();
     });
   });
 });
