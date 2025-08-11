@@ -21,7 +21,7 @@ import { Layout } from './Layout';
 import { NurseryInfoCard } from './NurseryInfoCard';
 import { QuestionAddForm } from './QuestionAddForm';
 import { QuestionsSection } from './QuestionsSection';
-import { NotesSection } from './NotesSection';
+import { InsightsSection } from './InsightsSection';
 import { InlineFormActions } from './NurseryCreator/FormActions';
 import { DeleteNurseryDialog } from './nursery/DeleteNurseryDialog';
 import { showToast } from '../utils/toaster';
@@ -143,20 +143,20 @@ export const NurseryDetailPage = () => {
     }
   };
 
-  // 見学メモ自動保存のハンドラー
-  const handleNotesAutoSave = async (notes: string) => {
+  // 気づいたことのタグ変更のハンドラー
+  const handleInsightsChange = async (insights: string[]) => {
     if (!currentNursery) return;
 
     const session = currentNursery.visitSessions[0];
     if (!session) return;
 
     try {
-      await updateVisitSession(session.id, { notes });
+      await updateVisitSession(session.id, { insights });
     } catch (error) {
-      console.error('Failed to save notes:', error);
+      console.error('Failed to save insights:', error);
       showToast.error(
         '保存エラー',
-        'メモの保存に失敗しました。もう一度お試しください。'
+        'タグの保存に失敗しました。もう一度お試しください。'
       );
     }
   };
@@ -264,10 +264,10 @@ export const NurseryDetailPage = () => {
           {/* 保育園情報と質問エリアの区切り */}
           <Separator my={2} />
 
-          {/* 見学メモセクション */}
-          <NotesSection
-            notes={session?.notes || ''}
-            onAutoSave={(notes) => void handleNotesAutoSave(notes)}
+          {/* 気づいたことのタグ用セクション */}
+          <InsightsSection
+            insights={session?.insights || []}
+            onInsightsChange={(insights) => void handleInsightsChange(insights)}
           />
 
           {/* 質問エリアと質問追加フォームの区切り */}

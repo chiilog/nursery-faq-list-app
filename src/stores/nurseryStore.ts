@@ -84,6 +84,11 @@ interface NurseryState {
     questionId: string
   ) => Promise<void>;
 
+  // アクション: 気づき管理
+  addInsight: (sessionId: string, insight: string) => Promise<void>;
+  removeInsight: (sessionId: string, insightIndex: number) => Promise<void>;
+  updateInsights: (sessionId: string, insights: string[]) => Promise<void>;
+
   // アクション: エラー・状態管理
   clearError: () => void;
   setLoading: (loading: LoadingState) => void;
@@ -578,6 +583,133 @@ export const useNurseryStore = create<NurseryState>()(
           throw error;
         } finally {
           setLoading({ isLoading: false });
+        }
+      },
+
+      // 気づき管理アクション
+      async addInsight(sessionId: string, insight: string) {
+        const { currentNursery, setCurrentNursery } = get();
+
+        if (!currentNursery) {
+          throw new Error('保育園が選択されていません');
+        }
+
+        const session = currentNursery.visitSessions.find(
+          (s) => s.id === sessionId
+        );
+        if (!session) {
+          throw new Error('見学セッションが見つかりません');
+        }
+
+        const currentInsights = session.insights || [];
+        const updatedInsights = [...currentInsights, insight];
+
+        try {
+          await nurseryDataStore.updateVisitSession(sessionId, {
+            insights: updatedInsights,
+          });
+
+          // 現在の保育園情報を更新
+          await setCurrentNursery(currentNursery.id);
+        } catch (error) {
+          const appError: AppError = {
+            message:
+              error instanceof NurseryDataStoreError
+                ? error.message
+                : '気づきの追加に失敗しました',
+            code:
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'ADD_INSIGHT_FAILED',
+            timestamp: new Date(),
+          };
+          set({ error: appError });
+          throw error;
+        }
+      },
+
+      async removeInsight(sessionId: string, insightIndex: number) {
+        const { currentNursery, setCurrentNursery } = get();
+
+        if (!currentNursery) {
+          throw new Error('保育園が選択されていません');
+        }
+
+        const session = currentNursery.visitSessions.find(
+          (s) => s.id === sessionId
+        );
+        if (!session) {
+          throw new Error('見学セッションが見つかりません');
+        }
+
+        const currentInsights = session.insights || [];
+        if (insightIndex < 0 || insightIndex >= currentInsights.length) {
+          throw new Error('無効な気づきインデックスです');
+        }
+
+        const updatedInsights = currentInsights.filter(
+          (_, index) => index !== insightIndex
+        );
+
+        try {
+          await nurseryDataStore.updateVisitSession(sessionId, {
+            insights: updatedInsights,
+          });
+
+          // 現在の保育園情報を更新
+          await setCurrentNursery(currentNursery.id);
+        } catch (error) {
+          const appError: AppError = {
+            message:
+              error instanceof NurseryDataStoreError
+                ? error.message
+                : '気づきの削除に失敗しました',
+            code:
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'REMOVE_INSIGHT_FAILED',
+            timestamp: new Date(),
+          };
+          set({ error: appError });
+          throw error;
+        }
+      },
+
+      async updateInsights(sessionId: string, insights: string[]) {
+        const { currentNursery, setCurrentNursery } = get();
+
+        if (!currentNursery) {
+          throw new Error('保育園が選択されていません');
+        }
+
+        const session = currentNursery.visitSessions.find(
+          (s) => s.id === sessionId
+        );
+        if (!session) {
+          throw new Error('見学セッションが見つかりません');
+        }
+
+        try {
+          await nurseryDataStore.updateVisitSession(sessionId, {
+            insights,
+          });
+
+          // 現在の保育園情報を更新
+          await setCurrentNursery(currentNursery.id);
+        } catch (error) {
+          const appError: AppError = {
+            message:
+              error instanceof NurseryDataStoreError
+                ? error.message
+                : '気づきの更新に失敗しました',
+            code:
+              error instanceof NurseryDataStoreError
+                ? error.code
+                : 'UPDATE_INSIGHTS_FAILED',
+            timestamp: new Date(),
+          };
+          set({ error: appError });
+          throw error;
         }
       },
 
