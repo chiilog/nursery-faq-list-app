@@ -36,6 +36,11 @@ interface SerializedVisitSession
   updatedAt: string; // ISO date string
 }
 
+// insightsがオプショナルなバージョン
+interface VisitSessionData extends Omit<SerializedVisitSession, 'insights'> {
+  insights?: string[];
+}
+
 interface SerializedQuestion
   extends Omit<Question, 'answeredAt' | 'createdAt' | 'updatedAt'> {
   answeredAt?: string; // ISO date string
@@ -134,8 +139,9 @@ class NurseryDataStore {
         createdAt: new Date(nurseryData.createdAt),
         updatedAt: new Date(nurseryData.updatedAt),
         visitSessions: nurseryData.visitSessions.map(
-          (session: SerializedVisitSession): VisitSession => ({
+          (session: VisitSessionData): VisitSession => ({
             ...session,
+            insights: session.insights ?? [], // insights を空配列で正規化
             visitDate: session.visitDate ? new Date(session.visitDate) : null,
             createdAt: new Date(session.createdAt),
             updatedAt: new Date(session.updatedAt),
@@ -207,8 +213,9 @@ class NurseryDataStore {
             createdAt: new Date(nurseryData.createdAt),
             updatedAt: new Date(nurseryData.updatedAt),
             visitSessions: visitSessions.map(
-              (session: SerializedVisitSession): VisitSession => ({
+              (session: VisitSessionData): VisitSession => ({
                 ...session,
+                insights: session.insights ?? [], // insights を空配列で正規化
                 visitDate: session.visitDate
                   ? new Date(session.visitDate)
                   : null,

@@ -9,10 +9,12 @@ import { vi } from 'vitest';
 import { renderWithProviders } from '../test/test-utils';
 import { NurseryCreator } from './NurseryCreator';
 import { useNurseryStore } from '../stores/nurseryStore';
+import type { CreateNurseryInput } from '../types/data';
 
 // useNurseryStoreのモック
-const mockCreateNursery = vi.fn();
-const mockClearError = vi.fn();
+const mockCreateNursery =
+  vi.fn<(input: CreateNurseryInput) => Promise<string>>();
+const mockClearError = vi.fn<() => void>();
 
 vi.mock('../stores/nurseryStore', () => ({
   useNurseryStore: vi.fn(),

@@ -24,7 +24,7 @@ export interface VisitSession {
   visitDate: Date | null; // nullの場合は「未定」を表現
   status: VisitSessionStatus;
   questions: Question[];
-  insights?: string[]; // 気づきタグの配列（タグ形式で管理）
+  insights: string[]; // 気づきタグの配列（タグ形式で管理）
   sharedWith?: string[]; // 共有相手のID
   createdAt: Date;
   updatedAt: Date;

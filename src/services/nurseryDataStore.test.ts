@@ -264,6 +264,7 @@ describe('NurseryDataStore', () => {
         visitDate: new Date('2024-02-15'),
         status: 'planned',
         questions: [],
+        insights: [],
         createdAt: new Date('2024-02-01'),
         updatedAt: new Date('2024-02-01'),
       };
@@ -290,6 +291,7 @@ describe('NurseryDataStore', () => {
         visitDate: new Date('2024-02-15'),
         status: 'planned',
         questions: [],
+        insights: [],
         createdAt: new Date('2024-02-01'),
         updatedAt: new Date('2024-02-01'),
       };

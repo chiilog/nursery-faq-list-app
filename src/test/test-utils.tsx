@@ -41,6 +41,7 @@ export const testUtils = {
     visitDate: new Date('2025-02-15'),
     status: 'planned' as const,
     questions: [],
+    insights: [],
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     ...overrides,

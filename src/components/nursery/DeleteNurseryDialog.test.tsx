@@ -66,6 +66,7 @@ const mockNursery: Nursery = {
           updatedAt: new Date(),
         },
       ],
+      insights: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     },
