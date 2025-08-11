@@ -131,7 +131,7 @@ export const DeleteNurseryDialog = ({
               primaryAction={{
                 label: '削除する',
                 onClick: () => void handleConfirmDelete(),
-                disabled: confirmText !== nursery.name,
+                disabled: confirmText !== nursery.name || isDeleting,
                 loading: isDeleting,
                 variant: 'solid',
                 colorPalette: 'red',

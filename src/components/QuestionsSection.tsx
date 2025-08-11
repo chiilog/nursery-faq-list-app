@@ -58,7 +58,7 @@ const QuestionEditForm = ({
         キャンセル
       </Button>
       <Button
-        colorScheme="brand"
+        colorPalette="brand"
         onClick={onSaveAnswer}
         size={{ base: 'sm', md: 'md' }}
       >

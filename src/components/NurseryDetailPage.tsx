@@ -240,7 +240,7 @@ export const NurseryDetailPage = () => {
               <Button
                 size="sm"
                 variant="outline"
-                colorScheme="brand"
+                colorPalette="brand"
                 onClick={nurseryEdit.handleEditNursery}
               >
                 編集

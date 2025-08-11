@@ -1,4 +1,4 @@
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -28,6 +28,18 @@ vi.mock('../../utils/toaster', () => ({
 vi.mock('../../stores/nurseryStore', () => ({
   useNurseryStore: () => ({
     deleteNursery: vi.fn(),
+  }),
+}));
+
+// useDeleteNurseryのモック
+const handleDeleteMock = vi.fn();
+const clearErrorMock = vi.fn();
+vi.mock('../../hooks/useDeleteNursery', () => ({
+  useDeleteNursery: () => ({
+    isDeleting: false,
+    error: null,
+    handleDelete: handleDeleteMock,
+    clearError: clearErrorMock,
   }),
 }));
 
@@ -65,6 +77,10 @@ const mockNursery: Nursery = {
 };
 
 describe('DeleteNurseryDialog', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   const renderDialog = (props: any) => {
     return render(
       <MemoryRouter>
@@ -151,6 +167,7 @@ describe('DeleteNurseryDialog', () => {
   test('削除ボタンをクリックすると削除処理が実行される', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
+    handleDeleteMock.mockResolvedValueOnce({ success: true });
 
     renderDialog({
       nursery: mockNursery,
@@ -170,8 +187,10 @@ describe('DeleteNurseryDialog', () => {
 
     await user.click(deleteButton);
 
-    // カスタムフック内で削除処理が実行されることを正しいテストに変更する必要あり
-    expect(deleteButton).toBeInTheDocument();
+    await waitFor(() => {
+      expect(handleDeleteMock).toHaveBeenCalledWith('nursery-1');
+      expect(onClose).toHaveBeenCalled();
+    });
   });
 
   test('キャンセルボタンをクリックするとonCloseが呼ばれる', async () => {
@@ -200,5 +219,34 @@ describe('DeleteNurseryDialog', () => {
     });
 
     expect(screen.queryByText('保育園の削除')).not.toBeInTheDocument();
+  });
+
+  test('削除失敗時はonCloseが呼ばれない', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    handleDeleteMock.mockResolvedValueOnce({ success: false });
+
+    renderDialog({
+      nursery: mockNursery,
+      isOpen: true,
+      onClose,
+    });
+
+    const input = screen.getByLabelText(/保育園名を入力/);
+    const deleteButton = screen.getByRole('button', { name: '削除する' });
+
+    await user.clear(input);
+    await user.type(input, 'テスト保育園');
+
+    await waitFor(() => {
+      expect(deleteButton).toBeEnabled();
+    });
+
+    await user.click(deleteButton);
+
+    await waitFor(() => {
+      expect(handleDeleteMock).toHaveBeenCalledWith('nursery-1');
+      expect(onClose).not.toHaveBeenCalled();
+    });
   });
 });

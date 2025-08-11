@@ -48,7 +48,7 @@ export const QuestionAddForm = ({
             キャンセル
           </Button>
           <Button
-            colorScheme="brand"
+            colorPalette="brand"
             onClick={onAddQuestion}
             disabled={!newQuestionText.trim()}
             size={{ base: 'sm', md: 'md' }}
@@ -62,7 +62,7 @@ export const QuestionAddForm = ({
 
   return (
     <Button
-      colorScheme="brand"
+      colorPalette="brand"
       onClick={() => onToggleAddForm(true)}
       size={{ base: 'md', md: 'lg' }}
       w="full"

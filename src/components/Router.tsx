@@ -61,7 +61,7 @@ const HomePage = ({ onCreateNew }: HomePageProps) => {
         {/* メインアクションボタン */}
         <Box textAlign="center">
           <Button
-            colorScheme="brand"
+            colorPalette="brand"
             size="lg"
             onClick={onCreateNew}
             disabled={loading.isLoading}

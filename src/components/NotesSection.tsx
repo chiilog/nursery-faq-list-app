@@ -97,7 +97,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
           <Text fontSize="md" fontWeight="semibold" color="gray.700">
             見学メモ
           </Text>
-          <Badge colorScheme="blue" size="sm">
+          <Badge colorPalette="blue" size="sm">
             自由記入
           </Badge>
         </HStack>

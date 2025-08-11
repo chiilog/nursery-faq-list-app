@@ -35,6 +35,7 @@ export const ActionButtons = ({
     <HStack gap={gap} justify={justify} width={fullWidth ? 'full' : 'auto'}>
       {secondaryAction && (
         <Button
+          type="button"
           variant={secondaryAction.variant || 'outline'}
           colorPalette={secondaryAction.colorPalette}
           onClick={secondaryAction.onClick}
@@ -47,10 +48,11 @@ export const ActionButtons = ({
         </Button>
       )}
       <Button
+        type="button"
         variant={primaryAction.variant || 'solid'}
         colorPalette={primaryAction.colorPalette || 'brand'}
         onClick={primaryAction.onClick}
-        disabled={primaryAction.disabled}
+        disabled={primaryAction.disabled || primaryAction.loading}
         loading={primaryAction.loading}
         size={size}
         flex={fullWidth ? (secondaryAction ? 2 : 1) : undefined}

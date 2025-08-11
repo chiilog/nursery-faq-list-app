@@ -132,6 +132,9 @@ describe('NurseryDataStore', () => {
 
       const nursery = await nurseryDataStore.getNursery('nursery-1');
 
+      expect(nursery).not.toBeNull();
+      expect(nursery?.createdAt).toBeInstanceOf(Date);
+      expect(nursery?.updatedAt).toBeInstanceOf(Date);
       expect(nursery).toEqual(mockNursery);
     });
 
