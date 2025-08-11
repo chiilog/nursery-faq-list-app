@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { ChakraProvider } from '@chakra-ui/react';
 import { NurseryDetailPage } from '../components/NurseryDetailPage';
@@ -98,10 +99,11 @@ describe('NurseryDetailPage - 削除機能', () => {
   });
 
   test('削除ボタンをクリックすると確認ダイアログが表示される', async () => {
+    const user = userEvent.setup();
     renderPage();
 
     const deleteButton = screen.getByRole('button', { name: /保育園を削除/ });
-    fireEvent.click(deleteButton);
+    await user.click(deleteButton);
 
     await waitFor(() => {
       expect(screen.getByText('保育園の削除')).toBeInTheDocument();
@@ -110,17 +112,19 @@ describe('NurseryDetailPage - 削除機能', () => {
   });
 
   test('削除確認後、保育園が削除されてホーム画面に遷移する', async () => {
+    const user = userEvent.setup();
     renderPage();
 
     const deleteButton = screen.getByRole('button', { name: /保育園を削除/ });
-    fireEvent.click(deleteButton);
+    await user.click(deleteButton);
 
     await waitFor(() => {
       expect(screen.getByText('保育園の削除')).toBeInTheDocument();
     });
 
     const input = screen.getByLabelText(/保育園名を入力/);
-    fireEvent.change(input, { target: { value: 'テスト保育園' } });
+    await user.clear(input);
+    await user.type(input, 'テスト保育園');
 
     const confirmDeleteButton = screen.getByRole('button', {
       name: '削除する',
@@ -130,7 +134,7 @@ describe('NurseryDetailPage - 削除機能', () => {
       expect(confirmDeleteButton).toBeEnabled();
     });
 
-    fireEvent.click(confirmDeleteButton);
+    await user.click(confirmDeleteButton);
 
     await waitFor(() => {
       expect(mockDeleteNursery).toHaveBeenCalledWith('nursery-1');
@@ -139,17 +143,18 @@ describe('NurseryDetailPage - 削除機能', () => {
   });
 
   test('削除をキャンセルするとダイアログが閉じる', async () => {
+    const user = userEvent.setup();
     renderPage();
 
     const deleteButton = screen.getByRole('button', { name: /保育園を削除/ });
-    fireEvent.click(deleteButton);
+    await user.click(deleteButton);
 
     await waitFor(() => {
       expect(screen.getByText('保育園の削除')).toBeInTheDocument();
     });
 
     const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
-    fireEvent.click(cancelButton);
+    await user.click(cancelButton);
 
     await waitFor(() => {
       expect(screen.queryByText('保育園の削除')).not.toBeInTheDocument();
@@ -160,19 +165,21 @@ describe('NurseryDetailPage - 削除機能', () => {
   });
 
   test('削除に失敗した場合エラーメッセージが表示される', async () => {
+    const user = userEvent.setup();
     mockDeleteNursery.mockRejectedValueOnce(new Error('削除に失敗しました'));
 
     renderPage();
 
     const deleteButton = screen.getByRole('button', { name: /保育園を削除/ });
-    fireEvent.click(deleteButton);
+    await user.click(deleteButton);
 
     await waitFor(() => {
       expect(screen.getByText('保育園の削除')).toBeInTheDocument();
     });
 
     const input = screen.getByLabelText(/保育園名を入力/);
-    fireEvent.change(input, { target: { value: 'テスト保育園' } });
+    await user.clear(input);
+    await user.type(input, 'テスト保育園');
 
     const confirmDeleteButton = screen.getByRole('button', {
       name: '削除する',
@@ -182,7 +189,7 @@ describe('NurseryDetailPage - 削除機能', () => {
       expect(confirmDeleteButton).toBeEnabled();
     });
 
-    fireEvent.click(confirmDeleteButton);
+    await user.click(confirmDeleteButton);
 
     await waitFor(() => {
       expect(mockDeleteNursery).toHaveBeenCalledWith('nursery-1');

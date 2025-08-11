@@ -1,5 +1,6 @@
 import { describe, test, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ChakraProvider } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
 import system from '../../theme';
@@ -104,6 +105,7 @@ describe('DeleteNurseryDialog', () => {
   });
 
   test('保育園名を正しく入力すると削除ボタンが有効になる', async () => {
+    const user = userEvent.setup();
     const onClose = vi.fn();
 
     renderDialog({
@@ -117,7 +119,8 @@ describe('DeleteNurseryDialog', () => {
 
     expect(deleteButton).toBeDisabled();
 
-    fireEvent.change(input, { target: { value: 'テスト保育園' } });
+    await user.clear(input);
+    await user.type(input, 'テスト保育園');
 
     await waitFor(() => {
       expect(deleteButton).toBeEnabled();
@@ -125,6 +128,7 @@ describe('DeleteNurseryDialog', () => {
   });
 
   test('間違った保育園名では削除ボタンが無効のまま', async () => {
+    const user = userEvent.setup();
     const onClose = vi.fn();
 
     renderDialog({
@@ -136,7 +140,8 @@ describe('DeleteNurseryDialog', () => {
     const input = screen.getByLabelText(/保育園名を入力/);
     const deleteButton = screen.getByRole('button', { name: '削除する' });
 
-    fireEvent.change(input, { target: { value: '間違った名前' } });
+    await user.clear(input);
+    await user.type(input, '間違った名前');
 
     await waitFor(() => {
       expect(deleteButton).toBeDisabled();
@@ -144,6 +149,7 @@ describe('DeleteNurseryDialog', () => {
   });
 
   test('削除ボタンをクリックすると削除処理が実行される', async () => {
+    const user = userEvent.setup();
     const onClose = vi.fn();
 
     renderDialog({
@@ -155,19 +161,21 @@ describe('DeleteNurseryDialog', () => {
     const input = screen.getByLabelText(/保育園名を入力/);
     const deleteButton = screen.getByRole('button', { name: '削除する' });
 
-    fireEvent.change(input, { target: { value: 'テスト保育園' } });
+    await user.clear(input);
+    await user.type(input, 'テスト保育園');
 
     await waitFor(() => {
       expect(deleteButton).toBeEnabled();
     });
 
-    fireEvent.click(deleteButton);
+    await user.click(deleteButton);
 
     // カスタムフック内で削除処理が実行されることを正しいテストに変更する必要あり
     expect(deleteButton).toBeInTheDocument();
   });
 
-  test('キャンセルボタンをクリックするとonCloseが呼ばれる', () => {
+  test('キャンセルボタンをクリックするとonCloseが呼ばれる', async () => {
+    const user = userEvent.setup();
     const onClose = vi.fn();
 
     renderDialog({
@@ -177,7 +185,7 @@ describe('DeleteNurseryDialog', () => {
     });
 
     const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
-    fireEvent.click(cancelButton);
+    await user.click(cancelButton);
 
     expect(onClose).toHaveBeenCalled();
   });
