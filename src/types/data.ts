@@ -24,7 +24,7 @@ export interface VisitSession {
   visitDate: Date | null; // nullの場合は「未定」を表現
   status: VisitSessionStatus;
   questions: Question[];
-  notes?: string;
+  insights?: string[]; // 気づきタグの配列（タグ形式で管理）
   sharedWith?: string[]; // 共有相手のID
   createdAt: Date;
   updatedAt: Date;
@@ -35,7 +35,6 @@ export interface Nursery {
   id: string;
   name: string;
   visitSessions: VisitSession[];
-  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,7 +69,6 @@ export interface CreateNurseryInput {
 // 保育園更新時の入力データ型
 export interface UpdateNurseryInput {
   name?: string;
-  notes?: string;
   visitSessions?: VisitSession[];
 }
 
@@ -78,7 +76,7 @@ export interface UpdateNurseryInput {
 export interface CreateVisitSessionInput {
   visitDate: Date;
   status?: VisitSessionStatus;
-  notes?: string;
+  insights?: string[]; // 気づきタグの配列
   questions?: CreateQuestionInput[];
   sharedWith?: string[];
 }
@@ -87,7 +85,7 @@ export interface CreateVisitSessionInput {
 export interface UpdateVisitSessionInput {
   visitDate?: Date;
   status?: VisitSessionStatus;
-  notes?: string;
+  insights?: string[]; // 気づきタグの配列
 }
 
 // 質問作成時の入力データ型
