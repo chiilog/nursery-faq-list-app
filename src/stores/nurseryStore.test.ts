@@ -48,9 +48,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
         {
           id: 'nursery-1',
           name: 'テスト保育園A',
-          address: '東京都渋谷区1-1-1',
-          phoneNumber: '03-1234-5678',
-          website: 'https://test-nursery-a.jp',
           visitSessions: [],
           notes: 'アットホームな保育園',
           createdAt: new Date('2024-01-01'),
@@ -102,7 +99,6 @@ describe('NurseryStore (TDD Green Phase)', () => {
       // Green: 実装されたので成功することが期待される
       const updates: UpdateNurseryInput = {
         name: '更新された保育園名',
-        phoneNumber: '03-1111-2222',
       };
 
       (nurseryDataStore.updateNursery as any).mockResolvedValue(undefined);

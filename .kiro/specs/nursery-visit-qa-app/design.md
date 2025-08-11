@@ -100,9 +100,6 @@
 interface Nursery {
   id: string;
   name: string;
-  address?: string;
-  phoneNumber?: string;
-  website?: string;
   visitSessions: VisitSession[];
   notes?: string;
   createdAt: Date;

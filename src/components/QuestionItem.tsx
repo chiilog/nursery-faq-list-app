@@ -80,7 +80,7 @@ export const QuestionItem = ({
           </Text>
           <HStack gap={2} flexShrink={0}>
             {question.isAnswered && (
-              <Badge colorScheme="green" size="sm">
+              <Badge colorPalette="green" size="sm">
                 回答済み
               </Badge>
             )}
