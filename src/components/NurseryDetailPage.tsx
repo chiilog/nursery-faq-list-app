@@ -2,8 +2,6 @@
  * 保育園詳細画面コンポーネント
  * リファクタリング: 責務別にコンポーネントを分割
  */
-import { IoChevronBack } from 'react-icons/io5';
-
 import {
   Box,
   VStack,
@@ -218,7 +216,7 @@ export const NurseryDetailPage = () => {
       headerTitle="保育園詳細"
       headerVariant="with-buttons"
       leftButton={{
-        icon: <IoChevronBack />,
+        text: '← 戻る',
         onClick: handleBack,
         variant: 'ghost',
       }}

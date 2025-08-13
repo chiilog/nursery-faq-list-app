@@ -3,7 +3,7 @@
  * 責務を分割して保守性を向上
  */
 
-import { Box } from '@chakra-ui/react';
+import { Box, Heading } from '@chakra-ui/react';
 import { useState, useRef } from 'react';
 import { useNurseryStore } from '../../stores/nurseryStore';
 import type { CreateNurseryInput } from '../../types/data';
@@ -101,6 +101,10 @@ export const NurseryCreator = ({ onCancel }: NurseryCreatorProps) => {
 
   return (
     <Box maxW="md" mx="auto">
+      <Heading as="h2" size="lg" mb={6}>
+        新しい保育園を追加
+      </Heading>
+
       <Box mb={4}>
         <ErrorDisplay error={error} onClearError={clearError} />
       </Box>
