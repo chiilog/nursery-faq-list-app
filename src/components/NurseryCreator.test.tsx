@@ -428,9 +428,9 @@ describe('NurseryCreator コンポーネント', () => {
       });
     });
 
-    test('過去の日付エラーの場合はフォーカス管理が正常に動作する', async () => {
-      // react-datepickerでは過去日付選択が制限されるため、
-      // 保存成功時の動作を確認
+    test('見学日未入力でも保存が呼ばれる（DatePicker依存を回避した簡略化）', async () => {
+      // react-datepickerの制約により、見学日を省略した
+      // 保存処理の動作を確認
       const user = userEvent.setup();
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
@@ -468,6 +468,9 @@ describe('NurseryCreator コンポーネント', () => {
 
       // エラーメッセージが表示されていることを確認
       expect(screen.getByText('保育園名は必須です')).toBeInTheDocument();
+
+      // バリデーションエラー時はcreateNurseryが呼ばれないことを確認
+      expect(mockCreateNursery).not.toHaveBeenCalled();
 
       // フォームの基本機能が動作することを確認
       await user.type(nameInput, 'テスト');
