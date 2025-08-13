@@ -441,11 +441,13 @@ describe('NurseryCreator コンポーネント', () => {
       await user.type(nameInput, 'テスト保育園');
       await user.click(saveButton);
 
-      // 保存ボタンがクリックされたことを確認
-      expect(mockCreateNursery).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'テスト保育園',
-        })
+      // 保存は非同期で呼ばれる場合があるためwaitForで検証
+      await waitFor(() =>
+        expect(mockCreateNursery).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: 'テスト保育園',
+          })
+        )
       );
     });
 

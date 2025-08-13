@@ -12,9 +12,9 @@ describe('QuestionAddForm', () => {
   const defaultProps = {
     isAddingQuestion: false,
     newQuestionText: '',
-    onToggleAddForm: vi.fn(),
-    onNewQuestionTextChange: vi.fn(),
-    onAddQuestion: vi.fn(),
+    onToggleAddForm: vi.fn<(value: boolean) => void>(),
+    onNewQuestionTextChange: vi.fn<(value: string) => void>(),
+    onAddQuestion: vi.fn<() => void>(),
   };
 
   beforeEach(() => {
