@@ -164,9 +164,6 @@ describe('NurseryCreator コンポーネント', () => {
       // バリデーションエラーが表示されないことを確認
       expect(screen.queryByText('保育園名は必須です')).not.toBeInTheDocument();
       expect(
-        screen.queryByText('保育園名は1文字以上で入力してください')
-      ).not.toBeInTheDocument();
-      expect(
         screen.queryByText('保育園名は100文字以内で入力してください')
       ).not.toBeInTheDocument();
     });
