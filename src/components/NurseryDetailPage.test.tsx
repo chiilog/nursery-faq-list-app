@@ -1,6 +1,7 @@
 /**
- * 保育園詳細画面のテスト
- * 質問管理、回答入力、見学日編集、気づき管理の包括的なテスト
+ * 保育園詳細画面の統合テスト
+ * ページレベルの表示・ナビゲーション・エラーハンドリングのテスト
+ * 詳細な子コンポーネントのテストは各コンポーネントのテストファイルで実施
  */
 
 import { screen } from '@testing-library/react';
@@ -113,68 +114,27 @@ describe('NurseryDetailPage コンポーネント', () => {
     });
   });
 
-  describe('質問リスト表示', () => {
-    test('質問一覧が表示される', () => {
+  describe('子コンポーネント表示', () => {
+    test('主要コンポーネントが表示される', () => {
       renderWithProviders(<NurseryDetailPage />);
 
+      // NurseryInfoCardの存在確認（詳細テストは各コンポーネントで実施）
+      expect(screen.getByText('テスト保育園')).toBeInTheDocument();
+      expect(screen.getByText(/見学日:/)).toBeInTheDocument();
+      expect(screen.getByText(/質問進捗:/)).toBeInTheDocument();
+
+      // QuestionsSection、QuestionAddForm、InsightsSectionの存在確認
+      expect(
+        screen.getByRole('button', { name: '+ 質問を追加' })
+      ).toBeInTheDocument();
       expect(
         screen.getByText('保育時間は何時から何時までですか？')
       ).toBeInTheDocument();
-      expect(screen.getByText('給食はありますか？')).toBeInTheDocument();
-    });
-
-    test('未回答の質問が先に表示される', () => {
-      renderWithProviders(<NurseryDetailPage />);
-
-      const questions = screen.getAllByTestId(/question-item/);
-      expect(questions).toHaveLength(2);
-
-      // 最初の質問（未回答）
-      expect(questions[0]).toHaveTextContent(
-        '保育時間は何時から何時までですか？'
-      );
-      // 2番目の質問（回答済み）
-      expect(questions[1]).toHaveTextContent('給食はありますか？');
-    });
-
-    test('回答済み質問の回答が表示される', () => {
-      renderWithProviders(<NurseryDetailPage />);
-
-      expect(screen.getByText('あります')).toBeInTheDocument();
     });
   });
 
-  describe('質問編集機能', () => {
-    test('質問をクリックすると編集モードになる', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NurseryDetailPage />);
-
-      const question = screen.getByRole('button', {
-        name: /質問: 保育時間は何時から何時までですか？/,
-      });
-      await user.click(question);
-
-      expect(
-        screen.getByDisplayValue('保育時間は何時から何時までですか？')
-      ).toBeInTheDocument();
-    });
-
-    test('質問の回答を入力できる', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NurseryDetailPage />);
-
-      const question = screen.getByRole('button', {
-        name: /質問: 保育時間は何時から何時までですか？/,
-      });
-      await user.click(question);
-
-      const answerInput = screen.getByPlaceholderText('回答を入力してください');
-      await user.type(answerInput, '7時から19時まで');
-
-      expect(answerInput).toHaveValue('7時から19時まで');
-    });
-
-    test('回答を保存すると質問が更新される', async () => {
+  describe('統合レベルのワークフロー', () => {
+    test('質問の編集・保存ワークフローが機能する', async () => {
       const user = userEvent.setup();
       const mockUpdateQuestion = vi.fn();
 
@@ -192,17 +152,21 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       renderWithProviders(<NurseryDetailPage />);
 
+      // 質問をクリックして編集開始
       const question = screen.getByRole('button', {
         name: /質問: 保育時間は何時から何時までですか？/,
       });
       await user.click(question);
 
+      // 回答入力
       const answerInput = screen.getByPlaceholderText('回答を入力してください');
       await user.type(answerInput, '7時から19時まで');
 
+      // 保存
       const saveButton = screen.getByRole('button', { name: '保存' });
       await user.click(saveButton);
 
+      // ストアのupdateQuestionが正しく呼ばれることを確認
       expect(mockUpdateQuestion).toHaveBeenCalledWith(
         'nursery-1',
         'session-1',
@@ -216,28 +180,8 @@ describe('NurseryDetailPage コンポーネント', () => {
     });
   });
 
-  describe('新しい質問の追加', () => {
-    test('質問追加ボタンが表示される', () => {
-      renderWithProviders(<NurseryDetailPage />);
-
-      const addButton = screen.getByRole('button', { name: '+ 質問を追加' });
-      expect(addButton).toBeInTheDocument();
-    });
-
-    test('質問追加ボタンをクリックすると入力フォームが表示される', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NurseryDetailPage />);
-
-      const addButton = screen.getByRole('button', { name: '+ 質問を追加' });
-      await user.click(addButton);
-
-      expect(
-        screen.getByPlaceholderText('新しい質問を入力してください')
-      ).toBeInTheDocument();
-    });
-
-    test('質問追加フォームが機能する', async () => {
-      const user = userEvent.setup();
+  describe('質問追加ワークフロー', () => {
+    test('質問追加の統合ワークフローが機能する', () => {
       const mockAddQuestion = vi.fn();
 
       vi.mocked(useNurseryStore).mockReturnValue({
@@ -254,50 +198,26 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       renderWithProviders(<NurseryDetailPage />);
 
-      // 質問追加ボタンをクリックしてフォームを表示
+      // 質問追加フォームが表示されることを確認（詳細動作はQuestionAddFormでテスト）
       const addButton = screen.getByRole('button', { name: '+ 質問を追加' });
-      await user.click(addButton);
-
-      // フォームが表示されることを確認（詳細な動作はQuestionAddFormのテストで確認）
-      expect(
-        screen.getByPlaceholderText('新しい質問を入力してください')
-      ).toBeInTheDocument();
+      expect(addButton).toBeInTheDocument();
     });
   });
 
-  describe('見学日編集機能', () => {
-    test('編集ボタンをクリックすると日付選択が表示される', async () => {
+  describe('保育園編集ワークフロー', () => {
+    test('保育園編集の統合ワークフローが機能する', async () => {
       const user = userEvent.setup();
       renderWithProviders(<NurseryDetailPage />);
 
+      // 編集ボタンから編集モードに入る
       const editButton = screen.getByRole('button', { name: '編集' });
       await user.click(editButton);
 
-      // DatePickerの入力フィールドを確認
-      const dateInput = screen.getByPlaceholderText('見学日を選択してください');
-      expect(dateInput).toBeInTheDocument();
-    });
-
-    test('見学日を変更して保存できる', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NurseryDetailPage />);
-
-      const editButton = screen.getByRole('button', { name: '編集' });
-      await user.click(editButton);
-
-      // 編集モードになることを確認
+      // 編集用のUI要素が表示される（詳細テストはNurseryInfoCardで実施）
       const saveButton = screen.getByRole('button', { name: '保存' });
+      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
       expect(saveButton).toBeInTheDocument();
-
-      // DatePickerがあることを確認
-      const dateInput = screen.getByPlaceholderText('見学日を選択してください');
-      expect(dateInput).toBeInTheDocument();
-
-      // 保存ボタンをクリック（何も変更せずに）
-      await user.click(saveButton);
-
-      // 編集機能が正常に動作することを確認（保存ボタンがクリックできた）
-      expect(saveButton).toBeInTheDocument();
+      expect(cancelButton).toBeInTheDocument();
     });
   });
 
@@ -339,87 +259,6 @@ describe('NurseryDetailPage コンポーネント', () => {
       expect(
         screen.getByText('保育園データを読み込み中...')
       ).toBeInTheDocument();
-    });
-  });
-
-  describe('保育園編集機能', () => {
-    test('編集ボタンが表示される', () => {
-      renderWithProviders(<NurseryDetailPage />);
-
-      const editButton = screen.getByRole('button', { name: '編集' });
-      expect(editButton).toBeInTheDocument();
-    });
-
-    test('編集ボタンをクリックすると編集モードになる', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NurseryDetailPage />);
-
-      const editButton = screen.getByRole('button', { name: '編集' });
-      await user.click(editButton);
-
-      expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: 'キャンセル' })
-      ).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText('保育園名を入力してください')
-      ).toBeInTheDocument();
-    });
-
-    test('保育園名を編集して保存できる', async () => {
-      const user = userEvent.setup();
-      const mockUpdateNursery = vi.fn();
-
-      vi.mocked(useNurseryStore).mockReturnValue({
-        currentNursery: mockCurrentNursery,
-        loading: { isLoading: false },
-        error: null,
-        updateNursery: mockUpdateNursery,
-        addQuestion: vi.fn(),
-        updateQuestion: vi.fn(),
-        deleteQuestion: vi.fn(),
-        setCurrentNursery: vi.fn(),
-        clearError: vi.fn(),
-      });
-
-      renderWithProviders(<NurseryDetailPage />);
-
-      // 編集モードに切り替え
-      const editButton = screen.getByRole('button', { name: '編集' });
-      await user.click(editButton);
-
-      // 保育園名を変更
-      const nameInput =
-        screen.getByPlaceholderText('保育園名を入力してください');
-      await user.clear(nameInput);
-      await user.type(nameInput, '新しい保育園名');
-
-      // 保存
-      const saveButton = screen.getByRole('button', { name: '保存' });
-      await user.click(saveButton);
-
-      expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
-        name: '新しい保育園名',
-        visitSessions: expect.any(Array),
-      });
-    });
-
-    test('キャンセルボタンで編集モードを終了できる', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NurseryDetailPage />);
-
-      // 編集モードに切り替え
-      const editButton = screen.getByRole('button', { name: '編集' });
-      await user.click(editButton);
-
-      // キャンセル
-      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
-      await user.click(cancelButton);
-
-      expect(screen.getByRole('button', { name: '編集' })).toBeInTheDocument();
-      expect(
-        screen.queryByRole('button', { name: '保存' })
-      ).not.toBeInTheDocument();
     });
   });
 
@@ -479,184 +318,75 @@ describe('NurseryDetailPage コンポーネント', () => {
     });
   });
 
-  describe('質問削除機能', () => {
-    test('削除ボタンが表示される', () => {
+  describe('子コンポーネント間連携テスト', () => {
+    test('保育園情報が各子コンポーネントに正しく渡される', () => {
       renderWithProviders(<NurseryDetailPage />);
 
-      const deleteButtons = screen.getAllByLabelText('質問を削除');
-      expect(deleteButtons).toHaveLength(2); // 2つの質問があるので
+      // NurseryInfoCardにpropsが正しく渡されていることを統合レベルで確認
+      expect(screen.getByText('テスト保育園')).toBeInTheDocument();
+      expect(screen.getByText(/2025\/12\/31/)).toBeInTheDocument();
+      expect(screen.getByText(/1\/2/)).toBeInTheDocument();
+
+      // QuestionsSectionに質問データが渡されていることを確認
+      expect(
+        screen.getByText('保育時間は何時から何時までですか？')
+      ).toBeInTheDocument();
+      expect(screen.getByText('給食はありますか？')).toBeInTheDocument();
+      expect(screen.getByText('あります')).toBeInTheDocument();
     });
 
-    test('削除ボタンをクリックすると確認ダイアログが表示される', async () => {
-      const user = userEvent.setup();
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
-
-      renderWithProviders(<NurseryDetailPage />);
-
-      const deleteButton = screen.getAllByLabelText('質問を削除')[0];
-      await user.click(deleteButton);
-
-      expect(confirmSpy).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /この操作は取り消せません。この質問を削除しますか？/
-        )
-      );
-
-      confirmSpy.mockRestore();
-    });
-
-    test('削除確認後に質問が削除される', async () => {
-      const user = userEvent.setup();
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-
-      renderWithProviders(<NurseryDetailPage />);
-
-      const deleteButton = screen.getAllByLabelText('質問を削除')[0];
-      await user.click(deleteButton);
-
-      expect(mockDeleteQuestion).toHaveBeenCalledWith(
-        'nursery-1',
-        'session-1',
-        'question-1'
-      );
-
-      confirmSpy.mockRestore();
-    });
-
-    test('編集中の質問を削除すると編集状態がリセットされる', async () => {
-      const user = userEvent.setup();
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    test('エラー状態が全体に適切に反映される', () => {
+      vi.mocked(useParams).mockReturnValue({ nurseryId: 'invalid-id' });
+      vi.mocked(useNurseryStore).mockReturnValue({
+        currentNursery: null,
+        loading: { isLoading: false },
+        error: { message: '保育園が見つかりません', timestamp: new Date() },
+        updateNursery: mockUpdateNursery,
+        addQuestion: vi.fn(),
+        updateQuestion: vi.fn(),
+        deleteQuestion: mockDeleteQuestion,
+        setCurrentNursery: vi.fn(),
+        clearError: vi.fn(),
+      });
 
       renderWithProviders(<NurseryDetailPage />);
 
-      // 質問をクリックして編集モードにする
-      const questionButton = screen.getByRole('button', {
-        name: /質問: 保育時間は何時から何時までですか？/,
-      });
-      await user.click(questionButton);
+      // エラー状態ではコンポーネントが適切に非表示になることを確認
+      expect(screen.getByText('保育園が見つかりません')).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'ホームに戻る' })
+      ).toBeInTheDocument();
 
-      // 削除ボタンをクリック（編集中の質問）
-      const deleteButton = screen.getAllByLabelText('質問を削除')[0];
-      await user.click(deleteButton);
-
-      expect(mockDeleteQuestion).toHaveBeenCalled();
-
-      confirmSpy.mockRestore();
-    });
-  });
-
-  describe('UX改善', () => {
-    describe('保育園名エラー表示', () => {
-      test('編集時に保育園名を空にするとエラーが表示される', async () => {
-        const user = userEvent.setup();
-
-        renderWithProviders(<NurseryDetailPage />);
-
-        // 編集ボタンをクリック
-        const editButton = screen.getByRole('button', { name: '編集' });
-        await user.click(editButton);
-
-        // 保育園名を空にする
-        const nameInput = screen.getByDisplayValue('テスト保育園');
-        await user.clear(nameInput);
-
-        // エラーメッセージが表示されることを確認
-        expect(
-          screen.getByText('保育園名を入力してください')
-        ).toBeInTheDocument();
-      });
-
-      test('保育園名を入力するとエラーが消える', async () => {
-        const user = userEvent.setup();
-
-        renderWithProviders(<NurseryDetailPage />);
-
-        // 編集ボタンをクリック
-        const editButton = screen.getByRole('button', { name: '編集' });
-        await user.click(editButton);
-
-        // 保育園名を空にしてエラーを表示
-        const nameInput = screen.getByDisplayValue('テスト保育園');
-        await user.clear(nameInput);
-        expect(
-          screen.getByText('保育園名を入力してください')
-        ).toBeInTheDocument();
-
-        // 保育園名を入力
-        await user.type(nameInput, '新しい保育園名');
-
-        // エラーメッセージが消えることを確認
-        expect(
-          screen.queryByText('保育園名を入力してください')
-        ).not.toBeInTheDocument();
-      });
+      // エラー時は主要コンポーネントが表示されないことを確認
+      expect(
+        screen.queryByRole('button', { name: '+ 質問を追加' })
+      ).not.toBeInTheDocument();
     });
 
-    describe('保存ボタンの状態', () => {
-      test('変更がない場合、保存ボタンが無効化される', async () => {
-        const user = userEvent.setup();
-
-        renderWithProviders(<NurseryDetailPage />);
-
-        // 編集ボタンをクリック
-        const editButton = screen.getByRole('button', { name: '編集' });
-        await user.click(editButton);
-
-        // 保存ボタンが無効化されていることを確認
-        const saveButton = screen.getByRole('button', { name: '保存' });
-        expect(saveButton).toBeDisabled();
+    test('ローディング状態が全体に適切に反映される', () => {
+      vi.mocked(useNurseryStore).mockReturnValue({
+        currentNursery: null,
+        loading: { isLoading: true, operation: '保育園データを読み込み中...' },
+        error: null,
+        updateNursery: mockUpdateNursery,
+        addQuestion: vi.fn(),
+        updateQuestion: vi.fn(),
+        deleteQuestion: mockDeleteQuestion,
+        setCurrentNursery: vi.fn(),
+        clearError: vi.fn(),
       });
 
-      test('保育園名を変更すると保存ボタンが有効になる', async () => {
-        const user = userEvent.setup();
+      renderWithProviders(<NurseryDetailPage />);
 
-        renderWithProviders(<NurseryDetailPage />);
+      // ローディング状態での表示確認
+      expect(
+        screen.getByText('保育園データを読み込み中...')
+      ).toBeInTheDocument();
 
-        // 編集ボタンをクリック
-        const editButton = screen.getByRole('button', { name: '編集' });
-        await user.click(editButton);
-
-        // 保育園名を変更
-        const nameInput = screen.getByDisplayValue('テスト保育園');
-        await user.clear(nameInput);
-        await user.type(nameInput, '新しい保育園名');
-
-        // 保存ボタンが有効になることを確認
-        const saveButton = screen.getByRole('button', { name: '保存' });
-        expect(saveButton).not.toBeDisabled();
-      });
-
-      test('保育園名が空の場合、保存ボタンが無効化される', async () => {
-        const user = userEvent.setup();
-
-        renderWithProviders(<NurseryDetailPage />);
-
-        // 編集ボタンをクリック
-        const editButton = screen.getByRole('button', { name: '編集' });
-        await user.click(editButton);
-
-        // 保育園名を空にする
-        const nameInput = screen.getByDisplayValue('テスト保育園');
-        await user.clear(nameInput);
-
-        // 保存ボタンが無効化されることを確認
-        const saveButton = screen.getByRole('button', { name: '保存' });
-        expect(saveButton).toBeDisabled();
-      });
-
-      test('見学日のみ変更した場合も保存ボタンが有効になる', async () => {
-        const user = userEvent.setup();
-
-        renderWithProviders(<NurseryDetailPage />);
-
-        // 編集ボタンをクリック
-        const editButton = screen.getByRole('button', { name: '編集' });
-        await user.click(editButton);
-
-        // 編集モードでは保存ボタンが利用可能であることを確認
-        const saveButton = screen.getByRole('button', { name: '保存' });
-        expect(saveButton).toBeInTheDocument();
-      });
+      // ローディング時は主要コンポーネントが表示されないことを確認
+      expect(
+        screen.queryByRole('button', { name: '+ 質問を追加' })
+      ).not.toBeInTheDocument();
     });
   });
 });
