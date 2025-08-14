@@ -2,14 +2,7 @@
  * 質問追加フォームコンポーネント
  */
 
-import {
-  Button,
-  Input,
-  Textarea,
-  VStack,
-  HStack,
-  Text,
-} from '@chakra-ui/react';
+import { Button, Input, Textarea, VStack, HStack, Text } from '@chakra-ui/react';
 
 interface QuestionAddFormProps {
   isAddingQuestion: boolean;
