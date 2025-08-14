@@ -32,11 +32,11 @@ export const useQuestionForm = () => {
   }, []);
 
   const resetForm = useCallback(() => {
-    setFormState(initialState);
+    setFormState(() => ({ ...initialState }));
   }, []);
 
   const cancelAdding = useCallback(() => {
-    setFormState(initialState);
+    setFormState(() => ({ ...initialState }));
   }, []);
 
   const isValid = formState.questionText.trim() !== '';

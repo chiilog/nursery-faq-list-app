@@ -28,6 +28,27 @@ describe('useQuestionForm', () => {
     expect(result.current.formState.answerText).toBe('');
   });
 
+  test('startAddingは既存の入力値を保持する', () => {
+    const { result } = renderHook(() => useQuestionForm());
+
+    // 先に入力値を設定
+    act(() => {
+      result.current.updateQuestionText('下書きの質問');
+      result.current.updateAnswerText('下書きの回答');
+    });
+
+    // startAddingを実行
+    act(() => {
+      result.current.startAdding();
+    });
+
+    // 入力値が保持されることを確認
+    expect(result.current.formState.isAdding).toBe(true);
+    expect(result.current.formState.questionText).toBe('下書きの質問');
+    expect(result.current.formState.answerText).toBe('下書きの回答');
+    expect(result.current.isValid).toBe(true);
+  });
+
   test('updateQuestionTextで質問テキストが更新される', () => {
     const { result } = renderHook(() => useQuestionForm());
 

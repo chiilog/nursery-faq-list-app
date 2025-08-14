@@ -39,7 +39,7 @@ export const useQuestionEditor = () => {
   }, []);
 
   const resetEdit = useCallback(() => {
-    setEditState(initialState);
+    setEditState(() => ({ ...initialState }));
   }, []);
 
   return {

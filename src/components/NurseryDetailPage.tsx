@@ -84,18 +84,26 @@ export const NurseryDetailPage = () => {
     const session = currentNursery.visitSessions[0];
     if (!session) return;
 
-    await updateQuestion(
-      currentNursery.id,
-      session.id,
-      questionEditor.editState.questionId,
-      {
-        text: questionEditor.editState.questionText.trim(),
-        answer: questionEditor.editState.answer,
-        isAnswered: questionEditor.editState.answer.trim() !== '',
-      }
-    );
-
-    questionEditor.resetEdit();
+    try {
+      await updateQuestion(
+        currentNursery.id,
+        session.id,
+        questionEditor.editState.questionId,
+        {
+          text: questionEditor.editState.questionText.trim(),
+          answer: questionEditor.editState.answer.trim(),
+          isAnswered: questionEditor.editState.answer.trim() !== '',
+        }
+      );
+      showToast.success('保存完了', '回答を保存しました');
+      questionEditor.resetEdit();
+    } catch (error) {
+      console.error('Failed to save answer:', error);
+      showToast.error(
+        '保存エラー',
+        '回答の保存に失敗しました。もう一度お試しください。'
+      );
+    }
   }, [currentNursery, questionEditor, updateQuestion]);
 
   const handleAddQuestion = useCallback(async () => {
@@ -104,13 +112,21 @@ export const NurseryDetailPage = () => {
     const session = currentNursery.visitSessions[0];
     if (!session) return;
 
-    await addQuestion(currentNursery.id, session.id, {
-      text: questionForm.formState.questionText,
-      answer: questionForm.formState.answerText.trim(),
-      isAnswered: questionForm.formState.answerText.trim() !== '',
-    });
-
-    questionForm.resetForm();
+    try {
+      await addQuestion(currentNursery.id, session.id, {
+        text: questionForm.formState.questionText.trim(),
+        answer: questionForm.formState.answerText.trim(),
+        isAnswered: questionForm.formState.answerText.trim() !== '',
+      });
+      showToast.success('追加完了', '質問を追加しました');
+      questionForm.resetForm();
+    } catch (error) {
+      console.error('Failed to add question:', error);
+      showToast.error(
+        '追加エラー',
+        '質問の追加に失敗しました。もう一度お試しください。'
+      );
+    }
   }, [currentNursery, questionForm, addQuestion]);
 
   const handleDeleteQuestion = useCallback(
