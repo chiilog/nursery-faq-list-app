@@ -12,7 +12,7 @@ import {
   Separator,
   useDisclosure,
 } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { Layout } from './Layout';
@@ -24,6 +24,8 @@ import { InlineFormActions } from './NurseryCreator/FormActions';
 import { DeleteNurseryDialog } from './nursery/DeleteNurseryDialog';
 import { showToast } from '../utils/toaster';
 import { useNurseryEdit } from '../hooks/useNurseryEdit';
+import { useQuestionEditor } from '../hooks/useQuestionEditor';
+import { useQuestionForm } from '../hooks/useQuestionForm';
 
 /**
  * 保育園詳細画面コンポーネント
@@ -44,14 +46,9 @@ export const NurseryDetailPage = () => {
     deleteQuestion,
   } = useNurseryStore();
 
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
-    null
-  );
-  const [editingAnswer, setEditingAnswer] = useState('');
-  const [editingQuestionText, setEditingQuestionText] = useState('');
-  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
-  const [newQuestionText, setNewQuestionText] = useState('');
-  const [newAnswerText, setNewAnswerText] = useState('');
+  // カスタムフックで状態管理を統合
+  const questionEditor = useQuestionEditor();
+  const questionForm = useQuestionForm();
 
   // 削除確認ダイアログの状態管理
   const {
@@ -70,96 +67,98 @@ export const NurseryDetailPage = () => {
     }
   }, [nurseryId, setCurrentNursery]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     void navigate('/');
-  };
+  }, [navigate]);
 
-  const handleQuestionClick = (
-    questionId: string,
-    currentAnswer: string,
-    questionText: string
-  ) => {
-    setEditingQuestionId(questionId);
-    setEditingAnswer(currentAnswer);
-    setEditingQuestionText(questionText);
-  };
+  const handleQuestionClick = useCallback(
+    (questionId: string, currentAnswer: string, questionText: string) => {
+      questionEditor.startEdit(questionId, currentAnswer, questionText);
+    },
+    [questionEditor]
+  );
 
-  const handleSaveAnswer = async () => {
-    if (!currentNursery || !editingQuestionId) return;
+  const handleSaveAnswer = useCallback(async () => {
+    if (!currentNursery || !questionEditor.editState.questionId) return;
 
     const session = currentNursery.visitSessions[0];
     if (!session) return;
 
-    await updateQuestion(currentNursery.id, session.id, editingQuestionId, {
-      text: editingQuestionText,
-      answer: editingAnswer,
-      isAnswered: editingAnswer.trim() !== '',
-    });
+    await updateQuestion(
+      currentNursery.id,
+      session.id,
+      questionEditor.editState.questionId,
+      {
+        text: questionEditor.editState.questionText.trim(),
+        answer: questionEditor.editState.answer,
+        isAnswered: questionEditor.editState.answer.trim() !== '',
+      }
+    );
 
-    setEditingQuestionId(null);
-    setEditingAnswer('');
-    setEditingQuestionText('');
-  };
+    questionEditor.resetEdit();
+  }, [currentNursery, questionEditor, updateQuestion]);
 
-  const handleAddQuestion = async () => {
-    if (!currentNursery || !newQuestionText.trim()) return;
+  const handleAddQuestion = useCallback(async () => {
+    if (!currentNursery || !questionForm.isValid) return;
 
     const session = currentNursery.visitSessions[0];
     if (!session) return;
 
     await addQuestion(currentNursery.id, session.id, {
-      text: newQuestionText,
-      answer: newAnswerText.trim(),
-      isAnswered: newAnswerText.trim() !== '',
+      text: questionForm.formState.questionText,
+      answer: questionForm.formState.answerText.trim(),
+      isAnswered: questionForm.formState.answerText.trim() !== '',
     });
 
-    setIsAddingQuestion(false);
-    setNewQuestionText('');
-    setNewAnswerText('');
-  };
+    questionForm.resetForm();
+  }, [currentNursery, questionForm, addQuestion]);
 
-  const handleDeleteQuestion = async (questionId: string) => {
-    if (!currentNursery) return;
+  const handleDeleteQuestion = useCallback(
+    async (questionId: string) => {
+      if (!currentNursery) return;
 
-    const session = currentNursery.visitSessions[0];
-    if (!session) return;
+      const session = currentNursery.visitSessions[0];
+      if (!session) return;
 
-    try {
-      await deleteQuestion(currentNursery.id, session.id, questionId);
-      showToast.success('削除完了', '質問を削除しました');
+      try {
+        await deleteQuestion(currentNursery.id, session.id, questionId);
+        showToast.success('削除完了', '質問を削除しました');
 
-      // 編集中の質問が削除された場合は編集状態をリセット
-      if (editingQuestionId === questionId) {
-        setEditingQuestionId(null);
-        setEditingAnswer('');
-        setEditingQuestionText('');
+        // 編集中の質問が削除された場合は編集状態をリセット
+        if (questionEditor.editState.questionId === questionId) {
+          questionEditor.resetEdit();
+        }
+      } catch (error) {
+        console.error('Failed to delete question:', error);
+        showToast.error(
+          '削除エラー',
+          '質問の削除に失敗しました。もう一度お試しください。'
+        );
       }
-    } catch (error) {
-      console.error('Failed to delete question:', error);
-      showToast.error(
-        '削除エラー',
-        '質問の削除に失敗しました。もう一度お試しください。'
-      );
-    }
-  };
+    },
+    [currentNursery, deleteQuestion, questionEditor]
+  );
 
   // 気づいたことのタグ変更のハンドラー
-  const handleInsightsChange = async (insights: string[]) => {
-    if (!currentNursery) return;
+  const handleInsightsChange = useCallback(
+    async (insights: string[]) => {
+      if (!currentNursery) return;
 
-    const session = currentNursery.visitSessions[0];
-    if (!session) return;
+      const session = currentNursery.visitSessions[0];
+      if (!session) return;
 
-    try {
-      await updateVisitSession(session.id, { insights });
-    } catch (error) {
-      console.error('Failed to save insights:', error);
-      showToast.error(
-        '保存エラー',
-        'タグの保存に失敗しました。もう一度お試しください。'
-      );
-    }
-  };
+      try {
+        await updateVisitSession(session.id, { insights });
+      } catch (error) {
+        console.error('Failed to save insights:', error);
+        showToast.error(
+          '保存エラー',
+          'タグの保存に失敗しました。もう一度お試しください。'
+        );
+      }
+    },
+    [currentNursery, updateVisitSession]
+  );
 
   // ローディング状態
   if (loading.isLoading || (nurseryId && !currentNursery && !error)) {
@@ -276,12 +275,14 @@ export const NurseryDetailPage = () => {
           {/* 質問追加フォーム */}
           <Box mb={2}>
             <QuestionAddForm
-              isAddingQuestion={isAddingQuestion}
-              newQuestionText={newQuestionText}
-              newAnswerText={newAnswerText}
-              onNewQuestionTextChange={setNewQuestionText}
-              onNewAnswerTextChange={setNewAnswerText}
-              onToggleAddForm={setIsAddingQuestion}
+              isAddingQuestion={questionForm.formState.isAdding}
+              newQuestionText={questionForm.formState.questionText}
+              newAnswerText={questionForm.formState.answerText}
+              onNewQuestionTextChange={questionForm.updateQuestionText}
+              onNewAnswerTextChange={questionForm.updateAnswerText}
+              onToggleAddForm={(value) =>
+                value ? questionForm.startAdding() : questionForm.cancelAdding()
+              }
               onAddQuestion={() => void handleAddQuestion()}
             />
           </Box>
@@ -289,18 +290,14 @@ export const NurseryDetailPage = () => {
           {/* 質問リスト */}
           <QuestionsSection
             questions={questions}
-            editingQuestionId={editingQuestionId}
-            editingAnswer={editingAnswer}
-            editingQuestionText={editingQuestionText}
+            editingQuestionId={questionEditor.editState.questionId}
+            editingAnswer={questionEditor.editState.answer}
+            editingQuestionText={questionEditor.editState.questionText}
             onQuestionClick={handleQuestionClick}
             onSaveAnswer={() => void handleSaveAnswer()}
-            onCancelEdit={() => {
-              setEditingQuestionId(null);
-              setEditingAnswer('');
-              setEditingQuestionText('');
-            }}
-            onEditingAnswerChange={setEditingAnswer}
-            onEditingQuestionTextChange={setEditingQuestionText}
+            onCancelEdit={questionEditor.resetEdit}
+            onEditingAnswerChange={questionEditor.updateAnswer}
+            onEditingQuestionTextChange={questionEditor.updateQuestionText}
             onDeleteQuestion={(questionId) =>
               void handleDeleteQuestion(questionId)
             }
