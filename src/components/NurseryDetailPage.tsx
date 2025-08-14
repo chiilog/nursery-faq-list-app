@@ -51,6 +51,7 @@ export const NurseryDetailPage = () => {
   const [editingQuestionText, setEditingQuestionText] = useState('');
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState('');
+  const [newAnswerText, setNewAnswerText] = useState('');
 
   // 削除確認ダイアログの状態管理
   const {
@@ -108,12 +109,13 @@ export const NurseryDetailPage = () => {
 
     await addQuestion(currentNursery.id, session.id, {
       text: newQuestionText,
-      answer: '',
-      isAnswered: false,
+      answer: newAnswerText.trim(),
+      isAnswered: newAnswerText.trim() !== '',
     });
 
     setIsAddingQuestion(false);
     setNewQuestionText('');
+    setNewAnswerText('');
   };
 
   const handleDeleteQuestion = async (questionId: string) => {
@@ -276,7 +278,9 @@ export const NurseryDetailPage = () => {
             <QuestionAddForm
               isAddingQuestion={isAddingQuestion}
               newQuestionText={newQuestionText}
+              newAnswerText={newAnswerText}
               onNewQuestionTextChange={setNewQuestionText}
+              onNewAnswerTextChange={setNewAnswerText}
               onToggleAddForm={setIsAddingQuestion}
               onAddQuestion={() => void handleAddQuestion()}
             />
