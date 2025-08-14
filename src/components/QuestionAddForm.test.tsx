@@ -12,8 +12,10 @@ describe('QuestionAddForm', () => {
   const defaultProps = {
     isAddingQuestion: false,
     newQuestionText: '',
+    newAnswerText: '',
     onToggleAddForm: vi.fn<(value: boolean) => void>(),
     onNewQuestionTextChange: vi.fn<(value: string) => void>(),
+    onNewAnswerTextChange: vi.fn<(value: string) => void>(),
     onAddQuestion: vi.fn<() => void>(),
   };
 
@@ -56,8 +58,15 @@ describe('QuestionAddForm', () => {
     test('質問入力フィールドが表示される', () => {
       renderWithProviders(<QuestionAddForm {...openFormProps} />);
 
-      const input = screen.getByPlaceholderText('新しい質問を入力してください');
+      const input = screen.getByLabelText('質問入力');
       expect(input).toBeInTheDocument();
+    });
+
+    test('回答入力フィールドが表示される', () => {
+      renderWithProviders(<QuestionAddForm {...openFormProps} />);
+
+      const textarea = screen.getByLabelText('回答入力（任意）');
+      expect(textarea).toBeInTheDocument();
     });
 
     test('追加ボタンとキャンセルボタンが表示される', () => {
@@ -80,13 +89,31 @@ describe('QuestionAddForm', () => {
         />
       );
 
-      const input = screen.getByPlaceholderText('新しい質問を入力してください');
+      const input = screen.getByLabelText('質問入力');
       await user.type(input, 'テスト');
 
       // onChangeが呼ばれることを確認（userEvent.typeは文字ごとにonChangeを呼び出す）
       expect(mockOnChange).toHaveBeenCalled();
       // 複数回呼び出されることを確認（具体的な回数は問わない）
       expect(mockOnChange.mock.calls.length).toBeGreaterThan(0);
+    });
+
+    test('回答を入力するとonNewAnswerTextChangeが呼ばれる', async () => {
+      const user = userEvent.setup();
+      const mockOnAnswerChange = vi.fn();
+
+      renderWithProviders(
+        <QuestionAddForm
+          {...openFormProps}
+          onNewAnswerTextChange={mockOnAnswerChange}
+        />
+      );
+
+      const textarea = screen.getByLabelText('回答入力（任意）');
+      await user.type(textarea, '回答テスト');
+
+      expect(mockOnAnswerChange).toHaveBeenCalled();
+      expect(mockOnAnswerChange.mock.calls.length).toBeGreaterThan(0);
     });
 
     test('追加ボタンをクリックするとonAddQuestionが呼ばれる', async () => {
@@ -122,6 +149,28 @@ describe('QuestionAddForm', () => {
       await user.click(cancelButton);
 
       expect(mockOnToggleAddForm).toHaveBeenCalledWith(false);
+    });
+
+    test('キャンセルボタンをクリックすると入力値がクリアされる', async () => {
+      const user = userEvent.setup();
+      const mockOnQuestionChange = vi.fn();
+      const mockOnAnswerChange = vi.fn();
+
+      renderWithProviders(
+        <QuestionAddForm
+          {...openFormProps}
+          newQuestionText="テスト質問"
+          newAnswerText="テスト回答"
+          onNewQuestionTextChange={mockOnQuestionChange}
+          onNewAnswerTextChange={mockOnAnswerChange}
+        />
+      );
+
+      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      await user.click(cancelButton);
+
+      expect(mockOnQuestionChange).toHaveBeenCalledWith('');
+      expect(mockOnAnswerChange).toHaveBeenCalledWith('');
     });
 
     test('質問が空の場合、追加ボタンが無効化される', () => {
@@ -165,8 +214,49 @@ describe('QuestionAddForm', () => {
         />
       );
 
-      const input = screen.getByPlaceholderText('新しい質問を入力してください');
+      const input = screen.getByLabelText('質問入力');
       expect(input).toHaveValue('既存の質問');
+    });
+
+    test('既存の回答テキストが回答フィールドに表示される', () => {
+      renderWithProviders(
+        <QuestionAddForm
+          {...defaultProps}
+          isAddingQuestion={true}
+          newAnswerText="既存の回答"
+        />
+      );
+
+      const textarea = screen.getByLabelText('回答入力（任意）');
+      expect(textarea).toHaveValue('既存の回答');
+    });
+
+    test('質問が空で回答がある場合、追加ボタンが無効化される', () => {
+      renderWithProviders(
+        <QuestionAddForm
+          {...defaultProps}
+          isAddingQuestion={true}
+          newQuestionText=""
+          newAnswerText="回答だけがある"
+        />
+      );
+
+      const addButton = screen.getByRole('button', { name: '追加' });
+      expect(addButton).toBeDisabled();
+    });
+
+    test('質問と回答の両方がある場合、追加ボタンが有効になる', () => {
+      renderWithProviders(
+        <QuestionAddForm
+          {...defaultProps}
+          isAddingQuestion={true}
+          newQuestionText="質問"
+          newAnswerText="回答"
+        />
+      );
+
+      const addButton = screen.getByRole('button', { name: '追加' });
+      expect(addButton).not.toBeDisabled();
     });
   });
 });

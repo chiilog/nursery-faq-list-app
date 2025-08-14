@@ -2,23 +2,44 @@
  * 質問追加フォームコンポーネント
  */
 
-import { Button, Input, VStack, HStack, Text } from '@chakra-ui/react';
+import {
+  Button,
+  Input,
+  Textarea,
+  VStack,
+  HStack,
+  Text,
+} from '@chakra-ui/react';
+import { useCallback } from 'react';
 
 interface QuestionAddFormProps {
   isAddingQuestion: boolean;
   newQuestionText: string;
+  newAnswerText: string;
   onToggleAddForm: (value: boolean) => void;
   onNewQuestionTextChange: (value: string) => void;
+  onNewAnswerTextChange: (value: string) => void;
   onAddQuestion: () => void;
 }
 
 export const QuestionAddForm = ({
   isAddingQuestion,
   newQuestionText,
+  newAnswerText,
   onToggleAddForm,
   onNewQuestionTextChange,
+  onNewAnswerTextChange,
   onAddQuestion,
 }: QuestionAddFormProps) => {
+  const handleCancel = useCallback(() => {
+    onNewQuestionTextChange('');
+    onNewAnswerTextChange('');
+    onToggleAddForm(false);
+  }, [onNewQuestionTextChange, onNewAnswerTextChange, onToggleAddForm]);
+
+  const handleStartAdding = useCallback(() => {
+    onToggleAddForm(true);
+  }, [onToggleAddForm]);
   if (isAddingQuestion) {
     return (
       <VStack
@@ -33,16 +54,29 @@ export const QuestionAddForm = ({
         <Input
           size="lg"
           placeholder="新しい質問を入力してください"
+          aria-label="質問入力"
+          autoFocus
           value={newQuestionText}
           onChange={(e) => onNewQuestionTextChange(e.target.value)}
           bg="white"
           borderColor="brand.300"
           _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
         />
+        <Textarea
+          placeholder="回答があれば入力してください（任意）"
+          aria-label="回答入力（任意）"
+          value={newAnswerText}
+          onChange={(e) => onNewAnswerTextChange(e.target.value)}
+          bg="white"
+          borderColor="brand.300"
+          _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
+          rows={3}
+          resize="vertical"
+        />
         <HStack justify="flex-end" gap={2}>
           <Button
             variant="ghost"
-            onClick={() => onToggleAddForm(false)}
+            onClick={handleCancel}
             size={{ base: 'sm', md: 'md' }}
           >
             キャンセル
@@ -63,7 +97,7 @@ export const QuestionAddForm = ({
   return (
     <Button
       colorPalette="brand"
-      onClick={() => onToggleAddForm(true)}
+      onClick={handleStartAdding}
       size={{ base: 'md', md: 'lg' }}
       w="full"
     >
