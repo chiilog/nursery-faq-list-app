@@ -11,7 +11,7 @@ npm run typecheck
 ## 2. ESLintチェック実行
 
 ```bash
-npm run lint -- --max-warnings=0 --fix
+npm run lint:fix
 ```
 
 ## 3. エラーがある場合の対応
@@ -22,7 +22,7 @@ npm run lint -- --max-warnings=0 --fix
 ## 4. 修正後の再チェック
 
 ```bash
-npm run typecheck && npm run lint -- --max-warnings=0 --fix
+npm run typecheck && npm run lint:fix
 ```
 
 ## 5. テストの実行
