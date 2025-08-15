@@ -334,7 +334,15 @@ export function deleteEncryptionKey(
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   try {
     const bytes = new Uint8Array(buffer);
-    return btoa(String.fromCharCode(...bytes));
+    const CHUNK_SIZE = 0x8000; // 32KB chunks to avoid stack overflow
+    let binary = '';
+
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      const chunk = bytes.subarray(i, Math.min(i + CHUNK_SIZE, bytes.length));
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+
+    return btoa(binary);
   } catch (error) {
     throw new CryptoServiceError(
       'Base64エンコードに失敗しました',
