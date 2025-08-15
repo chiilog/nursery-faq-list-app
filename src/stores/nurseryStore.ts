@@ -135,68 +135,152 @@ const getDataStore = (encryptionEnabled: boolean) => {
   // DataStoreResult形式に統一（暗号化対応のdataStoreはすでに統合済み）
   return {
     getAllNurseries: async () => {
-      const result = await dataStore.getAllNurseries();
-      return { success: true as const, data: result };
+      try {
+        const result = await dataStore.getAllNurseries();
+        return { success: true as const, data: result };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     createNursery: async (input: CreateNurseryInput) => {
-      const nurseryId = await dataStore.createNursery(input);
-      const nursery = await dataStore.getNursery(nurseryId);
-      return { success: true as const, data: nursery! };
+      try {
+        const nurseryId = await dataStore.createNursery(input);
+        const nursery = await dataStore.getNursery(nurseryId);
+        if (!nursery) {
+          return {
+            success: false as const,
+            error: '作成された保育園が見つかりません',
+          };
+        }
+        return { success: true as const, data: nursery };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     updateNursery: async (id: string, updates: UpdateNurseryInput) => {
-      await dataStore.updateNursery(id, updates);
-      return { success: true as const, data: undefined };
+      try {
+        await dataStore.updateNursery(id, updates);
+        return { success: true as const, data: undefined };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     deleteNursery: async (id: string) => {
-      await dataStore.deleteNursery(id);
-      return { success: true as const, data: undefined };
+      try {
+        await dataStore.deleteNursery(id);
+        return { success: true as const, data: undefined };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     getNursery: async (id: string) => {
-      const result = await dataStore.getNursery(id);
-      return { success: true as const, data: result };
+      try {
+        const result = await dataStore.getNursery(id);
+        return { success: true as const, data: result };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     createVisitSession: async (
       nurseryId: string,
       input: CreateVisitSessionInput
     ) => {
-      const sessionId = await dataStore.createVisitSession(nurseryId, input);
-      const session = await dataStore.getVisitSession(sessionId);
-      return { success: true as const, data: session! };
+      try {
+        const sessionId = await dataStore.createVisitSession(nurseryId, input);
+        const session = await dataStore.getVisitSession(sessionId);
+        if (!session) {
+          return {
+            success: false as const,
+            error: '作成された見学セッションが見つかりません',
+          };
+        }
+        return { success: true as const, data: session };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     updateVisitSession: async (
       sessionId: string,
       updates: UpdateVisitSessionInput
     ) => {
-      await dataStore.updateVisitSession(sessionId, updates);
-      return { success: true as const, data: undefined };
+      try {
+        await dataStore.updateVisitSession(sessionId, updates);
+        return { success: true as const, data: undefined };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     deleteVisitSession: async (sessionId: string) => {
-      await dataStore.deleteVisitSession(sessionId);
-      return { success: true as const, data: undefined };
+      try {
+        await dataStore.deleteVisitSession(sessionId);
+        return { success: true as const, data: undefined };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     getVisitSession: async (sessionId: string) => {
-      const result = await dataStore.getVisitSession(sessionId);
-      return { success: true as const, data: result };
+      try {
+        const result = await dataStore.getVisitSession(sessionId);
+        return { success: true as const, data: result };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     addQuestion: async (
       nurseryId: string,
       sessionId: string,
       input: CreateQuestionInput
     ) => {
-      const questionId = await dataStore.addQuestion(
-        nurseryId,
-        sessionId,
-        input
-      );
-      // 質問を直接構築（簡略化）
-      const question = {
-        id: questionId,
-        text: input.text,
-        isAnswered: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      return { success: true as const, data: question };
+      try {
+        const questionId = await dataStore.addQuestion(
+          nurseryId,
+          sessionId,
+          input
+        );
+        // 質問を直接構築（簡略化）
+        const question = {
+          id: questionId,
+          text: input.text,
+          answer: input.answer || '',
+          isAnswered: input.isAnswered || false,
+          answeredAt: input.isAnswered ? new Date() : undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        return { success: true as const, data: question };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     updateQuestion: async (
       nurseryId: string,
@@ -204,16 +288,35 @@ const getDataStore = (encryptionEnabled: boolean) => {
       questionId: string,
       updates: UpdateQuestionInput
     ) => {
-      await dataStore.updateQuestion(nurseryId, sessionId, questionId, updates);
-      return { success: true as const, data: undefined };
+      try {
+        await dataStore.updateQuestion(
+          nurseryId,
+          sessionId,
+          questionId,
+          updates
+        );
+        return { success: true as const, data: undefined };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     deleteQuestion: async (
       nurseryId: string,
       sessionId: string,
       questionId: string
     ) => {
-      await dataStore.deleteQuestion(nurseryId, sessionId, questionId);
-      return { success: true as const, data: undefined };
+      try {
+        await dataStore.deleteQuestion(nurseryId, sessionId, questionId);
+        return { success: true as const, data: undefined };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
   };
 };
@@ -221,15 +324,18 @@ const getDataStore = (encryptionEnabled: boolean) => {
 /**
  * エラーハンドリングヘルパー
  */
-const handleError = (
+const createAppError = (
   error: unknown,
   defaultMessage: string,
   defaultCode: string
 ): AppError => {
-  if (error && typeof error === 'object' && 'message' in error) {
+  if (error instanceof Error) {
     return {
-      message: (error as { message: string; code?: string }).message,
-      code: (error as { message: string; code?: string }).code || defaultCode,
+      message: error.message,
+      code:
+        'code' in error && typeof error.code === 'string'
+          ? error.code
+          : defaultCode,
       timestamp: new Date(),
     };
   }
@@ -263,19 +369,21 @@ export const useNurseryStore = create<NurseryState>()(
 
             const dataStore = getDataStore(storageConfig.encryptionEnabled);
             const result = await dataStore.getAllNurseries();
-            // getDataStoreヘルパーは常にsuccess: trueを返すので、エラーハンドリング簡素化
+            if (!result.success) {
+              throw new Error(result.error);
+            }
             const nurseries = result.data;
 
             set((state) => ({
               nurseries,
               // 現在の保育園が削除されている場合はクリア
               currentNursery: state.currentNursery
-                ? nurseries.find((n) => n.id === state.currentNursery!.id) ||
-                  null
+                ? (nurseries.find((n) => n.id === state.currentNursery?.id) ??
+                  null)
                 : null,
             }));
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '保育園リストの読み込みに失敗しました',
               'LOAD_NURSERIES_FAILED'
@@ -296,6 +404,9 @@ export const useNurseryStore = create<NurseryState>()(
 
             const dataStore = getDataStore(storageConfig.encryptionEnabled);
             const result = await dataStore.createNursery(input);
+            if (!result.success) {
+              throw new Error(result.error);
+            }
             const nurseryId = result.data.id;
 
             // リストを再読み込み
@@ -303,7 +414,7 @@ export const useNurseryStore = create<NurseryState>()(
 
             return nurseryId;
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '保育園の作成に失敗しました',
               'CREATE_NURSERY_FAILED'
@@ -330,7 +441,7 @@ export const useNurseryStore = create<NurseryState>()(
             // リストを再読み込み
             await loadNurseries();
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '保育園の更新に失敗しました',
               'UPDATE_NURSERY_FAILED'
@@ -364,7 +475,7 @@ export const useNurseryStore = create<NurseryState>()(
             // リストを再読み込み
             await loadNurseries();
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '保育園の削除に失敗しました',
               'DELETE_NURSERY_FAILED'
@@ -393,6 +504,9 @@ export const useNurseryStore = create<NurseryState>()(
 
             const dataStore = getDataStore(storageConfig.encryptionEnabled);
             const result = await dataStore.getNursery(id);
+            if (!result.success) {
+              throw new Error(result.error);
+            }
             const nursery = result.data;
 
             set({
@@ -400,7 +514,7 @@ export const useNurseryStore = create<NurseryState>()(
               currentVisitSession: null, // 保育園変更時は見学セッションもクリア
             });
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '保育園情報の読み込みに失敗しました',
               'LOAD_NURSERY_FAILED'
@@ -428,6 +542,9 @@ export const useNurseryStore = create<NurseryState>()(
 
             const dataStore = getDataStore(storageConfig.encryptionEnabled);
             const result = await dataStore.createVisitSession(nurseryId, input);
+            if (!result.success) {
+              throw new Error(result.error);
+            }
             const sessionId = result.data.id;
 
             // 現在の保育園を更新
@@ -435,7 +552,7 @@ export const useNurseryStore = create<NurseryState>()(
 
             return sessionId;
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '見学セッションの作成に失敗しました',
               'CREATE_SESSION_FAILED'
@@ -475,7 +592,7 @@ export const useNurseryStore = create<NurseryState>()(
               await setCurrentNursery(currentNursery.id);
             }
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '見学セッションの更新に失敗しました',
               'UPDATE_SESSION_FAILED'
@@ -520,7 +637,7 @@ export const useNurseryStore = create<NurseryState>()(
               await setCurrentNursery(currentNursery.id);
             }
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '見学セッションの削除に失敗しました',
               'DELETE_SESSION_FAILED'
@@ -549,6 +666,9 @@ export const useNurseryStore = create<NurseryState>()(
 
             const dataStore = getDataStore(storageConfig.encryptionEnabled);
             const result = await dataStore.getVisitSession(sessionId);
+            if (!result.success) {
+              throw new Error(result.error);
+            }
             const session = result.data;
 
             if (session) {
@@ -557,7 +677,7 @@ export const useNurseryStore = create<NurseryState>()(
               throw new Error('見学セッションが見つかりません');
             }
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '見学セッション情報の読み込みに失敗しました',
               'LOAD_SESSION_FAILED'
@@ -590,6 +710,9 @@ export const useNurseryStore = create<NurseryState>()(
               sessionId,
               input
             );
+            if (!result.success) {
+              throw new Error(result.error);
+            }
             const questionId = result.data.id;
 
             // 現在の保育園情報を更新
@@ -597,7 +720,7 @@ export const useNurseryStore = create<NurseryState>()(
 
             return questionId;
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '質問の追加に失敗しました',
               'ADD_QUESTION_FAILED'
@@ -637,7 +760,7 @@ export const useNurseryStore = create<NurseryState>()(
             // 現在の保育園情報を更新
             await setCurrentNursery(nurseryId);
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '質問の更新に失敗しました',
               'UPDATE_QUESTION_FAILED'
@@ -671,7 +794,7 @@ export const useNurseryStore = create<NurseryState>()(
             // 現在の保育園情報を更新
             await setCurrentNursery(nurseryId);
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '質問の削除に失敗しました',
               'DELETE_QUESTION_FAILED'
@@ -711,7 +834,7 @@ export const useNurseryStore = create<NurseryState>()(
             // 現在の保育園情報を更新
             await setCurrentNursery(currentNursery.id);
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '気づきの追加に失敗しました',
               'ADD_INSIGHT_FAILED'
@@ -754,7 +877,7 @@ export const useNurseryStore = create<NurseryState>()(
             // 現在の保育園情報を更新
             await setCurrentNursery(currentNursery.id);
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '気づきの削除に失敗しました',
               'REMOVE_INSIGHT_FAILED'
@@ -788,7 +911,7 @@ export const useNurseryStore = create<NurseryState>()(
             // 現在の保育園情報を更新
             await setCurrentNursery(currentNursery.id);
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '気づきの更新に失敗しました',
               'UPDATE_INSIGHTS_FAILED'
@@ -822,7 +945,7 @@ export const useNurseryStore = create<NurseryState>()(
             // データをリロードして新しいストレージに適用
             await loadNurseries();
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               '暗号化設定の変更に失敗しました',
               'TOGGLE_ENCRYPTION_FAILED'
@@ -834,7 +957,8 @@ export const useNurseryStore = create<NurseryState>()(
         },
 
         async migrateData() {
-          const { setLoading, clearError, storageConfig } = get();
+          const { setLoading, clearError, storageConfig, loadNurseries } =
+            get();
 
           try {
             setLoading({
@@ -843,25 +967,66 @@ export const useNurseryStore = create<NurseryState>()(
             });
             clearError();
 
-            // 現在のストアから全データを取得
+            // 移行元のストア（現在の設定と逆）から全データを取得
             const sourceStore = getDataStore(!storageConfig.encryptionEnabled);
+            const targetStore = getDataStore(storageConfig.encryptionEnabled);
 
-            const result = await sourceStore.getAllNurseries();
-            const sourceNurseries = result.data;
+            const sourceResult = await sourceStore.getAllNurseries();
+            if (!sourceResult.success) {
+              throw new Error(
+                `移行元データの取得に失敗: ${sourceResult.error}`
+              );
+            }
 
-            // 移行実行（詳細な移行ロジックは実装時に詳細化）
+            const sourceNurseries = sourceResult.data;
+
+            if (sourceNurseries.length === 0) {
+              console.log('移行対象のデータが見つかりません');
+              return;
+            }
+
+            // 各保育園データを新しいストレージ形式に移行
+            let migratedCount = 0;
+            for (const nursery of sourceNurseries) {
+              const createResult = await targetStore.createNursery({
+                name: nursery.name,
+                visitDate: nursery.visitSessions[0]?.visitDate || undefined,
+              });
+
+              if (createResult.success) {
+                // 見学セッションと質問データも移行
+                const newNursery = createResult.data;
+                for (const session of nursery.visitSessions.slice(1)) {
+                  // 最初のセッションは作成時に自動生成されるのでスキップ
+                  await targetStore.createVisitSession(newNursery.id, {
+                    visitDate: session.visitDate || new Date(),
+                    status: session.status,
+                    questions: session.questions.map((q) => ({
+                      text: q.text,
+                      answer: q.answer,
+                      isAnswered: q.isAnswered,
+                    })),
+                    insights: session.insights,
+                  });
+                }
+                migratedCount++;
+              }
+            }
+
+            // 移行完了後にデータをリロード
+            await loadNurseries();
+
             console.log(
-              'Data migration completed for',
-              sourceNurseries.length,
-              'nurseries'
+              `Data migration completed: ${migratedCount}/${sourceNurseries.length} nurseries migrated`
             );
           } catch (error) {
-            const appError = handleError(
+            const appError = createAppError(
               error,
               'データ移行に失敗しました',
               'MIGRATE_DATA_FAILED'
             );
             set({ error: appError });
+            throw error;
           } finally {
             setLoading({ isLoading: false });
           }
@@ -917,9 +1082,8 @@ export const useNurseryStore = create<NurseryState>()(
 
           const overallProgress =
             totalQuestions > 0
-              ? Math.round(
-                  (totalAnsweredQuestions / totalQuestions) * 100 * 100
-                ) / 100
+              ? Math.round((totalAnsweredQuestions / totalQuestions) * 10000) /
+                100
               : 0;
 
           return {
