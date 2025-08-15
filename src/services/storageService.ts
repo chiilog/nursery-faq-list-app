@@ -7,15 +7,44 @@
 
 import { DataStoreError } from '../types/errors';
 
+/**
+ * ストレージサービスのインターフェース
+ * localStorage操作を抽象化し、テスタビリティを向上させる
+ */
 export interface StorageService {
+  /**
+   * 指定されたキーの値を取得する
+   * @param key - 取得するキー
+   * @returns 値またはnull
+   * @throws {DataStoreError} 読み込みエラーの場合
+   */
   getItem(key: string): string | null;
+
+  /**
+   * 指定されたキーに値を設定する
+   * @param key - 設定するキー
+   * @param value - 設定する値
+   * @throws {DataStoreError} 書き込みエラーの場合
+   */
   setItem(key: string, value: string): void;
+
+  /**
+   * 指定されたキーを削除する
+   * @param key - 削除するキー
+   * @throws {DataStoreError} 削除エラーの場合
+   */
   removeItem(key: string): void;
+
+  /**
+   * すべてのデータをクリアする
+   * @throws {DataStoreError} クリアエラーの場合
+   */
   clear(): void;
 }
 
 /**
  * localStorage実装
+ * ブラウザのlocalStorageAPIをStorageServiceインターフェースで抽象化
  */
 export class LocalStorageService implements StorageService {
   getItem(key: string): string | null {
@@ -67,5 +96,8 @@ export class LocalStorageService implements StorageService {
   }
 }
 
-// デフォルトインスタンス
+/**
+ * デフォルトのストレージサービスインスタンス
+ * アプリケーション全体で使用される標準のlocalStorage実装
+ */
 export const defaultStorageService = new LocalStorageService();
