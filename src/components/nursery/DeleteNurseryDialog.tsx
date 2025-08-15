@@ -23,7 +23,7 @@ export const DeleteNurseryDialog = ({
 
     const result = await handleDelete(nursery.id);
     if (result.success) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -41,7 +41,9 @@ export const DeleteNurseryDialog = ({
   return (
     <Dialog.Root
       open={isOpen}
-      onOpenChange={(details) => details.open || handleClose()}
+      onOpenChange={(details) => {
+        if (!details.open) handleClose();
+      }}
       size="md"
       motionPreset="slide-in-bottom"
     >

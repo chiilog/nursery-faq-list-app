@@ -149,6 +149,7 @@ export function validateVisitDate(
 
   const oneYearFromNow = new Date();
   oneYearFromNow.setFullYear(today.getFullYear() + 1);
+  oneYearFromNow.setHours(0, 0, 0, 0);
   if (dateValue > oneYearFromNow) {
     errors.push('見学日は1年以内の日付を選択してください');
   }

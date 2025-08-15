@@ -133,6 +133,6 @@ export interface NurseryStats {
 }
 
 // データストアの結果型（成功/失敗の型安全性を保証）
-export type DataStoreResult<T> =
+export type DataStoreResult<T, E = string> =
   | { success: true; data: T }
-  | { success: false; error: string };
+  | { success: false; error: E };
