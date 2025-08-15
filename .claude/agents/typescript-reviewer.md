@@ -110,23 +110,6 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
    - コメントと型定義の整合性
    - パフォーマンス最適化
 
-### 推奨する tsconfig.json 設定
-
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true
-  }
-}
-```
-
 ### 説明スタイル
 
 - **具体例を重視**: 悪い例と良い例を対比して説明
