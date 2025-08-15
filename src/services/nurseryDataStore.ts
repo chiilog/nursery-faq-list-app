@@ -85,14 +85,15 @@ function isEncryptedDataMap(
   return (
     typeof value === 'object' &&
     value !== null &&
+    !Array.isArray(value) &&
     Object.values(value).every(
       (item): item is EncryptedData =>
-        typeof item === 'object' &&
         item !== null &&
+        typeof item === 'object' &&
         'data' in item &&
         'iv' in item &&
-        typeof (item as EncryptedData).data === 'string' &&
-        typeof (item as EncryptedData).iv === 'string'
+        typeof (item as Record<string, unknown>).data === 'string' &&
+        typeof (item as Record<string, unknown>).iv === 'string'
     )
   );
 }
@@ -168,7 +169,29 @@ class NurseryDataStore {
 
       for (const [nurseryId, encrypted] of Object.entries(parsedData)) {
         const decryptedJson = await decryptData(encrypted, key);
-        decryptedData[nurseryId] = JSON.parse(decryptedJson) as Nursery;
+        try {
+          const parsedNursery: unknown = JSON.parse(decryptedJson);
+          // 基本的な型チェック
+          if (
+            !parsedNursery ||
+            typeof parsedNursery !== 'object' ||
+            !('id' in parsedNursery) ||
+            typeof (parsedNursery as Record<string, unknown>).id !== 'string'
+          ) {
+            throw new Error(
+              `Invalid nursery data structure for ID: ${nurseryId}`
+            );
+          }
+          decryptedData[nurseryId] = parsedNursery as Nursery;
+        } catch (parseError) {
+          throw new Error(
+            `Failed to parse decrypted data for nursery ${nurseryId}: ${
+              parseError instanceof Error
+                ? parseError.message
+                : String(parseError)
+            }`
+          );
+        }
       }
 
       return decryptedData;
@@ -193,31 +216,42 @@ class NurseryDataStore {
   }
 
   /**
+   * NurseryオブジェクトをSerializedNursery形式に変換する
+   *
+   * @private
+   * @param nursery 変換元のNurseryオブジェクト
+   * @returns シリアライズされたNurseryオブジェクト
+   */
+  private serializeNursery(nursery: Nursery): SerializedNursery {
+    return {
+      ...nursery,
+      createdAt: nursery.createdAt.toISOString(),
+      updatedAt: nursery.updatedAt.toISOString(),
+      visitSessions: nursery.visitSessions.map((session) => ({
+        ...session,
+        visitDate: session.visitDate?.toISOString() || null,
+        createdAt: session.createdAt.toISOString(),
+        updatedAt: session.updatedAt.toISOString(),
+        questions: session.questions.map((question) => ({
+          ...question,
+          answeredAt: question.answeredAt?.toISOString(),
+          createdAt: question.createdAt.toISOString(),
+          updatedAt: question.updatedAt.toISOString(),
+        })),
+      })),
+    };
+  }
+
+  /**
    * データを読み込み（暗号化設定に応じて自動選択）
    */
   private async loadData(): Promise<Record<string, SerializedNursery>> {
     if (this.encryptionEnabled) {
       const data = await this.loadEncryptedData();
-      // Nurseryデータをシリアライズ形式に変換
+      // 共通のシリアライズメソッドを使用してデータ変換
       const serializedData: Record<string, SerializedNursery> = {};
       for (const [id, nursery] of Object.entries(data)) {
-        serializedData[id] = {
-          ...nursery,
-          createdAt: nursery.createdAt.toISOString(),
-          updatedAt: nursery.updatedAt.toISOString(),
-          visitSessions: nursery.visitSessions.map((session) => ({
-            ...session,
-            visitDate: session.visitDate?.toISOString() || null,
-            createdAt: session.createdAt.toISOString(),
-            updatedAt: session.updatedAt.toISOString(),
-            questions: session.questions.map((question) => ({
-              ...question,
-              answeredAt: question.answeredAt?.toISOString(),
-              createdAt: question.createdAt.toISOString(),
-              updatedAt: question.updatedAt.toISOString(),
-            })),
-          })),
-        };
+        serializedData[id] = this.serializeNursery(nursery);
       }
       return serializedData;
     } else {
@@ -838,12 +872,31 @@ class NurseryDataStore {
   }
 }
 
-// ファクトリ関数
+/**
+ * 保育園データストアのファクトリ関数
+ *
+ * @param options - データストアの設定オプション
+ * @returns 設定されたNurseryDataStoreインスタンス
+ *
+ * @example
+ * ```typescript
+ * // 暗号化有効
+ * const encryptedStore = createNurseryDataStore({ encryptionEnabled: true });
+ *
+ * // カスタムストレージサービス
+ * const customStore = createNurseryDataStore({
+ *   storageService: new MockStorageService()
+ * });
+ * ```
+ */
 export const createNurseryDataStore = (options?: NurseryDataStoreOptions) => {
   return new NurseryDataStore(options);
 };
 
-// デフォルトインスタンス（非暗号化）
+/**
+ * デフォルトの保育園データストアインスタンス（非暗号化）
+ * アプリケーション全体で使用される標準のデータストア
+ */
 export const nurseryDataStore = new NurseryDataStore({
   encryptionEnabled: false,
 });

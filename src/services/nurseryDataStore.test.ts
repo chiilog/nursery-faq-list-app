@@ -435,6 +435,7 @@ describe('NurseryDataStore（統合アーキテクチャ）', () => {
 
     // Note: 暗号化機能の詳細テストはブラウザ環境のE2Eテストで実施
     // Node.js環境ではWeb Crypto APIの制約によりテストが困難
+    // E2Eテストは cypress/e2e/crypto.cy.ts または同等のテストファイルで実施予定
   });
 
   describe('デフォルトエクスポート（非暗号化）', () => {
