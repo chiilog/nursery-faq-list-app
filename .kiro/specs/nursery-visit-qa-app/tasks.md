@@ -13,7 +13,7 @@
 
 - 🔄 OAuth 認証（Google/LINE）
 - 🔄 リアルタイム共有（Supabase Realtime）
-- 🔄 AWS Amplify との同期
+- 🔄 AWS Amplify Hosting へのデプロイ（プレビューデプロイ含む）
 - 🔄 オフライン機能
 
 ### Phase 3: 高度な機能・Nice to Have
@@ -293,6 +293,10 @@
     - スクリプト読み込み失敗時の処理
     - 遅延読み込みの実装
     - デバッグ機能の追加（開発環境のみ）
+    - Consent Mode v2 の導入
+      - 初期状態で consent を denied に設定（ads, analytics）
+      - 同意取得後に consent を granted に更新
+      - EEA 等の地域別挙動に備えた拡張余地を確保
   - _要件: 9.1, 9.2, 9.6, 9.7_
 
 - [ ] 8.6 Microsoft Clarity 統合の実装（TDD）
@@ -341,6 +345,9 @@
     - セキュリティヘッダーの強化
     - 分析スクリプトの遅延読み込み
     - エラー監視機能の実装
+    - CSP の強化（'unsafe-inline' 回避）
+      - ビルド時 nonce 付与 or SRI/hash を採用
+      - Clarity/gtag の読み込み方式を nonce/hash と両立させる
   - _要件: 9.6, 9.7_
 
 ### 9. デプロイメント準備
@@ -358,6 +365,7 @@
     - VITE_GA4_MEASUREMENT_ID の設定
     - VITE_CLARITY_PROJECT_ID の設定
     - VITE_ANALYTICS_ENABLED の設定
+    - VITE_ANALYTICS_DEBUG の設定（プレビュー/開発ブランチのみ true）
   - カスタムドメイン設定（オプション）
   - プレビューデプロイとブランチ戦略の設定
   - _要件: 全般_

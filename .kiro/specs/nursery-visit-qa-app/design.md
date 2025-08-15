@@ -719,21 +719,16 @@ interface AnalyticsEvent {
   timestamp: Date;
 }
 
-class AnalyticsService {
-  private isEnabled: boolean = false;
-  private consentGiven: boolean = false;
-
+interface AnalyticsService {
   // 初期化
-  async initialize(): Promise<void>;
-
+  initialize(): Promise<void>;
   // 同意管理
   setConsent(consent: boolean): void;
   getConsent(): boolean;
-
+  disable(): void;
   // イベント送信
   trackPageView(page: string): void;
   trackEvent(event: AnalyticsEvent): void;
-
   // 主要イベント
   trackNurseryCreated(nurseryId: string): void;
   trackQuestionAdded(nurseryId: string, questionCount: number): void;
@@ -744,39 +739,82 @@ class AnalyticsService {
 
 // Google Analytics 4 実装
 class GA4Service implements AnalyticsService {
+  private isEnabled = false;
+  private consentGiven = false;
+  private measurementId: string = (import.meta as any).env
+    .VITE_GA4_MEASUREMENT_ID as string;
   private gtag: any;
 
   async initialize(): Promise<void> {
     if (!this.consentGiven) return;
+    if ((import.meta as any).env.VITE_ANALYTICS_ENABLED === 'false') return;
+    if (navigator.doNotTrack === '1') return;
 
     // GA4スクリプトの動的読み込み
     await this.loadGA4Script();
-    this.setupGA4();
+    this.isEnabled = true;
+  }
+
+  setConsent(consent: boolean): void {
+    this.consentGiven = consent;
+    if (!consent) this.disable();
+
+    // Consent Mode v2: 同意状態を更新
+    if (consent && (window as any).gtag) {
+      (window as any).gtag('consent', 'update', {
+        ad_storage: 'granted',
+        analytics_storage: 'granted',
+      });
+    }
+  }
+
+  getConsent(): boolean {
+    return this.consentGiven;
+  }
+
+  disable(): void {
+    this.isEnabled = false;
+    // Consent Mode v2: 全て denied に更新
+    if ((window as any).gtag) {
+      (window as any).gtag('consent', 'update', {
+        ad_storage: 'denied',
+        analytics_storage: 'denied',
+      });
+    }
   }
 
   private async loadGA4Script(): Promise<void> {
     const script = document.createElement('script');
     script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${this.measurementId}`;
     document.head.appendChild(script);
 
     // gtag関数の初期化
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function () {
-      window.dataLayer.push(arguments);
+    (window as any).dataLayer = (window as any).dataLayer || [];
+    (window as any).gtag = function () {
+      (window as any).dataLayer.push(arguments);
     };
-    window.gtag('js', new Date());
-    window.gtag('config', GA4_MEASUREMENT_ID, {
+    (window as any).gtag('js', new Date());
+
+    // Consent Mode v2: 初期は denied
+    (window as any).gtag('consent', 'default', {
+      ad_storage: 'denied',
+      analytics_storage: 'denied',
+    });
+
+    (window as any).gtag('config', this.measurementId, {
       anonymize_ip: true,
       allow_google_signals: false,
       allow_ad_personalization_signals: false,
+      // debug_mode は開発時のみ
+      debug_mode: (import.meta as any).env.VITE_ANALYTICS_DEBUG === 'true',
     });
   }
 
   trackPageView(page: string): void {
     if (!this.isEnabled) return;
 
-    window.gtag('config', GA4_MEASUREMENT_ID, {
+    (window as any).gtag('config', this.measurementId, {
       page_path: page,
     });
   }
@@ -784,20 +822,82 @@ class GA4Service implements AnalyticsService {
   trackEvent(event: AnalyticsEvent): void {
     if (!this.isEnabled) return;
 
-    window.gtag('event', event.name, event.parameters);
+    (window as any).gtag('event', event.name, event.parameters);
+  }
+
+  trackNurseryCreated(nurseryId: string): void {
+    this.trackEvent({
+      name: 'nursery_created',
+      parameters: { nursery_id: nurseryId },
+      timestamp: new Date(),
+    });
+  }
+
+  trackQuestionAdded(nurseryId: string, questionCount: number): void {
+    this.trackEvent({
+      name: 'question_added',
+      parameters: { nursery_id: nurseryId, question_count: questionCount },
+      timestamp: new Date(),
+    });
+  }
+
+  trackInsightAdded(nurseryId: string, insightCount: number): void {
+    this.trackEvent({
+      name: 'insight_added',
+      parameters: { nursery_id: nurseryId, insight_count: insightCount },
+      timestamp: new Date(),
+    });
+  }
+
+  trackNurseryDeleted(nurseryId: string): void {
+    this.trackEvent({
+      name: 'nursery_deleted',
+      parameters: { nursery_id: nurseryId },
+      timestamp: new Date(),
+    });
+  }
+
+  trackInsightsViewed(nurseryId: string): void {
+    this.trackEvent({
+      name: 'insights_viewed',
+      parameters: { nursery_id: nurseryId },
+      timestamp: new Date(),
+    });
   }
 }
 
 // Microsoft Clarity 実装
 class ClarityService {
-  private clarityId: string;
-  private isEnabled: boolean = false;
+  private clarityId: string = (import.meta as any).env
+    .VITE_CLARITY_PROJECT_ID as string;
+  private isEnabled = false;
+  private consentGiven = false;
 
   async initialize(): Promise<void> {
     if (!this.consentGiven) return;
+    if ((import.meta as any).env.VITE_ANALYTICS_ENABLED === 'false') return;
+    if (navigator.doNotTrack === '1') return;
 
     await this.loadClarityScript();
     this.setupDataMasking();
+    this.isEnabled = true;
+  }
+
+  setConsent(consent: boolean): void {
+    this.consentGiven = consent;
+    if (!consent) this.disable();
+  }
+
+  getConsent(): boolean {
+    return this.consentGiven;
+  }
+
+  disable(): void {
+    this.isEnabled = false;
+    if ((window as any).clarity) {
+      (window as any).clarity('consent', false);
+      (window as any).clarity('stop');
+    }
   }
 
   private async loadClarityScript(): Promise<void> {
@@ -810,6 +910,9 @@ class ClarityService {
       })(window, document, "clarity", "script", "${this.clarityId}");
     `;
     document.head.appendChild(script);
+
+    // 可能なら consent を false で初期化
+    (window as any).clarity?.('consent', false);
   }
 
   private setupDataMasking(): void {
@@ -817,6 +920,10 @@ class ClarityService {
     const sensitiveSelectors = [
       'input[type="text"]',
       'input[type="email"]',
+      'input[type="tel"]',
+      'input[type="password"]',
+      'input[type="date"]',
+      'input[type="datetime-local"]',
       'textarea',
       '[data-sensitive]',
     ];
@@ -826,15 +933,9 @@ class ClarityService {
         element.setAttribute('data-clarity-mask', 'true');
       });
     });
-  }
 
-  setConsent(consent: boolean): void {
-    this.isEnabled = consent;
-
-    if (!consent && window.clarity) {
-      // Clarityの録画を停止
-      window.clarity('stop');
-    }
+    // 追加でテキスト全体のマスクを有効化
+    (window as any).clarity?.('set', 'maskText', true);
   }
 }
 ```
@@ -863,6 +964,10 @@ class PrivacyManager {
     const stored = localStorage.getItem(this.storageKey);
     if (stored) {
       this.settings = JSON.parse(stored);
+      // Date を復元
+      if (this.settings?.consentTimestamp) {
+        this.settings.consentTimestamp = new Date(this.settings.consentTimestamp as any);
+      }
     } else {
       this.settings = {
         analyticsConsent: false,
@@ -876,6 +981,15 @@ class PrivacyManager {
   // 設定の保存
   private saveSettings(): void {
     localStorage.setItem(this.storageKey, JSON.stringify(this.settings));
+  }
+
+  // 設定の取得（読み取り専用）
+  getSettings(): Readonly<PrivacySettings> {
+    return this.settings;
+  }
+
+  getConsentTimestamp(): Date {
+    return this.settings.consentTimestamp;
   }
 
   // 同意状態の取得
@@ -934,8 +1048,11 @@ const CookieConsentBanner: React.FC = () => {
   const handleAccept = () => {
     privacyManager.setAllConsent(true);
     setIsVisible(false);
-    // 分析サービスを初期化
+    // 分析サービスを初期化・同意反映
+    analyticsService.setConsent(true);
+    clarityService.setConsent(true);
     analyticsService.initialize();
+    clarityService.initialize();
   };
 
   const handleDecline = () => {
@@ -967,7 +1084,7 @@ const CookieConsentBanner: React.FC = () => {
         <Button variant="outline" onClick={handleDecline}>
           拒否する
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => {/* プライバシーポリシーを表示 */}}>
+        <Button as={Link} to="/privacy-policy" variant="ghost" size="sm">
           詳細
         </Button>
       </HStack>
@@ -1046,7 +1163,7 @@ const PrivacySettingsPage: React.FC = () => {
 
       <Box>
         <Text fontSize="sm" color="gray.600">
-          最終更新: {privacyManager.settings.consentTimestamp.toLocaleDateString()}
+          最終更新: {privacyManager.getConsentTimestamp().toLocaleDateString()}
         </Text>
         <Text fontSize="sm" color="gray.600">
           設定はいつでも変更できます
