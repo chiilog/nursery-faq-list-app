@@ -8,8 +8,18 @@ import {
 } from './cryptoService';
 
 // TextEncoder/TextDecoderのモック
-(globalThis as any).TextEncoder = TextEncoder;
-(globalThis as any).TextDecoder = TextDecoder;
+if (!globalThis.TextEncoder) {
+  Object.defineProperty(globalThis, 'TextEncoder', {
+    value: TextEncoder,
+    writable: true,
+  });
+}
+if (!globalThis.TextDecoder) {
+  Object.defineProperty(globalThis, 'TextDecoder', {
+    value: TextDecoder,
+    writable: true,
+  });
+}
 
 // Web Crypto APIのモック
 const mockCrypto = {
@@ -120,7 +130,7 @@ describe('cryptoService', () => {
       const originalText = '保育園の質問リストデータ';
       const encryptedResult = {
         data: 'SGVsbG8gV29ybGQ=', // Base64エンコードされたダミーデータ（"Hello World"）
-        iv: 'AQIDBAUGBwgJCgsMDQ4P', // Base64エンコードされた有効な12バイトIV
+        iv: 'AQIDBAUGBwgJCgsM', // Base64エンコードされた有効な12バイトIV
       };
 
       // TextEncoderで元のテキストをエンコード
@@ -147,7 +157,7 @@ describe('cryptoService', () => {
       const mockKey = { type: 'secret' } as CryptoKey;
       const invalidEncryptedResult = {
         data: 'invalid-base64!@#',
-        iv: 'AQIDBAUGBwgJCgsMDQ4P',
+        iv: 'AQIDBAUGBwgJCgsM', // 正しい12バイトIV
       };
 
       await expect(
@@ -251,7 +261,7 @@ describe('cryptoService', () => {
           'End-to-end test skipped due to mocked environment:',
           error
         );
-        expect(true).toBe(true); // テストをパス
+        return; // テストを早期終了
       }
     });
   });
