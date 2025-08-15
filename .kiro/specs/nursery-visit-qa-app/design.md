@@ -25,8 +25,8 @@
            │                 │
            ▼                 ▼
 ┌─────────────────┐ ┌─────────────────┐
-│ Cloudflare      │ │   Cloudflare    │
-│ Workers (API)   │ │   D1 (SQLite)   │
+│   AWS Amplify   │ │    Supabase     │
+│   (Hosting)     │ │  (PostgreSQL)   │
 └─────────────────┘ └─────────────────┘
 ```
 
@@ -35,30 +35,32 @@
 - **フロントエンド**: React 19 + TypeScript + Vite
 - **UI フレームワーク**: Chakra UI v3 + Emotion
 - **状態管理**: Zustand（軽量でシンプル）
-- **バックエンド API**: Cloudflare Workers（エッジ実行）
-- **データベース**: Cloudflare D1（SQLite、分散型）
+- **バックエンド API**: Supabase（PostgreSQL、REST API）
+- **データベース**: Supabase（PostgreSQL、クラウド型）
 - **認証**: Supabase Auth（OAuth対応）
 - **リアルタイム通信**: Supabase Realtime（WebSocket）
 - **オフラインキャッシュ**: IndexedDB（Dexie.js ラッパー使用）
 - **PWA**: Workbox（Service Worker 管理）
 - **テスト**: Vitest + React Testing Library
-- **ホスティング**: Cloudflare Workers Static Assets
+- **ホスティング**: AWS Amplify Hosting
 
-#### ハイブリッド構成の選択理由
+#### 統合プラットフォーム構成の選択理由
 
-**Supabase（認証・リアルタイム）**:
+**Supabase（フルスタックバックエンド）**:
 
 - **OAuth認証**: Google/LINE簡単設定
+- **PostgreSQLデータベース**: 高機能・高信頼性
 - **リアルタイム機能**: WebSocket ベースの自動同期
-- **実績**: 安定した認証・リアルタイム機能
+- **REST API**: 自動生成される高性能API
+- **実績**: 安定したフルスタックソリューション
 
-**Cloudflare（API・データベース・ホスティング）**:
+**AWS Amplify（ホスティング）**:
 
-- **エッジ実行**: 世界中で低レイテンシ
-- **D1データベース**: SQLiteベース、高速クエリ
-- **統合プラットフォーム**: Workers + D1 + Static Assets
+- **簡単デプロイ**: GitHubとの自動連携
+- **グローバルCDN**: 世界中で高速配信
+- **自動スケーリング**: トラフィック増加に自動対応
 - **コスト効率**: 使用量ベース課金
-- **最新技術**: 将来性の高いプラットフォーム
+- **AWS統合**: 将来的な機能拡張に対応
 
 ## コンポーネント設計
 
@@ -233,40 +235,30 @@ class SupabaseRealtimeService {
 }
 ```
 
-#### Cloudflare Workers API
+#### Supabase API サービス
 
 ```typescript
-class CloudflareAPIService {
-  // 質問リスト管理（D1データベース）
+class SupabaseAPIService {
+  // 質問リスト管理（PostgreSQLデータベース）
   async createQuestionList(
-    list: Omit<QuestionList, 'id' | 'createdAt' | 'updatedAt'>,
-    authToken: string
+    list: Omit<QuestionList, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<QuestionList>;
 
-  async getQuestionLists(authToken: string): Promise<QuestionList[]>;
+  async getQuestionLists(): Promise<QuestionList[]>;
 
   async updateQuestionList(
     id: string,
-    updates: Partial<QuestionList>,
-    authToken: string
+    updates: Partial<QuestionList>
   ): Promise<QuestionList>;
 
-  async deleteQuestionList(id: string, authToken: string): Promise<void>;
+  async deleteQuestionList(id: string): Promise<void>;
 
   // 共有機能
-  async shareQuestionList(
-    listId: string,
-    email: string,
-    authToken: string
-  ): Promise<void>;
+  async shareQuestionList(listId: string, email: string): Promise<void>;
 
-  async getSharedLists(authToken: string): Promise<QuestionList[]>;
+  async getSharedLists(): Promise<QuestionList[]>;
 
-  async removeShare(
-    listId: string,
-    userId: string,
-    authToken: string
-  ): Promise<void>;
+  async removeShare(listId: string, userId: string): Promise<void>;
 
   // 同期状態管理
   getSyncState(): SyncState;
@@ -274,55 +266,71 @@ class CloudflareAPIService {
 }
 ```
 
-#### データベーススキーマ（Cloudflare D1 - SQLite）
+#### データベーススキーマ（Supabase - PostgreSQL）
 
 ```sql
--- ユーザープロファイル
+-- ユーザープロファイル（Supabase Authと連携）
 CREATE TABLE profiles (
-  id TEXT PRIMARY KEY, -- Supabase User ID
+  id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email TEXT UNIQUE,
   display_name TEXT,
   provider TEXT NOT NULL, -- 'google', 'line' など
   provider_id TEXT NOT NULL, -- プロバイダー固有のユーザーID
   avatar_url TEXT, -- プロフィール画像URL
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(provider, provider_id)
 );
 
 -- 質問リスト
 CREATE TABLE question_lists (
-  id TEXT PRIMARY KEY, -- UUID v4
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   nursery_name TEXT,
   visit_date DATE,
-  owner_id TEXT REFERENCES profiles(id) NOT NULL,
-  is_template INTEGER DEFAULT 0, -- SQLite boolean
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  owner_id UUID REFERENCES profiles(id) NOT NULL,
+  is_template BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 質問
 CREATE TABLE questions (
-  id TEXT PRIMARY KEY, -- UUID v4
-  list_id TEXT REFERENCES question_lists(id) ON DELETE CASCADE,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  list_id UUID REFERENCES question_lists(id) ON DELETE CASCADE,
   text TEXT NOT NULL,
   answer TEXT,
-  is_answered INTEGER DEFAULT 0, -- SQLite boolean
-  answered_by TEXT REFERENCES profiles(id),
-  answered_at DATETIME,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  is_answered BOOLEAN DEFAULT FALSE,
+  answered_by UUID REFERENCES profiles(id),
+  answered_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 共有設定
 CREATE TABLE question_list_shares (
-  id TEXT PRIMARY KEY, -- UUID v4
-  list_id TEXT REFERENCES question_lists(id) ON DELETE CASCADE,
-  shared_with TEXT REFERENCES profiles(id) ON DELETE CASCADE,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  list_id UUID REFERENCES question_lists(id) ON DELETE CASCADE,
+  shared_with UUID REFERENCES profiles(id) ON DELETE CASCADE,
   permission TEXT CHECK (permission IN ('read', 'write')) DEFAULT 'write',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(list_id, shared_with)
+);
+
+-- Row Level Security (RLS) ポリシー
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE question_lists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE question_list_shares ENABLE ROW LEVEL SECURITY;
+
+-- プロファイルは自分のもののみアクセス可能
+CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- 質問リストは所有者または共有相手のみアクセス可能
+CREATE POLICY "Users can view own question lists" ON question_lists FOR SELECT USING (
+  auth.uid() = owner_id OR
+  auth.uid() IN (SELECT shared_with FROM question_list_shares WHERE list_id = question_lists.id)
 );
 
 -- インデックス（パフォーマンス最適化）
@@ -337,16 +345,16 @@ CREATE INDEX idx_shares_user ON question_list_shares(shared_with);
 ```mermaid
 sequenceDiagram
     participant F as Frontend
-    participant S as Supabase Realtime
-    participant W as Cloudflare Workers
-    participant D as D1 Database
+    participant S as Supabase API
+    participant R as Supabase Realtime
+    participant D as PostgreSQL
 
-    F->>W: 質問リスト作成 (JWT付き)
-    W->>W: JWT検証 (Supabase Auth)
-    W->>D: データ保存
-    W->>F: 作成完了レスポンス
-    F->>S: リアルタイム通知送信
-    S->>F: 他のクライアントに配信
+    F->>S: 質問リスト作成 (JWT付き)
+    S->>S: JWT検証 & RLS適用
+    S->>D: データ保存
+    S->>F: 作成完了レスポンス
+    S->>R: リアルタイム通知送信
+    R->>F: 他のクライアントに配信
     F->>F: UI更新
 ```
 
@@ -674,3 +682,987 @@ class CryptoService {
 - `HomePage` コンポーネントを保育園一覧表示に変更
 - ルーティングを `/` と `/nursery/:id` の2つに簡素化
 - 不要なページコンポーネントを削除
+
+## 分析・プライバシー機能設計
+
+### 分析機能アーキテクチャ
+
+```
+┌─────────────────────────────────────┐
+│           PWA Frontend              │
+│  ┌─────────────┐ ┌─────────────────┐│
+│  │   React     │ │ Analytics Layer ││
+│  │ Components  │ │ ┌─────────────┐ ││
+│  └─────────────┘ │ │ GA4 Service │ ││
+│                  │ │ Clarity SDK │ ││
+│                  │ │ Privacy Mgr │ ││
+│                  │ └─────────────┘ ││
+│                  └─────────────────┘│
+└─────────────────────────────────────┘
+           │                 │
+           ▼                 ▼
+┌─────────────────┐ ┌─────────────────┐
+│ Google Analytics│ │ Microsoft       │
+│ 4 (GA4)         │ │ Clarity         │
+└─────────────────┘ └─────────────────┘
+```
+
+### 分析機能コンポーネント設計
+
+#### 1. 分析サービス層
+
+```typescript
+// 分析イベント管理
+interface AnalyticsEvent {
+  name: string;
+  parameters?: Record<string, any>;
+  timestamp: Date;
+}
+
+interface AnalyticsService {
+  // 初期化
+  initialize(): Promise<void>;
+  // 同意管理
+  setConsent(consent: boolean): void;
+  getConsent(): boolean;
+  disable(): void;
+  // イベント送信
+  trackPageView(page: string): void;
+  trackEvent(event: AnalyticsEvent): void;
+  // 主要イベント
+  trackNurseryCreated(nurseryId: string): void;
+  trackQuestionAdded(nurseryId: string, questionCount: number): void;
+  trackInsightAdded(nurseryId: string, insightCount: number): void;
+  trackNurseryDeleted(nurseryId: string): void;
+  trackInsightsViewed(nurseryId: string): void;
+}
+
+// Google Analytics 4 実装
+class GA4Service implements AnalyticsService {
+  private isEnabled = false;
+  private consentGiven = false;
+  private measurementId: string = (import.meta as any).env
+    .VITE_GA4_MEASUREMENT_ID as string;
+  private gtag: any;
+
+  async initialize(): Promise<void> {
+    if (!this.consentGiven) return;
+    if ((import.meta as any).env.VITE_ANALYTICS_ENABLED === 'false') return;
+    if (navigator.doNotTrack === '1') return;
+
+    // GA4スクリプトの動的読み込み
+    await this.loadGA4Script();
+    this.isEnabled = true;
+  }
+
+  setConsent(consent: boolean): void {
+    this.consentGiven = consent;
+    if (!consent) this.disable();
+
+    // Consent Mode v2: 同意状態を更新
+    if (consent && (window as any).gtag) {
+      (window as any).gtag('consent', 'update', {
+        ad_storage: 'granted',
+        analytics_storage: 'granted',
+      });
+    }
+  }
+
+  getConsent(): boolean {
+    return this.consentGiven;
+  }
+
+  disable(): void {
+    this.isEnabled = false;
+    // Consent Mode v2: 全て denied に更新
+    if ((window as any).gtag) {
+      (window as any).gtag('consent', 'update', {
+        ad_storage: 'denied',
+        analytics_storage: 'denied',
+      });
+    }
+  }
+
+  private async loadGA4Script(): Promise<void> {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${this.measurementId}`;
+    document.head.appendChild(script);
+
+    // gtag関数の初期化
+    (window as any).dataLayer = (window as any).dataLayer || [];
+    (window as any).gtag = function () {
+      (window as any).dataLayer.push(arguments);
+    };
+    (window as any).gtag('js', new Date());
+
+    // Consent Mode v2: 初期は denied
+    (window as any).gtag('consent', 'default', {
+      ad_storage: 'denied',
+      analytics_storage: 'denied',
+    });
+
+    (window as any).gtag('config', this.measurementId, {
+      anonymize_ip: true,
+      allow_google_signals: false,
+      allow_ad_personalization_signals: false,
+      // debug_mode は開発時のみ
+      debug_mode: (import.meta as any).env.VITE_ANALYTICS_DEBUG === 'true',
+    });
+  }
+
+  trackPageView(page: string): void {
+    if (!this.isEnabled) return;
+
+    (window as any).gtag('config', this.measurementId, {
+      page_path: page,
+    });
+  }
+
+  trackEvent(event: AnalyticsEvent): void {
+    if (!this.isEnabled) return;
+
+    (window as any).gtag('event', event.name, event.parameters);
+  }
+
+  trackNurseryCreated(nurseryId: string): void {
+    this.trackEvent({
+      name: 'nursery_created',
+      parameters: { nursery_id: nurseryId },
+      timestamp: new Date(),
+    });
+  }
+
+  trackQuestionAdded(nurseryId: string, questionCount: number): void {
+    this.trackEvent({
+      name: 'question_added',
+      parameters: { nursery_id: nurseryId, question_count: questionCount },
+      timestamp: new Date(),
+    });
+  }
+
+  trackInsightAdded(nurseryId: string, insightCount: number): void {
+    this.trackEvent({
+      name: 'insight_added',
+      parameters: { nursery_id: nurseryId, insight_count: insightCount },
+      timestamp: new Date(),
+    });
+  }
+
+  trackNurseryDeleted(nurseryId: string): void {
+    this.trackEvent({
+      name: 'nursery_deleted',
+      parameters: { nursery_id: nurseryId },
+      timestamp: new Date(),
+    });
+  }
+
+  trackInsightsViewed(nurseryId: string): void {
+    this.trackEvent({
+      name: 'insights_viewed',
+      parameters: { nursery_id: nurseryId },
+      timestamp: new Date(),
+    });
+  }
+}
+
+// Microsoft Clarity 実装
+class ClarityService {
+  private clarityId: string = (import.meta as any).env
+    .VITE_CLARITY_PROJECT_ID as string;
+  private isEnabled = false;
+  private consentGiven = false;
+
+  async initialize(): Promise<void> {
+    if (!this.consentGiven) return;
+    if ((import.meta as any).env.VITE_ANALYTICS_ENABLED === 'false') return;
+    if (navigator.doNotTrack === '1') return;
+
+    await this.loadClarityScript();
+    this.setupDataMasking();
+    this.isEnabled = true;
+  }
+
+  setConsent(consent: boolean): void {
+    this.consentGiven = consent;
+    if (!consent) this.disable();
+  }
+
+  getConsent(): boolean {
+    return this.consentGiven;
+  }
+
+  disable(): void {
+    this.isEnabled = false;
+    if ((window as any).clarity) {
+      (window as any).clarity('consent', false);
+      (window as any).clarity('stop');
+    }
+  }
+
+  private async loadClarityScript(): Promise<void> {
+    const script = document.createElement('script');
+    script.innerHTML = `
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "${this.clarityId}");
+    `;
+    document.head.appendChild(script);
+
+    // 可能なら consent を false で初期化
+    (window as any).clarity?.('consent', false);
+  }
+
+  private setupDataMasking(): void {
+    // 個人情報を含む可能性のある要素をマスク
+    const sensitiveSelectors = [
+      'input[type="text"]',
+      'input[type="email"]',
+      'input[type="tel"]',
+      'input[type="password"]',
+      'input[type="date"]',
+      'input[type="datetime-local"]',
+      'textarea',
+      '[data-sensitive]',
+    ];
+
+    sensitiveSelectors.forEach((selector) => {
+      document.querySelectorAll(selector).forEach((element) => {
+        element.setAttribute('data-clarity-mask', 'true');
+      });
+    });
+
+    // 追加でテキスト全体のマスクを有効化
+    (window as any).clarity?.('set', 'maskText', true);
+  }
+}
+```
+
+#### 2. プライバシー管理コンポーネント
+
+```typescript
+// プライバシー設定管理
+interface PrivacySettings {
+  analyticsConsent: boolean;
+  clarityConsent: boolean;
+  consentTimestamp: Date;
+  consentVersion: string;
+}
+
+class PrivacyManager {
+  private settings: PrivacySettings;
+  private storageKey = 'privacy-settings';
+
+  constructor() {
+    this.loadSettings();
+  }
+
+  // 設定の読み込み
+  private loadSettings(): void {
+    const stored = localStorage.getItem(this.storageKey);
+    if (stored) {
+      this.settings = JSON.parse(stored);
+      // Date を復元
+      if (this.settings?.consentTimestamp) {
+        this.settings.consentTimestamp = new Date(this.settings.consentTimestamp as any);
+      }
+    } else {
+      this.settings = {
+        analyticsConsent: false,
+        clarityConsent: false,
+        consentTimestamp: new Date(),
+        consentVersion: '1.0'
+      };
+    }
+  }
+
+  // 設定の保存
+  private saveSettings(): void {
+    localStorage.setItem(this.storageKey, JSON.stringify(this.settings));
+  }
+
+  // 設定の取得（読み取り専用）
+  getSettings(): Readonly<PrivacySettings> {
+    return this.settings;
+  }
+
+  getConsentTimestamp(): Date {
+    return this.settings.consentTimestamp;
+  }
+
+  // 同意状態の取得
+  getAnalyticsConsent(): boolean {
+    return this.settings.analyticsConsent;
+  }
+
+  getClarityConsent(): boolean {
+    return this.settings.clarityConsent;
+  }
+
+  // 同意状態の更新
+  setAnalyticsConsent(consent: boolean): void {
+    this.settings.analyticsConsent = consent;
+    this.settings.consentTimestamp = new Date();
+    this.saveSettings();
+  }
+
+  setClarityConsent(consent: boolean): void {
+    this.settings.clarityConsent = consent;
+    this.settings.consentTimestamp = new Date();
+    this.saveSettings();
+  }
+
+  // 全体同意の設定
+  setAllConsent(consent: boolean): void {
+    this.settings.analyticsConsent = consent;
+    this.settings.clarityConsent = consent;
+    this.settings.consentTimestamp = new Date();
+    this.saveSettings();
+  }
+
+  // 同意が必要かどうかの判定
+  needsConsent(): boolean {
+    return !this.settings.consentTimestamp ||
+           this.isConsentExpired();
+  }
+
+  private isConsentExpired(): boolean {
+    const expiryDays = 365; // 1年間有効
+    const expiryDate = new Date(this.settings.consentTimestamp);
+    expiryDate.setDate(expiryDate.getDate() + expiryDays);
+    return new Date() > expiryDate;
+  }
+}
+
+// React コンポーネント
+const CookieConsentBanner: React.FC = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const privacyManager = usePrivacyManager();
+
+  useEffect(() => {
+    setIsVisible(privacyManager.needsConsent());
+  }, []);
+
+  const handleAccept = () => {
+    privacyManager.setAllConsent(true);
+    setIsVisible(false);
+    // 分析サービスを初期化・同意反映
+    analyticsService.setConsent(true);
+    clarityService.setConsent(true);
+    analyticsService.initialize();
+    clarityService.initialize();
+  };
+
+  const handleDecline = () => {
+    privacyManager.setAllConsent(false);
+    setIsVisible(false);
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <Box
+      position="fixed"
+      bottom={0}
+      left={0}
+      right={0}
+      bg="white"
+      p={4}
+      boxShadow="lg"
+      zIndex={1000}
+    >
+      <Text mb={3}>
+        このアプリでは、サービス改善のためにGoogleアナリティクスとMicrosoft Clarityを使用しています。
+        個人を特定する情報は収集しません。
+      </Text>
+      <HStack spacing={3}>
+        <Button colorScheme="blue" onClick={handleAccept}>
+          同意する
+        </Button>
+        <Button variant="outline" onClick={handleDecline}>
+          拒否する
+        </Button>
+        <Button as={Link} to="/privacy-policy" variant="ghost" size="sm">
+          詳細
+        </Button>
+      </HStack>
+    </Box>
+  );
+};
+
+const PrivacySettingsPage: React.FC = () => {
+  const privacyManager = usePrivacyManager();
+  const [analyticsConsent, setAnalyticsConsent] = useState(
+    privacyManager.getAnalyticsConsent()
+  );
+  const [clarityConsent, setClarityConsent] = useState(
+    privacyManager.getClarityConsent()
+  );
+
+  const handleAnalyticsChange = (consent: boolean) => {
+    setAnalyticsConsent(consent);
+    privacyManager.setAnalyticsConsent(consent);
+
+    if (consent) {
+      analyticsService.initialize();
+    } else {
+      analyticsService.disable();
+    }
+  };
+
+  const handleClarityChange = (consent: boolean) => {
+    setClarityConsent(consent);
+    privacyManager.setClarityConsent(consent);
+
+    if (consent) {
+      clarityService.initialize();
+    } else {
+      clarityService.disable();
+    }
+  };
+
+  return (
+    <VStack spacing={6} align="stretch">
+      <Heading size="md">プライバシー設定</Heading>
+
+      <Box>
+        <FormControl display="flex" alignItems="center">
+          <FormLabel htmlFor="analytics-consent" mb="0">
+            Googleアナリティクス
+          </FormLabel>
+          <Switch
+            id="analytics-consent"
+            isChecked={analyticsConsent}
+            onChange={(e) => handleAnalyticsChange(e.target.checked)}
+          />
+        </FormControl>
+        <Text fontSize="sm" color="gray.600" mt={1}>
+          ページビューと機能使用状況を分析します
+        </Text>
+      </Box>
+
+      <Box>
+        <FormControl display="flex" alignItems="center">
+          <FormLabel htmlFor="clarity-consent" mb="0">
+            Microsoft Clarity
+          </FormLabel>
+          <Switch
+            id="clarity-consent"
+            isChecked={clarityConsent}
+            onChange={(e) => handleClarityChange(e.target.checked)}
+          />
+        </FormControl>
+        <Text fontSize="sm" color="gray.600" mt={1}>
+          ユーザー操作の録画とヒートマップを収集します
+        </Text>
+      </Box>
+
+      <Divider />
+
+      <Box>
+        <Text fontSize="sm" color="gray.600">
+          最終更新: {privacyManager.getConsentTimestamp().toLocaleDateString()}
+        </Text>
+        <Text fontSize="sm" color="gray.600">
+          設定はいつでも変更できます
+        </Text>
+      </Box>
+
+      <Box mt={4}>
+        <Link to="/privacy-policy" color="blue.500">
+          プライバシーポリシーを確認する
+        </Link>
+      </Box>
+    </VStack>
+  );
+};
+
+// プライバシーポリシーページ
+const PrivacyPolicyPage: React.FC = () => {
+  return (
+    <Container maxW="4xl" py={8}>
+      <VStack spacing={8} align="stretch">
+        <Heading size="lg">プライバシーポリシー</Heading>
+
+        <Text fontSize="sm" color="gray.600">
+          最終更新日: 2025年8月15日
+        </Text>
+
+        <Box>
+          <Heading size="md" mb={4}>1. はじめに</Heading>
+          <Text mb={4}>
+            保育園見学質問リストアプリ（以下「本アプリ」）は、ユーザーのプライバシーを尊重し、
+            個人情報の保護に努めています。本プライバシーポリシーでは、本アプリがどのような情報を
+            収集し、どのように使用するかについて説明します。
+          </Text>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>2. 収集する情報</Heading>
+          <VStack align="stretch" spacing={3}>
+            <Box>
+              <Text fontWeight="bold" mb={2}>2.1 自動的に収集される情報</Text>
+              <UnorderedList spacing={1} ml={4}>
+                <ListItem>ページビュー情報（アクセスしたページ、滞在時間）</ListItem>
+                <ListItem>デバイス情報（ブラウザの種類、OS、画面サイズ）</ListItem>
+                <ListItem>使用機能の統計情報（保育園作成、質問追加など）</ListItem>
+                <ListItem>ユーザー操作パターン（クリック位置、スクロール動作）</ListItem>
+              </UnorderedList>
+            </Box>
+
+            <Box>
+              <Text fontWeight="bold" mb={2}>2.2 収集しない情報</Text>
+              <UnorderedList spacing={1} ml={4}>
+                <ListItem>保育園名、質問内容、回答内容などの個人的な記録</ListItem>
+                <ListItem>氏名、住所、電話番号などの個人識別情報</ListItem>
+                <ListItem>IPアドレス（匿名化処理を実施）</ListItem>
+                <ListItem>メールアドレスやその他の連絡先情報</ListItem>
+              </UnorderedList>
+            </Box>
+          </VStack>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>3. 情報の使用目的</Heading>
+          <UnorderedList spacing={2} ml={4}>
+            <ListItem>アプリの機能改善とユーザーエクスペリエンスの向上</ListItem>
+            <ListItem>技術的な問題の特定と解決</ListItem>
+            <ListItem>新機能の開発における優先順位の決定</ListItem>
+            <ListItem>アプリの使用状況の統計分析</ListItem>
+          </UnorderedList>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>4. 使用する分析ツール</Heading>
+          <VStack align="stretch" spacing={4}>
+            <Box>
+              <Text fontWeight="bold" mb={2}>4.1 Google Analytics 4</Text>
+              <Text mb={2}>
+                ページビューや機能使用状況の分析に使用します。以下の設定でプライバシーを保護しています：
+              </Text>
+              <UnorderedList spacing={1} ml={4}>
+                <ListItem>IPアドレスの匿名化</ListItem>
+                <ListItem>広告機能の無効化</ListItem>
+                <ListItem>Googleシグナルの無効化</ListItem>
+                <ListItem>データ保持期間の短縮（2ヶ月）</ListItem>
+              </UnorderedList>
+            </Box>
+
+            <Box>
+              <Text fontWeight="bold" mb={2}>4.2 Microsoft Clarity</Text>
+              <Text mb={2}>
+                ユーザー操作の録画とヒートマップ分析に使用します。以下の保護措置を実施しています：
+              </Text>
+              <UnorderedList spacing={1} ml={4}>
+                <ListItem>入力フィールドの内容を自動的にマスク</ListItem>
+                <ListItem>個人情報を含む可能性のある要素の非表示化</ListItem>
+                <ListItem>Do Not Track設定の尊重</ListItem>
+              </UnorderedList>
+            </Box>
+          </VStack>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>5. ユーザーの選択と制御</Heading>
+          <VStack align="stretch" spacing={3}>
+            <Text>
+              ユーザーは以下の方法で分析機能を制御できます：
+            </Text>
+            <UnorderedList spacing={2} ml={4}>
+              <ListItem>初回アクセス時の同意バナーで分析機能の使用を選択</ListItem>
+              <ListItem>プライバシー設定ページでいつでも設定を変更</ListItem>
+              <ListItem>個別に Google Analytics と Microsoft Clarity を制御</ListItem>
+              <ListItem>ブラウザの Do Not Track 設定の利用</ListItem>
+            </UnorderedList>
+          </VStack>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>6. データの保存と削除</Heading>
+          <VStack align="stretch" spacing={3}>
+            <Text>
+              収集されたデータは以下のように管理されます：
+            </Text>
+            <UnorderedList spacing={2} ml={4}>
+              <ListItem>Google Analytics: 2ヶ月後に自動削除</ListItem>
+              <ListItem>Microsoft Clarity: 1年後に自動削除</ListItem>
+              <ListItem>ローカルストレージ: ユーザーがブラウザから削除可能</ListItem>
+              <ListItem>同意設定: ユーザーが変更するまで保持</ListItem>
+            </UnorderedList>
+          </VStack>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>7. 第三者への情報提供</Heading>
+          <Text>
+            本アプリは、法的要請がある場合を除き、収集した情報を第三者に提供、販売、
+            または共有することはありません。分析ツールの提供者（Google、Microsoft）は、
+            それぞれのプライバシーポリシーに従って情報を処理します。
+          </Text>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>8. セキュリティ</Heading>
+          <Text>
+            本アプリは、収集した情報を保護するために適切な技術的・組織的措置を講じています。
+            ただし、インターネット上での情報伝送は完全に安全ではないことをご理解ください。
+          </Text>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>9. 子どものプライバシー</Heading>
+          <Text>
+            本アプリは13歳未満の子どもから意図的に個人情報を収集することはありません。
+            13歳未満の子どもの情報を収集していることが判明した場合、
+            速やかに削除いたします。
+          </Text>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>10. プライバシーポリシーの変更</Heading>
+          <Text>
+            本プライバシーポリシーは必要に応じて更新される場合があります。
+            重要な変更がある場合は、アプリ内で通知いたします。
+            継続してアプリを使用することで、更新されたポリシーに同意したものとみなされます。
+          </Text>
+        </Box>
+
+        <Box>
+          <Heading size="md" mb={4}>11. お問い合わせ</Heading>
+          <Text>
+            本プライバシーポリシーに関するご質問やご意見がございましたら、
+            アプリ内の設定ページからお問い合わせください。
+          </Text>
+        </Box>
+
+        <Divider />
+
+        <HStack justify="center" spacing={4}>
+          <Button as={Link} to="/privacy-settings" colorScheme="blue">
+            プライバシー設定
+          </Button>
+          <Button as={Link} to="/" variant="outline">
+            ホームに戻る
+          </Button>
+        </HStack>
+      </VStack>
+    </Container>
+  );
+};
+```
+
+#### 3. 分析イベント統合
+
+```typescript
+// React Hook for Analytics
+const useAnalytics = () => {
+  const analyticsService = useContext(AnalyticsContext);
+
+  const trackPageView = useCallback((page: string) => {
+    analyticsService.trackPageView(page);
+  }, [analyticsService]);
+
+  const trackNurseryCreated = useCallback((nurseryId: string) => {
+    analyticsService.trackNurseryCreated(nurseryId);
+  }, [analyticsService]);
+
+  const trackQuestionAdded = useCallback((nurseryId: string, questionCount: number) => {
+    analyticsService.trackQuestionAdded(nurseryId, questionCount);
+  }, [analyticsService]);
+
+  const trackInsightAdded = useCallback((nurseryId: string, insightCount: number) => {
+    analyticsService.trackInsightAdded(nurseryId, insightCount);
+  }, [analyticsService]);
+
+  return {
+    trackPageView,
+    trackNurseryCreated,
+    trackQuestionAdded,
+    trackInsightAdded
+  };
+};
+
+// Router レベルでのページビュー追跡
+const AnalyticsRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  const { trackPageView } = useAnalytics();
+
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname, trackPageView]);
+
+  return <>{children}</>;
+};
+
+// コンポーネントでの使用例
+const NurseryCreator: React.FC = () => {
+  const { trackNurseryCreated } = useAnalytics();
+
+  const handleCreateNursery = async (nurseryData: NurseryData) => {
+    try {
+      const nursery = await nurseryService.create(nurseryData);
+
+      // 分析イベントを送信
+      trackNurseryCreated(nursery.id);
+
+      // 成功処理
+      navigate(`/nursery/${nursery.id}`);
+    } catch (error) {
+      // エラー処理
+    }
+  };
+
+  return (
+    // コンポーネントのJSX
+  );
+};
+```
+
+### 環境設定とセキュリティ
+
+#### 環境変数設定
+
+```typescript
+// .env.local
+VITE_GA4_MEASUREMENT_ID = G - XXXXXXXXXX;
+VITE_CLARITY_PROJECT_ID = xxxxxxxxxx;
+VITE_ANALYTICS_ENABLED = true;
+
+// .env.development
+VITE_ANALYTICS_DEBUG = true;
+VITE_ANALYTICS_ENABLED = false;
+
+// .env.production
+VITE_ANALYTICS_DEBUG = false;
+VITE_ANALYTICS_ENABLED = true;
+```
+
+#### セキュリティ設定
+
+```typescript
+// Content Security Policy (CSP) 設定
+const cspDirectives = {
+  'script-src': [
+    "'self'",
+    "'unsafe-inline'", // GA4とClarityで必要（段階的に改善予定）
+    'https://www.googletagmanager.com',
+    'https://www.google-analytics.com',
+    'https://www.clarity.ms',
+  ],
+  'connect-src': [
+    "'self'",
+    'https://www.google-analytics.com',
+    'https://analytics.google.com',
+    'https://www.clarity.ms',
+  ],
+  'img-src': [
+    "'self'",
+    'data:',
+    'https://www.google-analytics.com',
+    'https://www.googletagmanager.com',
+  ],
+};
+
+// セキュリティ強化方針
+const securityEnhancementPlan = {
+  // Phase 1: 基本CSP実装（MVP）
+  phase1: {
+    description: '基本的なCSP設定で最低限のセキュリティを確保',
+    implementation: [
+      "'unsafe-inline'を許可（GA4/Clarityの制約による）",
+      '信頼できるドメインのみを許可',
+      'HTTPSの強制',
+    ],
+  },
+
+  // Phase 2: nonce/hashベースCSP（セキュリティ強化）
+  phase2: {
+    description: "'unsafe-inline'を回避したより安全なCSP実装",
+    implementation: [
+      'ビルド時nonceの生成と注入',
+      'インラインスクリプトのSHA256ハッシュ計算',
+      'GA4/Clarityスクリプトの動的読み込み最適化',
+    ],
+    example: `
+      // nonce ベースの実装例
+      const nonce = generateNonce(); // ビルド時生成
+      const cspDirectives = {
+        'script-src': [
+          "'self'",
+          \`'nonce-\${nonce}'\`,
+          "'sha256-{{SCRIPT_HASH}}'", // ビルド時計算
+          'https://www.googletagmanager.com',
+          'https://www.clarity.ms',
+        ],
+      };
+      
+      // スクリプト注入時にnonce付与
+      const script = document.createElement('script');
+      script.nonce = nonce;
+      script.src = 'https://www.googletagmanager.com/gtag/js';
+    `,
+  },
+
+  // Phase 3: strict-dynamic対応（将来的な拡張）
+  phase3: {
+    description: 'strict-dynamicを活用したより柔軟で安全なCSP',
+    implementation: [
+      "'strict-dynamic'の導入",
+      '信頼されたスクリプトからの動的読み込み許可',
+      'レガシーブラウザ対応の維持',
+    ],
+    example: `
+      'script-src': [
+        "'strict-dynamic'",
+        \`'nonce-\${nonce}'\`,
+        "'unsafe-inline'", // レガシーブラウザ用フォールバック
+        'https:', // レガシーブラウザ用フォールバック
+      ],
+    `,
+  },
+
+  // 実装優先順位
+  priority: {
+    high: ['Phase 1の基本CSP実装', 'HTTPS強制', 'ドメイン制限'],
+    medium: ['Phase 2のnonce/hash実装', 'スクリプト最適化'],
+    low: ['Phase 3のstrict-dynamic対応', '高度なセキュリティ機能'],
+  },
+
+  // セキュリティ監視
+  monitoring: {
+    cspReporting: 'CSP違反レポートの収集と分析',
+    securityHeaders: 'セキュリティヘッダーの定期的な検証',
+    vulnerabilityScanning: '依存関係の脆弱性スキャン',
+  },
+};
+
+// プライバシー保護設定
+const privacyConfig = {
+  // GA4設定
+  ga4: {
+    anonymize_ip: true,
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+    cookie_expires: 60 * 60 * 24 * 30, // 30日
+    storage: 'none', // Cookieを使用しない
+  },
+
+  // Clarity設定
+  clarity: {
+    maskTextContent: true,
+    maskSensitiveElements: true,
+    respectDoNotTrack: true,
+  },
+};
+```
+
+### デバッグ・監視機能
+
+```typescript
+// 開発環境でのデバッグ機能
+class AnalyticsDebugger {
+  private events: AnalyticsEvent[] = [];
+
+  logEvent(event: AnalyticsEvent): void {
+    if (import.meta.env.VITE_ANALYTICS_DEBUG === 'true') {
+      console.group(`📊 Analytics Event: ${event.name}`);
+      console.log('Parameters:', event.parameters);
+      console.log('Timestamp:', event.timestamp);
+      console.groupEnd();
+
+      this.events.push(event);
+    }
+  }
+
+  getEventHistory(): AnalyticsEvent[] {
+    return this.events;
+  }
+
+  clearHistory(): void {
+    this.events = [];
+  }
+}
+
+// エラー監視
+class AnalyticsErrorHandler {
+  handleScriptLoadError(service: 'ga4' | 'clarity', error: Error): void {
+    console.warn(`Failed to load ${service} script:`, error);
+
+    // アプリの動作に影響を与えないようにする
+    // 分析機能のみ無効化
+    if (service === 'ga4') {
+      analyticsService.disable();
+    } else if (service === 'clarity') {
+      clarityService.disable();
+    }
+  }
+
+  handleEventSendError(event: AnalyticsEvent, error: Error): void {
+    console.warn('Failed to send analytics event:', event.name, error);
+
+    // 必要に応じてローカルストレージに保存して後で再送信
+    this.queueFailedEvent(event);
+  }
+
+  private queueFailedEvent(event: AnalyticsEvent): void {
+    const failedEvents = JSON.parse(
+      localStorage.getItem('failed-analytics-events') || '[]'
+    );
+    failedEvents.push(event);
+    localStorage.setItem(
+      'failed-analytics-events',
+      JSON.stringify(failedEvents)
+    );
+  }
+}
+```
+
+### パフォーマンス最適化
+
+```typescript
+// 遅延読み込み
+class LazyAnalyticsLoader {
+  private loaded = false;
+  private pendingEvents: AnalyticsEvent[] = [];
+
+  async loadWhenReady(): Promise<void> {
+    // ユーザーの操作が落ち着いてから読み込み
+    await this.waitForUserIdle();
+
+    if (privacyManager.getAnalyticsConsent()) {
+      await this.loadAnalyticsScripts();
+      this.processPendingEvents();
+      this.loaded = true;
+    }
+  }
+
+  private async waitForUserIdle(): Promise<void> {
+    return new Promise((resolve) => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => resolve());
+      } else {
+        setTimeout(() => resolve(), 2000);
+      }
+    });
+  }
+
+  trackEvent(event: AnalyticsEvent): void {
+    if (this.loaded) {
+      analyticsService.trackEvent(event);
+    } else {
+      this.pendingEvents.push(event);
+    }
+  }
+
+  private processPendingEvents(): void {
+    this.pendingEvents.forEach((event) => {
+      analyticsService.trackEvent(event);
+    });
+    this.pendingEvents = [];
+  }
+}
+```
+
+この設計により、プライバシーを尊重しながら効果的な分析機能を提供し、ユーザーが安心してアプリを使用できる環境を構築します。
