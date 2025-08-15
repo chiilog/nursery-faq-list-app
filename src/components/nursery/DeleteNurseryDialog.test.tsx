@@ -3,7 +3,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../test/test-utils';
 import { DeleteNurseryDialog } from './DeleteNurseryDialog';
-import type { Nursery } from '../../types';
+import type { Nursery } from '../../types/data';
 
 // React Routerのモック
 vi.mock('react-router-dom', async () => {

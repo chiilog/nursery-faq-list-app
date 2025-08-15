@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Dialog, Input, Text, VStack, Alert, Box } from '@chakra-ui/react';
-import type { Nursery } from '../../types';
+import type { Nursery } from '../../types/data';
 import { ActionButtons } from '../ui/ActionButtons';
 import { useDeleteNursery } from '../../hooks/useDeleteNursery';
 
