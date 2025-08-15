@@ -47,6 +47,7 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
    function reverse(s: String): String;
 
    // ✅ 推奨パターン
+   type ProcessedData = { id: string; value: number }; // 例示用
    function process(data: unknown): ProcessedData;
    function reverse(s: string): string;
    ```
@@ -68,13 +69,14 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
 3. **関数設計の最適化**
 
    ```typescript
-   // ❌ 複雑なオーバーロード
-   declare function fn(x: unknown): unknown;
-   declare function fn(x: HTMLElement): number;
+   // ❌ 不要なオーバーロード
+   function len(x: string): number;
+   function len(x: any[]): number;
 
-   // ✅ 適切な順序とユニオン型
-   declare function fn(x: HTMLElement): number;
-   declare function fn(x: unknown): unknown;
+   // ✅ ユニオン型+型ガードで簡潔に
+   function len(x: string | any[]): number {
+     return x.length;
+   }
    ```
 
 4. **ユーティリティ型の活用**
@@ -125,3 +127,29 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
 - パフォーマンスクリティカルな部分での型設計の最適化
 
 このエージェントは、TypeScriptコードの品質向上と型安全性の確保を通じて、保守しやすく堅牢なアプリケーション開発をサポートします。
+
+### 参照元リンク
+
+このサブエージェントは以下のTypeScript公式ドキュメントに基づいて作成されています：
+
+#### 主要参考文献
+
+- Do's and Don'ts: https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html
+- Everyday Types: https://www.typescriptlang.org/docs/handbook/2/everyday-types.html
+- The Basics: https://www.typescriptlang.org/docs/handbook/2/basic-types.html
+- Utility Types: https://www.typescriptlang.org/docs/handbook/utility-types.html
+- Advanced Types: https://www.typescriptlang.org/docs/handbook/advanced-types.html
+
+#### 補助資料
+
+- TypeScript for JavaScript Programmers: https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html
+- TypeScript for the New Programmer: https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html
+- TypeScript Handbook: https://www.typescriptlang.org/docs/handbook/intro.html
+
+#### 最新情報
+
+- TypeScript公式サイト: https://www.typescriptlang.org/
+- TypeScript GitHub: https://github.com/Microsoft/TypeScript
+- リリースノート: https://www.typescriptlang.org/docs/handbook/release-notes/
+
+すべてのベストプラクティスと推奨事項は、これらの公式文書から直接抽出されており、TypeScriptチームによって推奨されている標準的な手法に基づいています。
