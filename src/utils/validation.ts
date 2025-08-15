@@ -9,6 +9,13 @@ import type {
   Question,
 } from '../types/data';
 
+// バリデーション制限値の定数定義
+export const VALIDATION_LIMITS = {
+  QUESTION_TEXT_MAX_LENGTH: 500,
+  ANSWER_TEXT_MAX_LENGTH: 1000,
+  NURSERY_NAME_MAX_LENGTH: 100,
+} as const;
+
 // エラーメッセージの型定義
 export interface ValidationResult {
   isValid: boolean;
@@ -25,8 +32,10 @@ export function validateQuestionText(text: string): ValidationResult {
     errors.push('質問内容を入力してください');
   }
 
-  if (text.trim().length > 500) {
-    errors.push('質問内容は500文字以内で入力してください');
+  if (text.trim().length > VALIDATION_LIMITS.QUESTION_TEXT_MAX_LENGTH) {
+    errors.push(
+      `質問内容は${VALIDATION_LIMITS.QUESTION_TEXT_MAX_LENGTH}文字以内で入力してください`
+    );
   }
 
   return {
@@ -41,8 +50,10 @@ export function validateQuestionText(text: string): ValidationResult {
 export function validateAnswerText(answer: string): ValidationResult {
   const errors: string[] = [];
 
-  if (answer.trim().length > 1000) {
-    errors.push('回答は1000文字以内で入力してください');
+  if (answer.trim().length > VALIDATION_LIMITS.ANSWER_TEXT_MAX_LENGTH) {
+    errors.push(
+      `回答は${VALIDATION_LIMITS.ANSWER_TEXT_MAX_LENGTH}文字以内で入力してください`
+    );
   }
 
   return {
@@ -68,8 +79,10 @@ export function validateNurseryName(
     errors.push('保育園名は必須です');
   }
 
-  if (trimmedName.length > 100) {
-    errors.push('保育園名は100文字以内で入力してください');
+  if (trimmedName.length > VALIDATION_LIMITS.NURSERY_NAME_MAX_LENGTH) {
+    errors.push(
+      `保育園名は${VALIDATION_LIMITS.NURSERY_NAME_MAX_LENGTH}文字以内で入力してください`
+    );
   }
 
   return {
