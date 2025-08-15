@@ -1446,7 +1446,7 @@ VITE_ANALYTICS_ENABLED = true;
 const cspDirectives = {
   'script-src': [
     "'self'",
-    "'unsafe-inline'", // GA4とClarityで必要
+    "'unsafe-inline'", // GA4とClarityで必要（段階的に改善予定）
     'https://www.googletagmanager.com',
     'https://www.google-analytics.com',
     'https://www.clarity.ms',
@@ -1463,6 +1463,79 @@ const cspDirectives = {
     'https://www.google-analytics.com',
     'https://www.googletagmanager.com',
   ],
+};
+
+// セキュリティ強化方針
+const securityEnhancementPlan = {
+  // Phase 1: 基本CSP実装（MVP）
+  phase1: {
+    description: '基本的なCSP設定で最低限のセキュリティを確保',
+    implementation: [
+      "'unsafe-inline'を許可（GA4/Clarityの制約による）",
+      '信頼できるドメインのみを許可',
+      'HTTPSの強制',
+    ],
+  },
+
+  // Phase 2: nonce/hashベースCSP（セキュリティ強化）
+  phase2: {
+    description: "'unsafe-inline'を回避したより安全なCSP実装",
+    implementation: [
+      'ビルド時nonceの生成と注入',
+      'インラインスクリプトのSHA256ハッシュ計算',
+      'GA4/Clarityスクリプトの動的読み込み最適化',
+    ],
+    example: `
+      // nonce ベースの実装例
+      const nonce = generateNonce(); // ビルド時生成
+      const cspDirectives = {
+        'script-src': [
+          "'self'",
+          \`'nonce-\${nonce}'\`,
+          "'sha256-{{SCRIPT_HASH}}'", // ビルド時計算
+          'https://www.googletagmanager.com',
+          'https://www.clarity.ms',
+        ],
+      };
+      
+      // スクリプト注入時にnonce付与
+      const script = document.createElement('script');
+      script.nonce = nonce;
+      script.src = 'https://www.googletagmanager.com/gtag/js';
+    `,
+  },
+
+  // Phase 3: strict-dynamic対応（将来的な拡張）
+  phase3: {
+    description: 'strict-dynamicを活用したより柔軟で安全なCSP',
+    implementation: [
+      "'strict-dynamic'の導入",
+      '信頼されたスクリプトからの動的読み込み許可',
+      'レガシーブラウザ対応の維持',
+    ],
+    example: `
+      'script-src': [
+        "'strict-dynamic'",
+        \`'nonce-\${nonce}'\`,
+        "'unsafe-inline'", // レガシーブラウザ用フォールバック
+        'https:', // レガシーブラウザ用フォールバック
+      ],
+    `,
+  },
+
+  // 実装優先順位
+  priority: {
+    high: ['Phase 1の基本CSP実装', 'HTTPS強制', 'ドメイン制限'],
+    medium: ['Phase 2のnonce/hash実装', 'スクリプト最適化'],
+    low: ['Phase 3のstrict-dynamic対応', '高度なセキュリティ機能'],
+  },
+
+  // セキュリティ監視
+  monitoring: {
+    cspReporting: 'CSP違反レポートの収集と分析',
+    securityHeaders: 'セキュリティヘッダーの定期的な検証',
+    vulnerabilityScanning: '依存関係の脆弱性スキャン',
+  },
 };
 
 // プライバシー保護設定
