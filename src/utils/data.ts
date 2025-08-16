@@ -3,7 +3,8 @@
  * データ操作のヘルパー関数
  */
 
-import type { Question, CreateQuestionInput } from '../types/data';
+import type { Question } from '../types/entities';
+import type { CreateQuestionInput } from '../types/inputs';
 
 /**
  * UUIDv4を生成する

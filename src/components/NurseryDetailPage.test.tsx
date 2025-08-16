@@ -11,7 +11,7 @@ import { useParams } from 'react-router-dom';
 import { renderWithProviders } from '../test/test-utils';
 import { NurseryDetailPage } from './NurseryDetailPage';
 import { useNurseryStore } from '../stores/nurseryStore';
-import type { Nursery } from '../types/data';
+import type { Nursery } from '../types/entities';
 
 // useParamsのモック
 vi.mock('react-router-dom', async () => {

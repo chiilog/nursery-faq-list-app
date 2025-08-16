@@ -5,18 +5,16 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import type { Nursery, VisitSession } from '../types/entities';
 import type {
-  Nursery,
   CreateNurseryInput,
   UpdateNurseryInput,
-  VisitSession,
   CreateVisitSessionInput,
   UpdateVisitSessionInput,
   CreateQuestionInput,
   UpdateQuestionInput,
-  SyncState,
-  NurseryStats,
-} from '../types/data';
+} from '../types/inputs';
+import type { SyncState, NurseryStats } from '../types/shared';
 import { createNurseryDataStore } from '../services/nurseryDataStore';
 
 // ストレージ設定の型定義

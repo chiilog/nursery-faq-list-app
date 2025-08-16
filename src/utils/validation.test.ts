@@ -13,11 +13,8 @@ import {
   validateUpdateQuestionInput,
   validateQuestion,
 } from './validation';
-import type {
-  CreateQuestionInput,
-  UpdateQuestionInput,
-  Question,
-} from '../types/data';
+import type { Question } from '../types/entities';
+import type { CreateQuestionInput, UpdateQuestionInput } from '../types/inputs';
 
 describe('validateQuestionText', () => {
   describe('正常系', () => {

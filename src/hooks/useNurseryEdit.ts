@@ -11,7 +11,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { showToast } from '../utils/toaster';
 import { generateId } from '../utils/id';
 import { validateVisitDateSimple } from '../utils/validation';
-import type { Nursery, VisitSession } from '../types/data';
+import type { Nursery, VisitSession } from '../types/entities';
 
 export interface UseNurseryEditReturn {
   // 状態

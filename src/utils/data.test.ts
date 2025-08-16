@@ -10,7 +10,8 @@ import {
   answerQuestion,
   addQuestionToQuestionsArray,
 } from './data';
-import type { CreateQuestionInput, Question } from '../types/data';
+import type { Question } from '../types/entities';
+import type { CreateQuestionInput } from '../types/inputs';
 
 describe('generateId', () => {
   describe('正常系', () => {

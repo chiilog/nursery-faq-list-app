@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { renderWithProviders, testUtils } from '../test/test-utils';
 import { NurseryCard } from './NurseryCard';
-import type { Nursery } from '../types/data';
+import type { Nursery } from '../types/entities';
 
 describe('NurseryCard コンポーネント', () => {
   describe('基本表示', () => {

@@ -4,7 +4,7 @@
  */
 
 import { Box, Text, VStack, HStack, Flex } from '@chakra-ui/react';
-import type { Nursery } from '../types/data';
+import type { Nursery } from '../types/entities';
 import { InsightTag } from './InsightTag';
 import { useNurseryStatus } from '../hooks/useNurseryStatus';
 

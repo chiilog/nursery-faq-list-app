@@ -4,7 +4,7 @@
 
 import { Box, Text, HStack, Badge, VStack, IconButton } from '@chakra-ui/react';
 import { FaTrash } from 'react-icons/fa';
-import type { Question } from '../types/data';
+import type { Question } from '../types/entities';
 
 interface QuestionItemProps {
   question: Question;

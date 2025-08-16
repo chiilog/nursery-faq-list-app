@@ -3,11 +3,8 @@
  * データ入力時の検証ロジック
  */
 
-import type {
-  CreateQuestionInput,
-  UpdateQuestionInput,
-  Question,
-} from '../types/data';
+import type { Question } from '../types/entities';
+import type { CreateQuestionInput, UpdateQuestionInput } from '../types/inputs';
 
 // バリデーション制限値の定数定義
 export const VALIDATION_LIMITS = Object.freeze({

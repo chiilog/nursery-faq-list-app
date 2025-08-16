@@ -1,12 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
+import type { Nursery, VisitSession } from '../types/entities';
 import type {
-  Nursery,
   CreateNurseryInput,
   UpdateNurseryInput,
-  VisitSession,
   CreateVisitSessionInput,
   UpdateVisitSessionInput,
-} from '../types/data';
+} from '../types/inputs';
 
 // テスト用の型定義
 interface MockLocalStorageData {

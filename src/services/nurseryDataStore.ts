@@ -4,17 +4,15 @@
  * DRY・KISS原則により、暗号化/非暗号化を統合管理
  */
 
+import type { Nursery, VisitSession, Question } from '../types/entities';
 import type {
-  Nursery,
   CreateNurseryInput,
   UpdateNurseryInput,
-  VisitSession,
   CreateVisitSessionInput,
   UpdateVisitSessionInput,
-  Question,
   CreateQuestionInput,
   UpdateQuestionInput,
-} from '../types/data';
+} from '../types/inputs';
 import { generatePrefixedId } from '../utils/id';
 import { addQuestionToQuestionsArray } from '../utils/data';
 import {

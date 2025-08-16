@@ -4,7 +4,7 @@ import { Box, Heading, Text, Button, VStack, Spinner } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { NurseryCard } from './NurseryCard';
 import { useNurseryStore } from '../stores/nurseryStore';
-import type { Nursery } from '../types/data';
+import type { Nursery } from '../types/entities';
 import { NurseryCreatorPage } from './NurseryCreatorPage';
 import { NurseryDetailPage } from './NurseryDetailPage';
 

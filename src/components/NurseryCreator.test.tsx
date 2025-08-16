@@ -9,7 +9,7 @@ import { vi } from 'vitest';
 import { renderWithProviders } from '../test/test-utils';
 import { NurseryCreator } from './NurseryCreator';
 import { useNurseryStore } from '../stores/nurseryStore';
-import type { CreateNurseryInput } from '../types/data';
+import type { CreateNurseryInput } from '../types/inputs';
 
 // useNurseryStoreのモック
 const mockCreateNursery =

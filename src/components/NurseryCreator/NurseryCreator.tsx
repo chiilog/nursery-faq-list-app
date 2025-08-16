@@ -6,7 +6,7 @@
 import { Box, Heading } from '@chakra-ui/react';
 import { useState, useRef } from 'react';
 import { useNurseryStore } from '../../stores/nurseryStore';
-import type { CreateNurseryInput } from '../../types/data';
+import type { CreateNurseryInput } from '../../types/inputs';
 
 import { ErrorDisplay } from './ErrorDisplay';
 import { LoadingDisplay } from './LoadingDisplay';

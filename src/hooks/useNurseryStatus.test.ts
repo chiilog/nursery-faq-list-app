@@ -5,7 +5,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useNurseryStatus } from './useNurseryStatus';
-import type { VisitSession } from '../types/data';
+import type { VisitSession } from '../types/entities';
 
 describe('useNurseryStatus', () => {
   beforeEach(() => {

@@ -11,7 +11,7 @@ import {
   Textarea,
   Button,
 } from '@chakra-ui/react';
-import type { Question } from '../types/data';
+import type { Question } from '../types/entities';
 import { QuestionItem } from './QuestionItem';
 
 interface QuestionEditFormProps {
