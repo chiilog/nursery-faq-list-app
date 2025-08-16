@@ -63,6 +63,7 @@ export const QuestionAddForm = ({
           _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
         />
         <Textarea
+          size="lg"
           placeholder="回答があれば入力してください（任意）"
           aria-label="回答入力（任意）"
           value={newAnswerText}

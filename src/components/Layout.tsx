@@ -22,12 +22,12 @@ export const Layout = ({
   showDefaultTitle = true,
 }: LayoutProps) => {
   const shouldShowHeader = headerTitle || showDefaultTitle;
-  const title = headerTitle || '保育園見学質問リスト';
+  const title = headerTitle || '保活手帳';
 
   return (
     <Box minH="100vh" bg="gray.50">
       <Box as="header" bg="white" shadow="sm">
-        <Container maxW="container.xl" py={4}>
+        <Container maxW="container.xl" py={2}>
           {shouldShowHeader && (
             <NurseryHeader
               title={title}

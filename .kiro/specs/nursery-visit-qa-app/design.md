@@ -493,7 +493,7 @@ test('見学当日: 質問リストを使って回答を記録できる', async 
   await page.getByRole('button', { name: 'Googleでログイン' }).click();
 
   // 質問リスト選択（見出しで特定）
-  await page.getByRole('heading', { name: '保育園見学質問リスト' }).click();
+  await page.getByRole('heading', { name: '保活手帳' }).click();
 
   // 質問に回答（ラベルで特定）
   const answerInput = page.getByLabelText('回答を入力してください');
@@ -1193,7 +1193,7 @@ const PrivacyPolicyPage: React.FC = () => {
         <Box>
           <Heading size="md" mb={4}>1. はじめに</Heading>
           <Text mb={4}>
-            保育園見学質問リストアプリ（以下「本アプリ」）は、ユーザーのプライバシーを尊重し、
+            保活手帳（以下「本アプリ」）は、ユーザーのプライバシーを尊重し、
             個人情報の保護に努めています。本プライバシーポリシーでは、本アプリがどのような情報を
             収集し、どのように使用するかについて説明します。
           </Text>
