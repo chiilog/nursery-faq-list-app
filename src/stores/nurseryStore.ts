@@ -164,26 +164,10 @@ const getDataStore = (encryptionEnabled: boolean) => {
       }
     },
     updateNursery: async (id: string, updates: UpdateNurseryInput) => {
-      try {
-        await dataStore.updateNursery(id, updates);
-        return { success: true as const, data: undefined };
-      } catch (error) {
-        return {
-          success: false as const,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
+      await dataStore.updateNursery(id, updates);
     },
     deleteNursery: async (id: string) => {
-      try {
-        await dataStore.deleteNursery(id);
-        return { success: true as const, data: undefined };
-      } catch (error) {
-        return {
-          success: false as const,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
+      await dataStore.deleteNursery(id);
     },
     getNursery: async (id: string) => {
       try {
@@ -221,26 +205,10 @@ const getDataStore = (encryptionEnabled: boolean) => {
       sessionId: string,
       updates: UpdateVisitSessionInput
     ) => {
-      try {
-        await dataStore.updateVisitSession(sessionId, updates);
-        return { success: true as const, data: undefined };
-      } catch (error) {
-        return {
-          success: false as const,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
+      await dataStore.updateVisitSession(sessionId, updates);
     },
     deleteVisitSession: async (sessionId: string) => {
-      try {
-        await dataStore.deleteVisitSession(sessionId);
-        return { success: true as const, data: undefined };
-      } catch (error) {
-        return {
-          success: false as const,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
+      await dataStore.deleteVisitSession(sessionId);
     },
     getVisitSession: async (sessionId: string) => {
       try {
@@ -288,35 +256,14 @@ const getDataStore = (encryptionEnabled: boolean) => {
       questionId: string,
       updates: UpdateQuestionInput
     ) => {
-      try {
-        await dataStore.updateQuestion(
-          nurseryId,
-          sessionId,
-          questionId,
-          updates
-        );
-        return { success: true as const, data: undefined };
-      } catch (error) {
-        return {
-          success: false as const,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
+      await dataStore.updateQuestion(nurseryId, sessionId, questionId, updates);
     },
     deleteQuestion: async (
       nurseryId: string,
       sessionId: string,
       questionId: string
     ) => {
-      try {
-        await dataStore.deleteQuestion(nurseryId, sessionId, questionId);
-        return { success: true as const, data: undefined };
-      } catch (error) {
-        return {
-          success: false as const,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
+      await dataStore.deleteQuestion(nurseryId, sessionId, questionId);
     },
   };
 };
