@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
@@ -24,13 +25,13 @@ const mockQuestions: Question[] = [
   }),
 ];
 
-// デフォルトのprops
-const defaultProps = {
+// デフォルトのprops（型安全）
+const defaultProps: ComponentProps<typeof QuestionsSection> = {
   questions: mockQuestions,
   editingQuestionId: null,
   editingQuestionText: '',
   editingAnswer: '',
-  onQuestionClick: vi.fn(),
+  onQuestionClick: vi.fn(), // 型チェックが効く
   onEditingQuestionTextChange: vi.fn(),
   onEditingAnswerChange: vi.fn(),
   onSaveAnswer: vi.fn(),

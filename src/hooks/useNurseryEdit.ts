@@ -74,6 +74,7 @@ export function useNurseryEdit(
         return {
           ...existingSession,
           visitDate,
+          updatedAt: new Date(),
         };
       }
 

@@ -299,7 +299,12 @@ describe('useNurseryEdit', () => {
 
       expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
         name: '新しい保育園名',
-        visitSessions: mockNursery.visitSessions,
+        visitSessions: [
+          {
+            ...mockNursery.visitSessions[0],
+            updatedAt: expect.any(Date),
+          },
+        ],
       });
 
       expect(result.current.isEditingNursery).toBe(false);
@@ -330,6 +335,7 @@ describe('useNurseryEdit', () => {
           {
             ...mockNursery.visitSessions[0],
             visitDate: new Date('2026-01-01'),
+            updatedAt: expect.any(Date),
           },
         ],
       });

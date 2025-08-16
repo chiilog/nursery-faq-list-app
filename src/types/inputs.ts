@@ -31,6 +31,7 @@ export interface UpdateVisitSessionInput {
   visitDate?: Date;
   status?: VisitSessionStatus;
   insights?: string[]; // 気づきタグの配列
+  sharedWith?: string[];
 }
 
 // 質問作成時の入力データ型

@@ -52,9 +52,7 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
   return (
     <Box
       as="button"
-      role="button"
       aria-label={`${nursery.name}の詳細を開く`}
-      tabIndex={0}
       p={4}
       borderWidth={1}
       borderRadius="md"

@@ -28,7 +28,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [],
           insights: [],
@@ -37,7 +38,8 @@ describe('useNurseryStatus', () => {
         },
         {
           id: 'session2',
-          visitDate: new Date('2025-01-18'),
+          // タイムゾーン非依存の日付生成（2025-01-18）
+          visitDate: new Date(2025, 0, 18),
           status: 'planned',
           questions: [],
           insights: [],
@@ -93,7 +95,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [],
           insights: [],
@@ -111,7 +114,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [
             {
@@ -144,7 +148,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [
             {
@@ -177,7 +182,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [
             {
@@ -222,7 +228,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [],
           insights: [],
@@ -240,7 +247,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [],
           insights: ['広い園庭', '先生が親切'],
@@ -271,7 +279,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [],
           insights: [
@@ -300,7 +309,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [],
           insights: ['', '   ', '広い園庭', '\t\n'],
@@ -320,7 +330,8 @@ describe('useNurseryStatus', () => {
       const visitSessions: VisitSession[] = [
         {
           id: 'session1',
-          visitDate: new Date('2025-01-20'),
+          // タイムゾーン非依存の日付生成（2025-01-20）
+          visitDate: new Date(2025, 0, 20),
           status: 'planned',
           questions: [],
           insights: ['広い園庭'],

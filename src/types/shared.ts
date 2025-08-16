@@ -16,6 +16,7 @@ export interface VisitSessionStats {
   total: number;
   answered: number;
   unanswered: number;
+  /** 進捗率（%）。0〜100 の整数を想定 */
   progress: number;
 }
 
@@ -27,10 +28,11 @@ export interface NurseryStats {
   cancelledSessions: number;
   totalQuestions: number;
   totalAnsweredQuestions: number;
+  /** 全体進捗率（%）。0〜100 の整数を想定 */
   overallProgress: number;
 }
 
 // データストアの結果型（成功/失敗の型安全性を保証）
-export type DataStoreResult<T, E = string> =
+export type DataStoreResult<T, E = unknown> =
   | { success: true; data: T }
   | { success: false; error: E };
