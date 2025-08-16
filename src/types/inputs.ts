@@ -19,7 +19,7 @@ export interface UpdateNurseryInput {
 
 // 見学セッション作成時の入力データ型
 export interface CreateVisitSessionInput {
-  visitDate: Date;
+  visitDate: Date | null;
   status?: VisitSessionStatus;
   insights?: string[]; // 気づきタグの配列
   questions?: CreateQuestionInput[];
@@ -28,7 +28,7 @@ export interface CreateVisitSessionInput {
 
 // 見学セッション更新時の入力データ型
 export interface UpdateVisitSessionInput {
-  visitDate?: Date;
+  visitDate?: Date | null;
   status?: VisitSessionStatus;
   insights?: string[]; // 気づきタグの配列
   sharedWith?: string[];
@@ -55,6 +55,12 @@ export interface CreateQuestionTemplateInput {
   ageGroup?: string;
   questions: Omit<
     Question,
-    'id' | 'answer' | 'isAnswered' | 'answeredBy' | 'answeredAt'
+    | 'id'
+    | 'answer'
+    | 'isAnswered'
+    | 'answeredBy'
+    | 'answeredAt'
+    | 'createdAt'
+    | 'updatedAt'
   >[];
 }
