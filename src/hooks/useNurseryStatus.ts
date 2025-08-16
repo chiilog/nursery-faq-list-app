@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import type { VisitSession } from '../types/data';
+import type { VisitSession } from '../types/entities';
 import { formatDate } from '../utils/dateFormat';
 
 /**

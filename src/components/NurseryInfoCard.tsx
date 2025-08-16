@@ -7,7 +7,7 @@ import { Box, Text, VStack } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { VisitDatePicker } from './common/VisitDatePicker';
 import { NurseryNameInput } from './common/NurseryNameInput';
-import type { Question } from '../types/data';
+import type { Question } from '../types/entities';
 import { formatDate } from '../utils/dateFormat';
 
 interface NurseryInfoCardProps {

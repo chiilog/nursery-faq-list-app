@@ -1,13 +1,15 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import type {
   Nursery,
+  VisitSession,
+  VisitSessionStatus,
+} from '../types/entities';
+import type {
   CreateNurseryInput,
   UpdateNurseryInput,
   CreateVisitSessionInput,
   UpdateVisitSessionInput,
-  VisitSession,
-  VisitSessionStatus,
-} from '../types/data';
+} from '../types/inputs';
 import { createQuestionMock } from '../test/test-utils';
 
 // Vitestモックホイスティングに対応したモック定義
