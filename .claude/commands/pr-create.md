@@ -3,4 +3,4 @@
 - mainブランチにいる場合：新しいブランチを作成
 - 別ブランチにいる場合：mainブランチに切り替え、git pull してから新しいブランチを作成
 
-コミットはConventional Commitsの仕様に従うこと。
+コミットはConventional Commitsの仕様に従い、適切な粒度でコミットすること。

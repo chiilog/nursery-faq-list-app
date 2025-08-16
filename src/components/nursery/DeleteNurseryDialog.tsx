@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Dialog, Input, Text, VStack, Alert, Box } from '@chakra-ui/react';
-import type { Nursery } from '../../types';
+import type { Nursery } from '../../types/data';
 import { ActionButtons } from '../ui/ActionButtons';
 import { useDeleteNursery } from '../../hooks/useDeleteNursery';
 
@@ -23,7 +23,7 @@ export const DeleteNurseryDialog = ({
 
     const result = await handleDelete(nursery.id);
     if (result.success) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -41,7 +41,9 @@ export const DeleteNurseryDialog = ({
   return (
     <Dialog.Root
       open={isOpen}
-      onOpenChange={(details) => details.open || handleClose()}
+      onOpenChange={(details) => {
+        if (!details.open) handleClose();
+      }}
       size="md"
       motionPreset="slide-in-bottom"
     >

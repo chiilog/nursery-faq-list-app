@@ -131,3 +131,8 @@ export interface NurseryStats {
   totalAnsweredQuestions: number;
   overallProgress: number;
 }
+
+// データストアの結果型（成功/失敗の型安全性を保証）
+export type DataStoreResult<T, E = string> =
+  | { success: true; data: T }
+  | { success: false; error: E };

@@ -1,6 +1,7 @@
 /**
- * 保育園データストア（ローカルストレージ）
- * 保育園中心設計に基づいたデータ永続化
+ * 保育園データストア（暗号化対応）
+ * 保育園中心設計に基づいたデータ永続化と暗号化
+ * DRY・KISS原則により、暗号化/非暗号化を統合管理
  */
 
 import type {
@@ -16,6 +17,12 @@ import type {
 } from '../types/data';
 import { generatePrefixedId } from '../utils/id';
 import { addQuestionToQuestionsArray } from '../utils/data';
+import {
+  getOrCreateEncryptionKey,
+  encryptData,
+  decryptData,
+  type EncryptedData,
+} from './cryptoService';
 
 // シリアライズされたデータの型定義（JSON形式）
 interface SerializedNursery
@@ -48,20 +55,48 @@ interface SerializedQuestion
   updatedAt: string; // ISO date string
 }
 
-// データストアエラークラス
-export class NurseryDataStoreError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public originalError?: Error
-  ) {
-    super(message);
+import { DataStoreError } from '../types/errors';
+import { defaultStorageService, type StorageService } from './storageService';
+
+// データストアエラークラス（統合）
+export class NurseryDataStoreError extends DataStoreError {
+  constructor(message: string, code: string, originalError?: Error) {
+    super(message, code, originalError);
     this.name = 'NurseryDataStoreError';
   }
 }
 
-// ローカルストレージキー
+// ストレージ設定の型定義
+export interface NurseryDataStoreOptions {
+  encryptionEnabled?: boolean;
+  storageService?: StorageService; // 依存性注入によりテスト可能性を向上
+}
+
+// ストレージキー
 const NURSERIES_STORAGE_KEY = 'nursery-app-nurseries';
+const ENCRYPTED_NURSERIES_STORAGE_KEY = 'encrypted_nurseries_data';
+
+/**
+ * 暗号化データの型ガード
+ */
+function isEncryptedDataMap(
+  value: unknown
+): value is Record<string, EncryptedData> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every(
+      (item): item is EncryptedData =>
+        item !== null &&
+        typeof item === 'object' &&
+        'data' in item &&
+        'iv' in item &&
+        typeof (item as Record<string, unknown>).data === 'string' &&
+        typeof (item as Record<string, unknown>).iv === 'string'
+    )
+  );
+}
 
 // ユーティリティ関数
 
@@ -70,9 +105,162 @@ function getCurrentTimestamp(): Date {
 }
 
 /**
- * 保育園データストア
+ * 保育園データストア（暗号化対応）
+ *
+ * 依存性注入パターンによりストレージ操作を抽象化し、
+ * テスタビリティと保守性を向上させた実装
  */
 class NurseryDataStore {
+  private encryptionEnabled: boolean;
+  private storage: StorageService;
+
+  constructor(options: NurseryDataStoreOptions = {}) {
+    this.encryptionEnabled = options.encryptionEnabled ?? false;
+    this.storage = options.storageService ?? defaultStorageService;
+  }
+
+  /**
+   * 暗号化データを保存
+   */
+  private async saveEncryptedData(
+    data: Record<string, Nursery>
+  ): Promise<void> {
+    try {
+      const key = await getOrCreateEncryptionKey();
+      const encryptedData: Record<string, EncryptedData> = {};
+
+      for (const [nurseryId, nursery] of Object.entries(data)) {
+        // シリアライズされた形式で保存して読み込み時との整合性を保つ
+        const serializedNursery = this.serializeNursery(nursery);
+        const serializedJson = JSON.stringify(serializedNursery);
+        encryptedData[nurseryId] = await encryptData(serializedJson, key);
+      }
+
+      this.storage.setItem(
+        ENCRYPTED_NURSERIES_STORAGE_KEY,
+        JSON.stringify(encryptedData)
+      );
+    } catch (error) {
+      throw new NurseryDataStoreError(
+        '暗号化データの保存に失敗しました',
+        'ENCRYPTED_SAVE_FAILED',
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  /**
+   * 暗号化データを読み込み
+   */
+  private async loadEncryptedData(): Promise<
+    Record<string, SerializedNursery>
+  > {
+    try {
+      const encryptedData = this.storage.getItem(
+        ENCRYPTED_NURSERIES_STORAGE_KEY
+      );
+      if (!encryptedData) {
+        return {};
+      }
+
+      const parsedData: unknown = JSON.parse(encryptedData);
+      if (!isEncryptedDataMap(parsedData)) {
+        throw new Error('無効な暗号化データ形式');
+      }
+
+      const key = await getOrCreateEncryptionKey();
+      const decryptedData: Record<string, SerializedNursery> = {};
+
+      for (const [nurseryId, encrypted] of Object.entries(parsedData)) {
+        const decryptedJson = await decryptData(encrypted, key);
+        try {
+          const parsedNursery: unknown = JSON.parse(decryptedJson);
+          // 基本的な型チェック
+          if (
+            !parsedNursery ||
+            typeof parsedNursery !== 'object' ||
+            !('id' in parsedNursery) ||
+            typeof (parsedNursery as Record<string, unknown>).id !== 'string'
+          ) {
+            throw new Error(
+              `Invalid nursery data structure for ID: ${nurseryId}`
+            );
+          }
+          decryptedData[nurseryId] = parsedNursery as SerializedNursery;
+        } catch (parseError) {
+          throw new Error(
+            `Failed to parse decrypted data for nursery ${nurseryId}: ${
+              parseError instanceof Error
+                ? parseError.message
+                : String(parseError)
+            }`
+          );
+        }
+      }
+
+      return decryptedData;
+    } catch (error) {
+      throw new NurseryDataStoreError(
+        '暗号化データの読み込みに失敗しました',
+        'ENCRYPTED_LOAD_FAILED',
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  /**
+   * データを保存（暗号化設定に応じて自動選択）
+   */
+  private async saveData(data: Record<string, Nursery>): Promise<void> {
+    if (this.encryptionEnabled) {
+      await this.saveEncryptedData(data);
+    } else {
+      this.storage.setItem(NURSERIES_STORAGE_KEY, JSON.stringify(data));
+    }
+  }
+
+  /**
+   * NurseryオブジェクトをSerializedNursery形式に変換する
+   *
+   * @private
+   * @param nursery 変換元のNurseryオブジェクト
+   * @returns シリアライズされたNurseryオブジェクト
+   */
+  private serializeNursery(nursery: Nursery): SerializedNursery {
+    return {
+      ...nursery,
+      createdAt: nursery.createdAt.toISOString(),
+      updatedAt: nursery.updatedAt.toISOString(),
+      visitSessions: nursery.visitSessions.map((session) => ({
+        ...session,
+        visitDate: session.visitDate?.toISOString() || null,
+        createdAt: session.createdAt.toISOString(),
+        updatedAt: session.updatedAt.toISOString(),
+        questions: session.questions.map((question) => ({
+          ...question,
+          answeredAt: question.answeredAt?.toISOString(),
+          createdAt: question.createdAt.toISOString(),
+          updatedAt: question.updatedAt.toISOString(),
+        })),
+      })),
+    };
+  }
+
+  /**
+   * データを読み込み（暗号化設定に応じて自動選択）
+   */
+  private async loadData(): Promise<Record<string, SerializedNursery>> {
+    if (this.encryptionEnabled) {
+      // 暗号化データは既にシリアライズ済みで保存されているので直接返す
+      return await this.loadEncryptedData();
+    } else {
+      const nurseriesData = this.storage.getItem(NURSERIES_STORAGE_KEY);
+      if (!nurseriesData) {
+        return {};
+      }
+      return JSON.parse(nurseriesData) as Record<string, SerializedNursery>;
+    }
+  }
   // 保育園管理
   async createNursery(input: CreateNurseryInput): Promise<string> {
     try {
@@ -102,7 +290,7 @@ class NurseryDataStore {
       };
 
       const nurseries = await this.getAllNurseries();
-      this.saveNurseries([...nurseries, nursery]);
+      await this.saveNurseries([...nurseries, nursery]);
 
       return nurseryId;
     } catch (error) {
@@ -117,21 +305,13 @@ class NurseryDataStore {
     }
   }
 
-  getNursery(id: string): Promise<Nursery | null> {
+  async getNursery(id: string): Promise<Nursery | null> {
     try {
-      const nurseriesData = localStorage.getItem(NURSERIES_STORAGE_KEY);
-      if (!nurseriesData) {
-        return Promise.resolve(null);
-      }
-
-      const nurseries = JSON.parse(nurseriesData) as Record<
-        string,
-        SerializedNursery
-      >;
-      const nurseryData = nurseries[id];
+      const nurseriesData = await this.loadData();
+      const nurseryData = nurseriesData[id];
 
       if (!nurseryData) {
-        return Promise.resolve(null);
+        return null;
       }
 
       const nursery: Nursery = {
@@ -159,36 +339,26 @@ class NurseryDataStore {
         ),
       };
 
-      return Promise.resolve(nursery);
+      return nursery;
     } catch (error) {
       if (error instanceof Error) {
-        return Promise.reject(
-          new NurseryDataStoreError(
-            'データの読み込みに失敗しました',
-            'LOAD_FAILED',
-            error
-          )
+        throw new NurseryDataStoreError(
+          'データの読み込みに失敗しました',
+          'LOAD_FAILED',
+          error
         );
       } else {
-        return Promise.reject(new Error('Unknown error occurred'));
+        throw new Error('Unknown error occurred');
       }
     }
   }
 
   async getAllNurseries(): Promise<Nursery[]> {
     try {
-      const nurseriesData = localStorage.getItem(NURSERIES_STORAGE_KEY);
-      if (!nurseriesData) {
-        return Promise.resolve([]);
-      }
-
-      const serializedNurseries = JSON.parse(nurseriesData) as Record<
-        string,
-        SerializedNursery
-      >;
+      const nurseriesData = await this.loadData();
 
       let needsMigration = false;
-      const nurseries = Object.values(serializedNurseries).map(
+      const nurseries = Object.values(nurseriesData).map(
         (nurseryData: SerializedNursery): Nursery => {
           // visitSessionsが空の場合はデフォルトセッションを作成（既存データのマイグレーション）
           let visitSessions = nurseryData.visitSessions;
@@ -239,10 +409,10 @@ class NurseryDataStore {
 
       if (needsMigration) {
         // マイグレーション発生時のみ保存してIDの安定性を確保
-        this.saveNurseries(nurseries);
+        await this.saveNurseries(nurseries);
       }
 
-      return Promise.resolve(nurseries);
+      return nurseries;
     } catch (error) {
       if (error instanceof Error) {
         throw new NurseryDataStoreError(
@@ -274,7 +444,7 @@ class NurseryDataStore {
 
       const nurseries = await this.getAllNurseries();
       const updated = nurseries.map((n) => (n.id === id ? updatedNursery : n));
-      this.saveNurseries(updated);
+      await this.saveNurseries(updated);
     } catch (error) {
       if (error instanceof NurseryDataStoreError) {
         throw error;
@@ -294,7 +464,7 @@ class NurseryDataStore {
     try {
       const nurseries = await this.getAllNurseries();
       const remaining = nurseries.filter((n) => n.id !== id);
-      this.saveNurseries(remaining);
+      await this.saveNurseries(remaining);
     } catch (error) {
       if (error instanceof Error) {
         throw new NurseryDataStoreError(
@@ -353,7 +523,7 @@ class NurseryDataStore {
       const updated = nurseries.map((n) =>
         n.id === nurseryId ? updatedNursery : n
       );
-      this.saveNurseries(updated);
+      await this.saveNurseries(updated);
 
       return sessionId;
     } catch (error) {
@@ -496,7 +666,7 @@ class NurseryDataStore {
   }
 
   // 保育園データを保存するヘルパーメソッド
-  private saveNurseries(nurseries: Nursery[]): void {
+  private async saveNurseries(nurseries: Nursery[]): Promise<void> {
     try {
       const nurseriesMap = nurseries.reduce(
         (acc, n) => {
@@ -506,7 +676,7 @@ class NurseryDataStore {
         {} as Record<string, Nursery>
       );
 
-      localStorage.setItem(NURSERIES_STORAGE_KEY, JSON.stringify(nurseriesMap));
+      await this.saveData(nurseriesMap);
     } catch (error) {
       if (error instanceof Error) {
         throw new NurseryDataStoreError(
@@ -563,7 +733,7 @@ class NurseryDataStore {
         newQuestion
       );
 
-      this.saveNurseries(nurseries);
+      await this.saveNurseries(nurseries);
 
       return questionId;
     } catch (error) {
@@ -618,7 +788,7 @@ class NurseryDataStore {
         question.isAnswered = updates.isAnswered;
       question.updatedAt = new Date();
 
-      this.saveNurseries(nurseries);
+      await this.saveNurseries(nurseries);
     } catch (error) {
       if (error instanceof NurseryDataStoreError) {
         throw error;
@@ -666,7 +836,7 @@ class NurseryDataStore {
       }
 
       session.questions.splice(questionIndex, 1);
-      this.saveNurseries(nurseries);
+      await this.saveNurseries(nurseries);
     } catch (error) {
       if (error instanceof NurseryDataStoreError) {
         throw error;
@@ -680,25 +850,52 @@ class NurseryDataStore {
   }
 
   // データクリア
-  clearAllData(): Promise<void> {
+  clearAllData(): void {
     try {
-      localStorage.removeItem(NURSERIES_STORAGE_KEY);
-      return Promise.resolve();
+      if (this.encryptionEnabled) {
+        this.storage.removeItem(ENCRYPTED_NURSERIES_STORAGE_KEY);
+      } else {
+        this.storage.removeItem(NURSERIES_STORAGE_KEY);
+      }
     } catch (error) {
       if (error instanceof Error) {
-        return Promise.reject(
-          new NurseryDataStoreError(
-            'データの削除に失敗しました',
-            'CLEAR_DATA_FAILED',
-            error
-          )
+        throw new NurseryDataStoreError(
+          'データの削除に失敗しました',
+          'CLEAR_DATA_FAILED',
+          error
         );
       } else {
-        return Promise.reject(new Error('Unknown error occurred'));
+        throw new Error('Unknown error occurred');
       }
     }
   }
 }
 
-// シングルトンインスタンス
-export const nurseryDataStore = new NurseryDataStore();
+/**
+ * 保育園データストアのファクトリ関数
+ *
+ * @param options - データストアの設定オプション
+ * @returns 設定されたNurseryDataStoreインスタンス
+ *
+ * @example
+ * ```typescript
+ * // 暗号化有効
+ * const encryptedStore = createNurseryDataStore({ encryptionEnabled: true });
+ *
+ * // カスタムストレージサービス
+ * const customStore = createNurseryDataStore({
+ *   storageService: new MockStorageService()
+ * });
+ * ```
+ */
+export const createNurseryDataStore = (options?: NurseryDataStoreOptions) => {
+  return new NurseryDataStore(options);
+};
+
+/**
+ * デフォルトの保育園データストアインスタンス（非暗号化）
+ * アプリケーション全体で使用される標準のデータストア
+ */
+export const nurseryDataStore = new NurseryDataStore({
+  encryptionEnabled: false,
+});

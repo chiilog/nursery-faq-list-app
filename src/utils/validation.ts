@@ -9,6 +9,13 @@ import type {
   Question,
 } from '../types/data';
 
+// バリデーション制限値の定数定義
+export const VALIDATION_LIMITS = Object.freeze({
+  QUESTION_TEXT_MAX_LENGTH: 500,
+  ANSWER_TEXT_MAX_LENGTH: 1000,
+  NURSERY_NAME_MAX_LENGTH: 100,
+} as const);
+
 // エラーメッセージの型定義
 export interface ValidationResult {
   isValid: boolean;
@@ -20,13 +27,16 @@ export interface ValidationResult {
  */
 export function validateQuestionText(text: string): ValidationResult {
   const errors: string[] = [];
+  const trimmedText = text.trim();
 
-  if (!text || text.trim().length === 0) {
+  if (trimmedText.length === 0) {
     errors.push('質問内容を入力してください');
   }
 
-  if (text.trim().length > 500) {
-    errors.push('質問内容は500文字以内で入力してください');
+  if (trimmedText.length > VALIDATION_LIMITS.QUESTION_TEXT_MAX_LENGTH) {
+    errors.push(
+      `質問内容は${VALIDATION_LIMITS.QUESTION_TEXT_MAX_LENGTH}文字以内で入力してください`
+    );
   }
 
   return {
@@ -40,9 +50,12 @@ export function validateQuestionText(text: string): ValidationResult {
  */
 export function validateAnswerText(answer: string): ValidationResult {
   const errors: string[] = [];
+  const trimmedAnswer = answer.trim();
 
-  if (answer.trim().length > 1000) {
-    errors.push('回答は1000文字以内で入力してください');
+  if (trimmedAnswer.length > VALIDATION_LIMITS.ANSWER_TEXT_MAX_LENGTH) {
+    errors.push(
+      `回答は${VALIDATION_LIMITS.ANSWER_TEXT_MAX_LENGTH}文字以内で入力してください`
+    );
   }
 
   return {
@@ -68,8 +81,10 @@ export function validateNurseryName(
     errors.push('保育園名は必須です');
   }
 
-  if (trimmedName.length > 100) {
-    errors.push('保育園名は100文字以内で入力してください');
+  if (trimmedName.length > VALIDATION_LIMITS.NURSERY_NAME_MAX_LENGTH) {
+    errors.push(
+      `保育園名は${VALIDATION_LIMITS.NURSERY_NAME_MAX_LENGTH}文字以内で入力してください`
+    );
   }
 
   return {
@@ -134,9 +149,11 @@ export function validateVisitDate(
     errors.push('見学日は今日以降の日付を入力してください');
   }
 
-  const oneYearFromNow = new Date();
-  oneYearFromNow.setFullYear(today.getFullYear() + 1);
-  if (dateValue > oneYearFromNow) {
+  const oneYearFromToday = new Date(today);
+  oneYearFromToday.setFullYear(today.getFullYear() + 1);
+  // today は 0:00 に正規化済みだが、念のため同様に揃える
+  oneYearFromToday.setHours(0, 0, 0, 0);
+  if (dateValue > oneYearFromToday) {
     errors.push('見学日は1年以内の日付を選択してください');
   }
 
@@ -187,8 +204,9 @@ export function validateUpdateQuestionInput(
     errors.push(...textValidation.errors);
   }
 
-  if (input.answer !== undefined && input.answer.trim().length > 0) {
-    const answerValidation = validateAnswerText(input.answer);
+  const trimmedAnswer = input.answer?.trim();
+  if (trimmedAnswer?.length) {
+    const answerValidation = validateAnswerText(trimmedAnswer);
     errors.push(...answerValidation.errors);
   }
 
@@ -207,8 +225,9 @@ export function validateQuestion(question: Question): ValidationResult {
   const textValidation = validateQuestionText(question.text);
   errors.push(...textValidation.errors);
 
-  if (question.answer && question.answer.trim().length > 0) {
-    const answerValidation = validateAnswerText(question.answer);
+  const trimmedAnswer = question.answer?.trim();
+  if (trimmedAnswer?.length) {
+    const answerValidation = validateAnswerText(trimmedAnswer);
     errors.push(...answerValidation.errors);
   }
 
