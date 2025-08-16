@@ -27,12 +27,13 @@ export interface ValidationResult {
  */
 export function validateQuestionText(text: string): ValidationResult {
   const errors: string[] = [];
+  const trimmedText = text.trim();
 
-  if (!text || text.trim().length === 0) {
+  if (!text || trimmedText.length === 0) {
     errors.push('質問内容を入力してください');
   }
 
-  if (text.trim().length > VALIDATION_LIMITS.QUESTION_TEXT_MAX_LENGTH) {
+  if (trimmedText.length > VALIDATION_LIMITS.QUESTION_TEXT_MAX_LENGTH) {
     errors.push(
       `質問内容は${VALIDATION_LIMITS.QUESTION_TEXT_MAX_LENGTH}文字以内で入力してください`
     );
@@ -49,8 +50,9 @@ export function validateQuestionText(text: string): ValidationResult {
  */
 export function validateAnswerText(answer: string): ValidationResult {
   const errors: string[] = [];
+  const trimmedAnswer = answer.trim();
 
-  if (answer.trim().length > VALIDATION_LIMITS.ANSWER_TEXT_MAX_LENGTH) {
+  if (trimmedAnswer.length > VALIDATION_LIMITS.ANSWER_TEXT_MAX_LENGTH) {
     errors.push(
       `回答は${VALIDATION_LIMITS.ANSWER_TEXT_MAX_LENGTH}文字以内で入力してください`
     );
@@ -201,8 +203,9 @@ export function validateUpdateQuestionInput(
     errors.push(...textValidation.errors);
   }
 
-  if (input.answer !== undefined && input.answer.trim().length > 0) {
-    const answerValidation = validateAnswerText(input.answer);
+  const trimmedAnswer = input.answer?.trim();
+  if (trimmedAnswer !== undefined && trimmedAnswer.length > 0) {
+    const answerValidation = validateAnswerText(input.answer!);
     errors.push(...answerValidation.errors);
   }
 
@@ -221,7 +224,8 @@ export function validateQuestion(question: Question): ValidationResult {
   const textValidation = validateQuestionText(question.text);
   errors.push(...textValidation.errors);
 
-  if (question.answer && question.answer.trim().length > 0) {
+  const trimmedAnswer = question.answer?.trim();
+  if (trimmedAnswer && trimmedAnswer.length > 0 && question.answer) {
     const answerValidation = validateAnswerText(question.answer);
     errors.push(...answerValidation.errors);
   }

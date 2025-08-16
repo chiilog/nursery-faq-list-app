@@ -983,12 +983,11 @@ export const useNurseryStore = create<NurseryState>()(
             const sourceNurseries = sourceResult.data;
 
             if (sourceNurseries.length === 0) {
-              console.log('移行対象のデータが見つかりません');
+              // 移行対象のデータが見つからない場合は正常終了
               return;
             }
 
             // 各保育園データを新しいストレージ形式に移行
-            let migratedCount = 0;
             for (const nursery of sourceNurseries) {
               const createResult = await targetStore.createNursery({
                 name: nursery.name,
@@ -1057,16 +1056,11 @@ export const useNurseryStore = create<NurseryState>()(
                     }
                   }
                 }
-                migratedCount++;
               }
             }
 
             // 移行完了後にデータをリロード
             await loadNurseries();
-
-            console.log(
-              `Data migration completed: ${migratedCount}/${sourceNurseries.length} nurseries migrated`
-            );
           } catch (error) {
             const appError = createAppError(
               error,
