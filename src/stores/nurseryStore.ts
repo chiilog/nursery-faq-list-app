@@ -1028,18 +1028,33 @@ export const useNurseryStore = create<NurseryState>()(
                     });
                   }
 
-                  // 2番目以降のセッションを移行
+                  // 2番目以降のセッションを移行（質問なしで作成後、個別に質問を追加）
                   for (const session of originalSessions.slice(1)) {
-                    await targetStore.createVisitSession(newNursery.id, {
-                      visitDate: session.visitDate || new Date(),
-                      status: session.status,
-                      questions: session.questions.map((q) => ({
-                        text: q.text,
-                        answer: q.answer,
-                        isAnswered: q.isAnswered,
-                      })),
-                      insights: session.insights,
-                    });
+                    const sessionResult = await targetStore.createVisitSession(
+                      newNursery.id,
+                      {
+                        visitDate: session.visitDate || new Date(),
+                        status: session.status,
+                        insights: session.insights,
+                      }
+                    );
+
+                    if (sessionResult.success) {
+                      const newSessionId = sessionResult.data.id;
+
+                      // 質問を個別に追加して回答状態を保持
+                      for (const question of session.questions) {
+                        await targetStore.addQuestion(
+                          newNursery.id,
+                          newSessionId,
+                          {
+                            text: question.text,
+                            answer: question.answer,
+                            isAnswered: question.isAnswered,
+                          }
+                        );
+                      }
+                    }
                   }
                 }
                 migratedCount++;
