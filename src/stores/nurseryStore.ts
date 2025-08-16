@@ -447,7 +447,7 @@ export const useNurseryStore = create<NurseryState>()(
               'UPDATE_NURSERY_FAILED'
             );
             set({ error: appError });
-            throw error;
+            throw error; // エラーを再度投げて呼び出し元に伝播
           } finally {
             setLoading({ isLoading: false });
           }
@@ -481,7 +481,7 @@ export const useNurseryStore = create<NurseryState>()(
               'DELETE_NURSERY_FAILED'
             );
             set({ error: appError });
-            throw error;
+            throw error; // エラーを再度投げて呼び出し元に伝播
           } finally {
             setLoading({ isLoading: false });
           }
@@ -520,6 +520,7 @@ export const useNurseryStore = create<NurseryState>()(
               'LOAD_NURSERY_FAILED'
             );
             set({ error: appError });
+            throw error; // エラーを再度投げて呼び出し元に伝播
           } finally {
             setLoading({ isLoading: false });
           }
@@ -683,6 +684,7 @@ export const useNurseryStore = create<NurseryState>()(
               'LOAD_SESSION_FAILED'
             );
             set({ error: appError });
+            throw error; // エラーを再度投げて呼び出し元に伝播
           } finally {
             setLoading({ isLoading: false });
           }
@@ -994,20 +996,51 @@ export const useNurseryStore = create<NurseryState>()(
               });
 
               if (createResult.success) {
-                // 見学セッションと質問データも移行
                 const newNursery = createResult.data;
-                for (const session of nursery.visitSessions.slice(1)) {
-                  // 最初のセッションは作成時に自動生成されるのでスキップ
-                  await targetStore.createVisitSession(newNursery.id, {
-                    visitDate: session.visitDate || new Date(),
-                    status: session.status,
-                    questions: session.questions.map((q) => ({
-                      text: q.text,
-                      answer: q.answer,
-                      isAnswered: q.isAnswered,
-                    })),
-                    insights: session.insights,
-                  });
+                const originalSessions = nursery.visitSessions;
+
+                if (originalSessions.length > 0) {
+                  // 最初のセッションの質問とinsightsを更新
+                  const firstSession = originalSessions[0];
+                  const newFirstSession = newNursery.visitSessions[0]; // 自動生成されたセッション
+
+                  // 最初のセッションに質問とinsightsを追加
+                  for (const question of firstSession.questions) {
+                    await targetStore.addQuestion(
+                      newNursery.id,
+                      newFirstSession.id,
+                      {
+                        text: question.text,
+                        answer: question.answer,
+                        isAnswered: question.isAnswered,
+                      }
+                    );
+                  }
+
+                  // insightsとステータスを更新
+                  if (
+                    firstSession.insights.length > 0 ||
+                    firstSession.status !== 'planned'
+                  ) {
+                    await targetStore.updateVisitSession(newFirstSession.id, {
+                      insights: firstSession.insights,
+                      status: firstSession.status,
+                    });
+                  }
+
+                  // 2番目以降のセッションを移行
+                  for (const session of originalSessions.slice(1)) {
+                    await targetStore.createVisitSession(newNursery.id, {
+                      visitDate: session.visitDate || new Date(),
+                      status: session.status,
+                      questions: session.questions.map((q) => ({
+                        text: q.text,
+                        answer: q.answer,
+                        isAnswered: q.isAnswered,
+                      })),
+                      insights: session.insights,
+                    });
+                  }
                 }
                 migratedCount++;
               }

@@ -130,8 +130,10 @@ class NurseryDataStore {
       const encryptedData: Record<string, EncryptedData> = {};
 
       for (const [nurseryId, nursery] of Object.entries(data)) {
-        const serializedNursery = JSON.stringify(nursery);
-        encryptedData[nurseryId] = await encryptData(serializedNursery, key);
+        // シリアライズされた形式で保存して読み込み時との整合性を保つ
+        const serializedNursery = this.serializeNursery(nursery);
+        const serializedJson = JSON.stringify(serializedNursery);
+        encryptedData[nurseryId] = await encryptData(serializedJson, key);
       }
 
       this.storage.setItem(
@@ -150,7 +152,9 @@ class NurseryDataStore {
   /**
    * 暗号化データを読み込み
    */
-  private async loadEncryptedData(): Promise<Record<string, Nursery>> {
+  private async loadEncryptedData(): Promise<
+    Record<string, SerializedNursery>
+  > {
     try {
       const encryptedData = this.storage.getItem(
         ENCRYPTED_NURSERIES_STORAGE_KEY
@@ -165,7 +169,7 @@ class NurseryDataStore {
       }
 
       const key = await getOrCreateEncryptionKey();
-      const decryptedData: Record<string, Nursery> = {};
+      const decryptedData: Record<string, SerializedNursery> = {};
 
       for (const [nurseryId, encrypted] of Object.entries(parsedData)) {
         const decryptedJson = await decryptData(encrypted, key);
@@ -182,7 +186,7 @@ class NurseryDataStore {
               `Invalid nursery data structure for ID: ${nurseryId}`
             );
           }
-          decryptedData[nurseryId] = parsedNursery as Nursery;
+          decryptedData[nurseryId] = parsedNursery as SerializedNursery;
         } catch (parseError) {
           throw new Error(
             `Failed to parse decrypted data for nursery ${nurseryId}: ${
@@ -247,13 +251,8 @@ class NurseryDataStore {
    */
   private async loadData(): Promise<Record<string, SerializedNursery>> {
     if (this.encryptionEnabled) {
-      const data = await this.loadEncryptedData();
-      // 共通のシリアライズメソッドを使用してデータ変換
-      const serializedData: Record<string, SerializedNursery> = {};
-      for (const [id, nursery] of Object.entries(data)) {
-        serializedData[id] = this.serializeNursery(nursery);
-      }
-      return serializedData;
+      // 暗号化データは既にシリアライズ済みで保存されているので直接返す
+      return await this.loadEncryptedData();
     } else {
       const nurseriesData = this.storage.getItem(NURSERIES_STORAGE_KEY);
       if (!nurseriesData) {
