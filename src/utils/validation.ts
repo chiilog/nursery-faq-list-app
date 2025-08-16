@@ -10,11 +10,11 @@ import type {
 } from '../types/data';
 
 // バリデーション制限値の定数定義
-export const VALIDATION_LIMITS = {
+export const VALIDATION_LIMITS = Object.freeze({
   QUESTION_TEXT_MAX_LENGTH: 500,
   ANSWER_TEXT_MAX_LENGTH: 1000,
   NURSERY_NAME_MAX_LENGTH: 100,
-} as const;
+} as const);
 
 // エラーメッセージの型定義
 export interface ValidationResult {
@@ -29,7 +29,7 @@ export function validateQuestionText(text: string): ValidationResult {
   const errors: string[] = [];
   const trimmedText = text.trim();
 
-  if (!text || trimmedText.length === 0) {
+  if (trimmedText.length === 0) {
     errors.push('質問内容を入力してください');
   }
 
@@ -149,10 +149,11 @@ export function validateVisitDate(
     errors.push('見学日は今日以降の日付を入力してください');
   }
 
-  const oneYearFromNow = new Date();
-  oneYearFromNow.setFullYear(today.getFullYear() + 1);
-  oneYearFromNow.setHours(0, 0, 0, 0);
-  if (dateValue > oneYearFromNow) {
+  const oneYearFromToday = new Date(today);
+  oneYearFromToday.setFullYear(today.getFullYear() + 1);
+  // today は 0:00 に正規化済みだが、念のため同様に揃える
+  oneYearFromToday.setHours(0, 0, 0, 0);
+  if (dateValue > oneYearFromToday) {
     errors.push('見学日は1年以内の日付を選択してください');
   }
 
@@ -204,8 +205,8 @@ export function validateUpdateQuestionInput(
   }
 
   const trimmedAnswer = input.answer?.trim();
-  if (trimmedAnswer !== undefined && trimmedAnswer.length > 0) {
-    const answerValidation = validateAnswerText(input.answer!);
+  if (trimmedAnswer?.length) {
+    const answerValidation = validateAnswerText(trimmedAnswer);
     errors.push(...answerValidation.errors);
   }
 
@@ -225,8 +226,8 @@ export function validateQuestion(question: Question): ValidationResult {
   errors.push(...textValidation.errors);
 
   const trimmedAnswer = question.answer?.trim();
-  if (trimmedAnswer && trimmedAnswer.length > 0 && question.answer) {
-    const answerValidation = validateAnswerText(question.answer);
+  if (trimmedAnswer?.length) {
+    const answerValidation = validateAnswerText(trimmedAnswer);
     errors.push(...answerValidation.errors);
   }
 
