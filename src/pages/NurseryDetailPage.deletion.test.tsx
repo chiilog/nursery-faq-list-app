@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test/test-utils';
-import { NurseryDetailPage } from '../components/NurseryDetailPage';
+import { NurseryDetailPage } from './NurseryDetailPage';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { useNavigate } from 'react-router-dom';
 
