@@ -12,16 +12,17 @@ import {
   Separator,
   useDisclosure,
 } from '@chakra-ui/react';
+import { IoArrowBack } from 'react-icons/io5';
 import { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNurseryStore } from '../stores/nurseryStore';
-import { Layout } from './Layout';
-import { NurseryInfoCard } from './NurseryInfoCard';
-import { QuestionAddForm } from './QuestionAddForm';
-import { QuestionsSection } from './QuestionsSection';
-import { InsightsSection } from './InsightsSection';
-import { InlineFormActions } from './NurseryCreator/FormActions';
-import { DeleteNurseryDialog } from './nursery/DeleteNurseryDialog';
+import { Layout } from '../components/Layout';
+import { NurseryInfoCard } from '../components/NurseryInfoCard';
+import { QuestionAddForm } from '../components/QuestionAddForm';
+import { QuestionsSection } from '../components/QuestionsSection';
+import { InsightsSection } from '../components/InsightsSection';
+import { InlineFormActions } from '../components/NurseryCreator/FormActions';
+import { DeleteNurseryDialog } from '../components/nursery/DeleteNurseryDialog';
 import { showToast } from '../utils/toaster';
 import { useNurseryEdit } from '../hooks/useNurseryEdit';
 import { useQuestionEditor } from '../hooks/useQuestionEditor';
@@ -230,14 +231,13 @@ export const NurseryDetailPage = () => {
 
   return (
     <Layout
-      headerTitle="保育園詳細"
       headerVariant="with-buttons"
       leftButton={{
-        text: '← 戻る',
+        icon: <IoArrowBack />,
         onClick: handleBack,
         variant: 'ghost',
+        'aria-label': '戻る',
       }}
-      showDefaultTitle={false}
     >
       <Box p={0} maxW="4xl" mx="auto">
         <VStack align="stretch" gap={{ base: 3, md: 4 }}>

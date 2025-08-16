@@ -109,7 +109,7 @@ describe('NurseryDetailPage コンポーネント', () => {
     test('戻るボタンが表示される', () => {
       renderWithProviders(<NurseryDetailPage />);
 
-      const backButton = screen.getByRole('button', { name: '← 戻る' });
+      const backButton = screen.getByRole('button', { name: '戻る' });
       expect(backButton).toBeInTheDocument();
     });
   });
@@ -267,7 +267,7 @@ describe('NurseryDetailPage コンポーネント', () => {
       renderWithProviders(<NurseryDetailPage />);
 
       expect(
-        screen.getByRole('heading', { name: '保育園詳細' })
+        screen.getByRole('heading', { name: '保活手帳' })
       ).toBeInTheDocument();
     });
 
@@ -275,7 +275,7 @@ describe('NurseryDetailPage コンポーネント', () => {
       renderWithProviders(<NurseryDetailPage />);
 
       // 主要な要素に直接フォーカスして機能を確認
-      const backButton = screen.getByRole('button', { name: '← 戻る' });
+      const backButton = screen.getByRole('button', { name: '戻る' });
       backButton.focus();
       expect(backButton).toHaveFocus();
 
