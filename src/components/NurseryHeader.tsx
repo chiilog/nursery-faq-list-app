@@ -3,6 +3,8 @@
  */
 
 import { Box, Button, Heading, HStack, IconButton } from '@chakra-ui/react';
+import { IoHelpCircleOutline } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
 import type { HeaderButton, HeaderVariant } from '../types/header';
 
 interface NurseryHeaderProps {
@@ -18,6 +20,13 @@ export const NurseryHeader = ({
   rightButton,
   variant = 'with-buttons',
 }: NurseryHeaderProps) => {
+  const navigate = useNavigate();
+
+  const defaultHelpButton: HeaderButton = {
+    icon: <IoHelpCircleOutline />,
+    onClick: () => void navigate('/about'),
+    'aria-label': 'ヘルプ',
+  };
   if (variant === 'centered') {
     return (
       <Heading
@@ -33,7 +42,7 @@ export const NurseryHeader = ({
 
   return (
     <HStack justify="space-between" align="center" w="full">
-      {leftButton ? (
+      {leftButton && !leftButton.hidden ? (
         leftButton.icon ? (
           <IconButton
             onClick={leftButton.onClick}
@@ -69,30 +78,35 @@ export const NurseryHeader = ({
         {title}
       </Heading>
 
-      {rightButton ? (
-        rightButton.icon ? (
-          <IconButton
-            onClick={rightButton.onClick}
-            variant={rightButton.variant || 'ghost'}
-            aria-label={rightButton['aria-label'] || 'Action button'}
-            size={{ base: 'sm', md: 'md' }}
-            borderRadius="full"
-            _hover={{ bg: 'gray.100' }}
-          >
-            {rightButton.icon}
-          </IconButton>
+      {(() => {
+        const buttonToShow = rightButton || defaultHelpButton;
+        const shouldShow = buttonToShow && !buttonToShow.hidden;
+
+        return shouldShow ? (
+          buttonToShow.icon ? (
+            <IconButton
+              onClick={buttonToShow.onClick}
+              variant={buttonToShow.variant || 'ghost'}
+              aria-label={buttonToShow['aria-label'] || 'Action button'}
+              size={{ base: 'sm', md: 'md' }}
+              borderRadius="full"
+              _hover={{ bg: 'gray.100' }}
+            >
+              {buttonToShow.icon}
+            </IconButton>
+          ) : (
+            <Button
+              variant={buttonToShow.variant || 'ghost'}
+              onClick={buttonToShow.onClick}
+              size={{ base: 'sm', md: 'md' }}
+            >
+              {buttonToShow.text}
+            </Button>
+          )
         ) : (
-          <Button
-            variant={rightButton.variant || 'ghost'}
-            onClick={rightButton.onClick}
-            size={{ base: 'sm', md: 'md' }}
-          >
-            {rightButton.text}
-          </Button>
-        )
-      ) : (
-        <Box w="40px" />
-      )}
+          <Box w="40px" />
+        );
+      })()}
     </HStack>
   );
 };
