@@ -148,15 +148,14 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
 8. **Branded Typeの活用**
 
    ```typescript
-   // ❌ 手動での型定義
-   interface UserUpdate {
-     id?: number;
-     name?: string;
-     email?: string;
-   }
+   // ❌ プリミティブのまま識別子を扱う
+   function transfer(fromId: number, toId: number, amount: number) {}
 
-   // ✅ ユーティリティ型の活用
-   type UserUpdate = Partial<User>;
+   // ✅ Branded Typeによる誤用防止
+   type UserId = number & { readonly brand: unique symbol };
+   type MoneyAmount = number & { readonly brand: unique symbol };
+
+   function transfer(fromId: UserId, toId: UserId, amount: MoneyAmount) {}
    ```
 
 ### コード改善の優先順位
