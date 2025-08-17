@@ -1,6 +1,16 @@
 import { screen, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
 import { renderWithChakra } from './test/test-utils';
 import App from './App';
+
+// PrivacyManager をモック
+vi.mock('./services/privacyManager', () => ({
+  PrivacyManager: vi.fn().mockImplementation(() => ({
+    isConsentValid: vi.fn().mockReturnValue(true), // デフォルトで同意済み（バナー非表示）
+    setAllConsent: vi.fn(),
+    addChangeListener: vi.fn(() => () => {}),
+  })),
+}));
 
 describe('App', () => {
   test('アプリのタイトルが表示される', () => {
@@ -22,5 +32,12 @@ describe('App', () => {
         screen.getByRole('button', { name: /保育園を追加する/i })
       ).toBeInTheDocument();
     });
+  });
+
+  test('CookieConsentBannerが統合されている（同意済みの場合は非表示）', () => {
+    renderWithChakra(<App />);
+
+    // PrivacyManagerのモックで同意済み(true)に設定しているため、バナーは表示されない
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

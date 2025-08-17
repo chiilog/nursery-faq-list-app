@@ -33,15 +33,45 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PrivacyManager } from '../services/privacyManager';
 import type { PrivacySettings } from '../types/privacy';
 
-// シングルトンパターンでPrivacyManagerインスタンスを管理
-let privacyManagerInstance: PrivacyManager | null = null;
+/**
+ * @description 型安全なPrivacyManagerシングルトンファクトリー
+ * 初期化エラーや循環参照を防ぎ、確実に単一インスタンスを管理
+ */
+const createPrivacyManagerSingleton = (): (() => PrivacyManager) => {
+  let instance: PrivacyManager | undefined;
+  let isInitializing = false;
 
-function getPrivacyManager(): PrivacyManager {
-  if (!privacyManagerInstance) {
-    privacyManagerInstance = new PrivacyManager();
-  }
-  return privacyManagerInstance;
-}
+  return (): PrivacyManager => {
+    // 初期化中の循環参照を防ぐ
+    if (isInitializing) {
+      throw new Error(
+        '[usePrivacySettings] Circular dependency detected during PrivacyManager initialization'
+      );
+    }
+
+    if (!instance) {
+      try {
+        isInitializing = true;
+        instance = new PrivacyManager();
+      } catch (error) {
+        console.error(
+          '[usePrivacySettings] PrivacyManager initialization failed:',
+          error
+        );
+        throw error; // 呼び出し側でのエラーハンドリングに委ねる
+      } finally {
+        isInitializing = false;
+      }
+    }
+
+    return instance;
+  };
+};
+
+/**
+ * @description 型安全なPrivacyManagerシングルトンインスタンスゲッター
+ */
+const getPrivacyManager = createPrivacyManagerSingleton();
 
 /**
  * usePrivacySettings フックの戻り値の型
@@ -56,15 +86,25 @@ export interface UsePrivacySettingsReturn {
 }
 
 /**
- * プライバシー設定を管理するカスタムフック
+ * @description プライバシー設定を管理するカスタムフック
  * PrivacyManagerと連携してReactコンポーネントでの状態管理を提供
+ * @returns プライバシー設定の状態と操作関数を含むオブジェクト
+ * @throws {Error} PrivacyManagerの初期化に失敗した場合
  */
 export function usePrivacySettings(): UsePrivacySettingsReturn {
-  const privacyManager = useMemo(() => getPrivacyManager(), []);
+  const privacyManager = useMemo(() => {
+    try {
+      return getPrivacyManager();
+    } catch (error) {
+      console.error(
+        '[usePrivacySettings] Failed to get PrivacyManager instance:',
+        error
+      );
+      throw error; // React Error Boundaryでキャッチ可能
+    }
+  }, []);
 
-  const [settings, setSettings] = useState<PrivacySettings>(() =>
-    privacyManager.getSettings()
-  );
+  const [settings, setSettings] = useState(() => privacyManager.getSettings()); // 型推論: PrivacySettings
 
   useEffect(() => {
     // 設定変更リスナーを登録
@@ -107,12 +147,22 @@ export function usePrivacySettings(): UsePrivacySettingsReturn {
     return privacyManager.isConsentValid();
   }, [privacyManager]);
 
-  return {
-    settings,
-    updateSettings,
-    setGoogleAnalyticsConsent,
-    setMicrosoftClarityConsent,
-    setAllConsent,
-    isConsentValid,
-  };
+  return useMemo(
+    () => ({
+      settings,
+      updateSettings,
+      setGoogleAnalyticsConsent,
+      setMicrosoftClarityConsent,
+      setAllConsent,
+      isConsentValid,
+    }),
+    [
+      settings,
+      updateSettings,
+      setGoogleAnalyticsConsent,
+      setMicrosoftClarityConsent,
+      setAllConsent,
+      isConsentValid,
+    ]
+  );
 }

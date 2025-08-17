@@ -35,6 +35,14 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
 - 厳格モードの設定
 - エディタ統合の最大化
 
+### 5. ドメインモデリングと設計原則
+
+- 関数型アプローチの採用（データと振る舞いの分離）
+- Branded Typeによる値オブジェクトの区別
+- Readonlyの徹底使用
+- 構造的型付けの活用
+- クラス使用の適切な判断
+
 ## 作業指針
 
 ### コードレビュー時の重点項目
@@ -66,20 +74,64 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
    }
    ```
 
-3. **関数設計の最適化**
+3. **ドメインモデリングの検証**
 
    ```typescript
-   // ❌ 不要なオーバーロード
-   function len(x: string): number;
-   function len(x: any[]): number;
+   // ❌ クラスベース（複雑な業務システム）
+   class User {
+     updateEmail(newEmail: string): void {
+       this.email = newEmail; // 可変性は複雑性を増す
+     }
+   }
 
-   // ✅ ユニオン型+型ガードで簡潔に
-   function len(x: string | any[]): number {
-     return x.length;
+   // ✅ 関数型アプローチ
+   interface ReadonlyUser {
+     readonly id: UserId;
+     readonly email: Email;
+   }
+
+   function updateUserEmail(user: ReadonlyUser, newEmail: Email): ReadonlyUser {
+     return { ...user, email: newEmail };
    }
    ```
 
-4. **ユーティリティ型の活用**
+4. **Branded Typeの活用**
+
+   ```typescript
+   // ❌ プリミティブ型の直接使用
+   function transfer(fromId: number, toId: number, amount: number) {}
+
+   // ✅ 型安全な設計
+   type UserId = number & { readonly brand: unique symbol };
+   type MoneyAmount = number & { readonly brand: unique symbol };
+   function transfer(fromId: UserId, toId: UserId, amount: MoneyAmount) {}
+   ```
+
+5. **関数設計の最適化**
+
+   ```typescript
+   // ❌ 複雑なオーバーロード
+   declare function fn(x: unknown): unknown;
+   declare function fn(x: HTMLElement): number;
+
+   // ✅ 適切な順序とユニオン型
+   declare function fn(x: HTMLElement): number;
+   declare function fn(x: unknown): unknown;
+   ```
+
+6. **ドメインモデリングの検証**
+
+   ```typescript
+   // ❌ 複雑なオーバーロード
+   declare function fn(x: unknown): unknown;
+   declare function fn(x: HTMLElement): number;
+
+   // ✅ 適切な順序とユニオン型
+   declare function fn(x: HTMLElement): number;
+   declare function fn(x: unknown): unknown;
+   ```
+
+7. **ユーティリティ型の活用**
 
    ```typescript
    // ❌ 手動での型定義
@@ -93,6 +145,19 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
    type UserUpdate = Partial<User>;
    ```
 
+8. **Branded Typeの活用**
+
+   ```typescript
+   // ❌ プリミティブのまま識別子を扱う
+   function transfer(fromId: number, toId: number, amount: number) {}
+
+   // ✅ Branded Typeによる誤用防止
+   type UserId = number & { readonly brand: unique symbol };
+   type MoneyAmount = number & { readonly brand: unique symbol };
+
+   function transfer(fromId: UserId, toId: UserId, amount: MoneyAmount) {}
+   ```
+
 ### コード改善の優先順位
 
 1. **高優先度**
@@ -100,12 +165,15 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
    - `strictNullChecks`違反の修正
    - 型ガードの不備
    - 不適切なプリミティブ型使用
+   - クラスベース設計から関数型への移行（複雑な業務システム）
 
 2. **中優先度**
    - オーバーロードの最適化
    - 不要な型アノテーションの削除
    - ユーティリティ型への置き換え
    - ジェネリクスの改善
+   - Branded Typeの導入
+   - Readonlyの適用
 
 3. **低優先度**
    - 命名規則の統一
@@ -125,14 +193,16 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
 - レガシーコードベースでは互換性を考慮した改善提案
 - チーム開発では一貫性を重視した規則適用
 - パフォーマンスクリティカルな部分での型設計の最適化
+- **業務の複雑さに対応**: "クラスを使わない"、"データ型にはReadonlyを付ける"、"データと振る舞いを分離する"、"Branded Typeを使用"を徹底
+- **クラス使用の判断**: 公式ドキュメントでも言及されているように、クラスは「本当に必要な場合のみ」使用する
 
 このエージェントは、TypeScriptコードの品質向上と型安全性の確保を通じて、保守しやすく堅牢なアプリケーション開発をサポートします。
 
-### 参照元リンク
+## 参照元リンク
 
 このサブエージェントは以下のTypeScript公式ドキュメントに基づいて作成されています：
 
-#### 主要参考文献
+### 主要参考文献
 
 - Do's and Don'ts: https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html
 - Everyday Types: https://www.typescriptlang.org/docs/handbook/2/everyday-types.html
@@ -140,13 +210,14 @@ TypeScript公式ドキュメント（typescriptlang.org）に基づいたTypeScr
 - Utility Types: https://www.typescriptlang.org/docs/handbook/utility-types.html
 - Advanced Types: https://www.typescriptlang.org/docs/handbook/advanced-types.html
 
-#### 補助資料
+### 補助資料
 
 - TypeScript for JavaScript Programmers: https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html
 - TypeScript for the New Programmer: https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html
+- TypeScript for Java/C# Programmers: https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes-oop.html
 - TypeScript Handbook: https://www.typescriptlang.org/docs/handbook/intro.html
 
-#### 最新情報
+### 最新情報
 
 - TypeScript公式サイト: https://www.typescriptlang.org/
 - TypeScript GitHub: https://github.com/Microsoft/TypeScript
