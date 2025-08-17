@@ -280,22 +280,19 @@ describe('CookieConsentBanner', () => {
 
     it('changeListenerのアンサブスクライブが正常に動作する', () => {
       mockPrivacyManager.isConsentValid.mockReturnValue(false);
+      const unsubscribe = vi.fn();
+      mockPrivacyManager.addChangeListener.mockReturnValue(unsubscribe);
 
       const { unmount } = testHelpers.renderBanner(mockPrivacyManager);
 
       // changeListenerが登録されることを確認
       expect(mockPrivacyManager.addChangeListener).toHaveBeenCalledTimes(1);
 
-      // unsubscribe関数が返されることを確認
-      const unsubscribeFn =
-        mockPrivacyManager.addChangeListener.mock.results[0].value;
-      expect(typeof unsubscribeFn).toBe('function');
-
       // コンポーネントをアンマウント
       unmount();
 
-      // アンサブスクライブ関数が呼ばれることを確認（useEffectのクリーンアップ）
-      // 実際には useEffect の return で unsubscribeFn が呼ばれる
+      // クリーンアップでunsubscribeが呼ばれることを確認
+      expect(unsubscribe).toHaveBeenCalledTimes(1);
     });
   });
 
