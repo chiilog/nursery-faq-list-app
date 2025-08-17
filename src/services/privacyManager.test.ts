@@ -99,9 +99,9 @@ describe('PrivacyManager', () => {
   });
 
   describe('同意期限の判定', () => {
-    it('同意が期限内であることを判定する', () => {
+    it('初回訪問時（設定なし）は同意が無効であることを判定する', () => {
       const isValid = privacyManager.isConsentValid();
-      expect(isValid).toBe(true);
+      expect(isValid).toBe(false);
     });
 
     it('同意が期限切れであることを判定する', () => {

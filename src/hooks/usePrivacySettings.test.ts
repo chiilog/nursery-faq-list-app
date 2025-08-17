@@ -77,15 +77,25 @@ describe('usePrivacySettings', () => {
   describe('リアクティブ更新', () => {
     it('設定変更時にコンポーネントが再レンダリングされる', () => {
       const { result } = renderHook(() => usePrivacySettings());
-      const initialRender = result.current;
 
+      // 初期状態を確実にfalseに設定
+      act(() => {
+        result.current.updateSettings({ googleAnalytics: false });
+      });
+
+      const initialGoogleAnalytics = result.current.settings.googleAnalytics;
+      expect(initialGoogleAnalytics).toBe(false);
+
+      // 設定を変更
       act(() => {
         result.current.updateSettings({ googleAnalytics: true });
       });
 
-      // 新しいオブジェクトが返されることを確認（React の再レンダリングトリガー）
-      expect(result.current).not.toBe(initialRender);
+      // 設定値が変更されることを確認（React の再レンダリングが機能している証拠）
       expect(result.current.settings.googleAnalytics).toBe(true);
+      expect(result.current.settings.googleAnalytics).not.toBe(
+        initialGoogleAnalytics
+      );
     });
   });
 

@@ -1,6 +1,6 @@
 /**
  * useNurseryEdit フックのテスト
- * TDD Red Phase: 失敗するテストを先に作成
+ * 保育園編集機能のインターフェースと動作を検証
  */
 
 import { renderHook, act } from '@testing-library/react';
