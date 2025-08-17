@@ -2,6 +2,7 @@ import { Box, Container } from '@chakra-ui/react';
 import { Outlet } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { NurseryHeader } from './NurseryHeader';
+import { APP_CONFIG } from '../constants/app';
 import type { HeaderButton, HeaderVariant } from '../types/header';
 
 interface LayoutProps {
@@ -22,12 +23,12 @@ export const Layout = ({
   showDefaultTitle = true,
 }: LayoutProps) => {
   const shouldShowHeader = headerTitle || showDefaultTitle;
-  const title = headerTitle || '保育園見学質問リスト';
+  const title = headerTitle || APP_CONFIG.APP_NAME;
 
   return (
     <Box minH="100vh" bg="gray.50">
       <Box as="header" bg="white" shadow="sm">
-        <Container maxW="container.xl" py={4}>
+        <Container maxW="container.xl" py={2}>
           {shouldShowHeader && (
             <NurseryHeader
               title={title}

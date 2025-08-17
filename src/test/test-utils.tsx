@@ -3,13 +3,37 @@
  * ChakraUIコンポーネントのテストで使用するヘルパー関数
  */
 
-import type { ReactElement } from 'react';
-import { render as rtlRender } from '@testing-library/react';
+import type { ReactElement, ReactNode } from 'react';
+import { render as rtlRender, renderHook } from '@testing-library/react';
+import type { RenderResult, RenderHookResult } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { MemoryRouter } from 'react-router-dom';
 import system from '../theme';
 
-// プロバイダー付きでコンポーネントをレンダリング
+// Chakra UI Provider Wrapper
+const ChakraWrapper = ({ children }: { children: ReactNode }) => (
+  <ChakraProvider value={system}>{children}</ChakraProvider>
+);
+
+export { ChakraWrapper };
+
+// コンポーネント用のrender関数（Chakraのみ）
+export function renderWithChakra(ui: React.ReactElement): RenderResult {
+  return rtlRender(ui, { wrapper: ChakraWrapper });
+}
+
+// フック用のrenderHook関数
+export function renderHookWithChakra<TResult, TProps>(
+  hook: (props: TProps) => TResult,
+  options?: { initialProps?: TProps }
+): RenderHookResult<TResult, TProps> {
+  return renderHook(hook, {
+    wrapper: ChakraWrapper,
+    ...options,
+  });
+}
+
+// プロバイダー付きでコンポーネントをレンダリング（React Router対応）
 export const renderWithProviders = (
   ui: ReactElement,
   { initialEntries = ['/'] } = {}

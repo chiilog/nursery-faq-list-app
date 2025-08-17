@@ -3,6 +3,9 @@
  */
 
 import { Box, Button, Heading, HStack, IconButton } from '@chakra-ui/react';
+import { IoHelpCircleOutline } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
+import { APP_CONFIG } from '../constants/app';
 import type { HeaderButton, HeaderVariant } from '../types/header';
 
 interface NurseryHeaderProps {
@@ -18,12 +21,19 @@ export const NurseryHeader = ({
   rightButton,
   variant = 'with-buttons',
 }: NurseryHeaderProps) => {
+  const navigate = useNavigate();
+
+  const defaultHelpButton: HeaderButton = {
+    icon: <IoHelpCircleOutline />,
+    onClick: () => void navigate('/about'),
+    'aria-label': 'ヘルプ',
+  };
   if (variant === 'centered') {
     return (
       <Heading
         as="h1"
         size={{ base: 'md', md: 'lg' }}
-        color="teal.600"
+        color={APP_CONFIG.COLORS.PRIMARY}
         textAlign="center"
       >
         {title}
@@ -33,7 +43,7 @@ export const NurseryHeader = ({
 
   return (
     <HStack justify="space-between" align="center" w="full">
-      {leftButton ? (
+      {leftButton && !leftButton.hidden ? (
         leftButton.icon ? (
           <IconButton
             onClick={leftButton.onClick}
@@ -62,37 +72,46 @@ export const NurseryHeader = ({
       <Heading
         as="h1"
         size={{ base: 'md', md: 'lg' }}
-        color="teal.600"
+        color={APP_CONFIG.COLORS.PRIMARY}
         flex={1}
         textAlign="center"
       >
         {title}
       </Heading>
 
-      {rightButton ? (
-        rightButton.icon ? (
-          <IconButton
-            onClick={rightButton.onClick}
-            variant={rightButton.variant || 'ghost'}
-            aria-label={rightButton['aria-label'] || 'Action button'}
-            size={{ base: 'sm', md: 'md' }}
-            borderRadius="full"
-            _hover={{ bg: 'gray.100' }}
-          >
-            {rightButton.icon}
-          </IconButton>
-        ) : (
+      {(() => {
+        const buttonToShow = rightButton || defaultHelpButton;
+        const shouldShow = buttonToShow && !buttonToShow.hidden;
+
+        if (!shouldShow) {
+          return <Box w="40px" />;
+        }
+
+        if (buttonToShow.icon) {
+          return (
+            <IconButton
+              onClick={buttonToShow.onClick}
+              variant={buttonToShow.variant || 'ghost'}
+              aria-label={buttonToShow['aria-label'] || 'Action button'}
+              size={{ base: 'sm', md: 'md' }}
+              borderRadius="full"
+              _hover={{ bg: 'gray.100' }}
+            >
+              {buttonToShow.icon}
+            </IconButton>
+          );
+        }
+
+        return (
           <Button
-            variant={rightButton.variant || 'ghost'}
-            onClick={rightButton.onClick}
+            variant={buttonToShow.variant || 'ghost'}
+            onClick={buttonToShow.onClick}
             size={{ base: 'sm', md: 'md' }}
           >
-            {rightButton.text}
+            {buttonToShow.text}
           </Button>
-        )
-      ) : (
-        <Box w="40px" />
-      )}
+        );
+      })()}
     </HStack>
   );
 };

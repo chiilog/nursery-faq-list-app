@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 import { Layout } from './Layout';
-import { renderWithProviders } from '../test/testUtils';
+import { renderWithProviders } from '../test/test-utils';
 
 describe('Layout', () => {
   describe('基本レイアウト', () => {
@@ -9,7 +9,7 @@ describe('Layout', () => {
       renderWithProviders(<Layout />);
 
       const title = screen.getByRole('heading', {
-        name: /保育園見学質問リスト/i,
+        name: /保活手帳/i,
       });
       expect(title).toBeInTheDocument();
     });
@@ -18,7 +18,7 @@ describe('Layout', () => {
       renderWithProviders(<Layout />);
 
       const title = screen.getByRole('heading', {
-        name: /保育園見学質問リスト/i,
+        name: /保活手帳/i,
       });
       expect(title).toHaveStyle({ textAlign: 'center' });
     });
@@ -48,7 +48,7 @@ describe('Layout', () => {
 
       const title = screen.getByRole('heading', { level: 1 });
       expect(title).toBeInTheDocument();
-      expect(title).toHaveTextContent('保育園見学質問リスト');
+      expect(title).toHaveTextContent('保活手帳');
     });
   });
 });

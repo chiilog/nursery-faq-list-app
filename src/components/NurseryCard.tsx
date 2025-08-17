@@ -58,20 +58,6 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
       borderRadius="md"
       bg="white"
       shadow="sm"
-      _hover={{
-        shadow: 'md',
-        transform: 'translateY(-1px)',
-        borderColor: 'brand.200',
-      }}
-      _focus={{
-        outline: 'none',
-        shadow: 'outline',
-        borderColor: 'brand.300',
-      }}
-      _active={{
-        transform: 'translateY(0)',
-        shadow: 'sm',
-      }}
       transition="all 0.2s ease-in-out"
       width="100%"
       cursor="pointer"

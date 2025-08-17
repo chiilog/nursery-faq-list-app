@@ -587,4 +587,48 @@ describe('NurseryHeader', () => {
       expect(button).toBeInTheDocument();
     });
   });
+
+  describe('デフォルトヘルプボタン', () => {
+    it('rightButtonが指定されていない場合、デフォルトのヘルプボタンが表示される', () => {
+      render(<NurseryHeader title="タイトル" />);
+
+      expect(
+        screen.getByRole('button', { name: 'ヘルプ' })
+      ).toBeInTheDocument();
+    });
+
+    it('デフォルトのヘルプボタンがクリックできる', async () => {
+      const user = userEvent.setup();
+
+      render(<NurseryHeader title="タイトル" />);
+
+      const helpButton = screen.getByRole('button', { name: 'ヘルプ' });
+      expect(helpButton).toBeEnabled();
+
+      // クリックしてもエラーが発生しないことを確認
+      await user.click(helpButton);
+    });
+
+    it('rightButtonが指定されている場合、ヘルプボタンは表示されない', () => {
+      const rightButton: HeaderButton = {
+        text: '保存',
+        onClick: vi.fn(),
+      };
+
+      render(<NurseryHeader title="タイトル" rightButton={rightButton} />);
+
+      expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'ヘルプ' })
+      ).not.toBeInTheDocument();
+    });
+
+    it('centeredバリアントの場合、ヘルプボタンは表示されない', () => {
+      render(<NurseryHeader title="タイトル" variant="centered" />);
+
+      expect(
+        screen.queryByRole('button', { name: 'ヘルプ' })
+      ).not.toBeInTheDocument();
+    });
+  });
 });

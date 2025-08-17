@@ -11,6 +11,7 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { useCallback } from 'react';
+import { APP_CONFIG } from '../constants/app';
 
 interface QuestionAddFormProps {
   isAddingQuestion: boolean;
@@ -42,15 +43,7 @@ export const QuestionAddForm = ({
   }, [onToggleAddForm]);
   if (isAddingQuestion) {
     return (
-      <VStack
-        align="stretch"
-        p={4}
-        border="2px"
-        borderColor="brand.200"
-        borderRadius="lg"
-        bg="brand.50"
-        shadow="sm"
-      >
+      <VStack align="stretch">
         <Input
           size="lg"
           placeholder="新しい質問を入力してください"
@@ -59,30 +52,31 @@ export const QuestionAddForm = ({
           value={newQuestionText}
           onChange={(e) => onNewQuestionTextChange(e.target.value)}
           bg="white"
-          borderColor="brand.300"
-          _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
         />
         <Textarea
+          size="lg"
           placeholder="回答があれば入力してください（任意）"
           aria-label="回答入力（任意）"
           value={newAnswerText}
           onChange={(e) => onNewAnswerTextChange(e.target.value)}
           bg="white"
-          borderColor="brand.300"
-          _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
           rows={3}
           resize="vertical"
         />
         <HStack justify="flex-end" gap={2}>
           <Button
-            variant="ghost"
+            variant="subtle"
+            bgColor={APP_CONFIG.COLORS.PRIMARY_LIGHT}
+            color={APP_CONFIG.COLORS.PRIMARY_DARK}
             onClick={handleCancel}
             size={{ base: 'sm', md: 'md' }}
           >
             キャンセル
           </Button>
           <Button
-            colorPalette="brand"
+            variant="solid"
+            bgColor={APP_CONFIG.COLORS.PRIMARY}
+            color={APP_CONFIG.COLORS.WHITE}
             onClick={onAddQuestion}
             disabled={!newQuestionText.trim()}
             size={{ base: 'sm', md: 'md' }}
@@ -96,7 +90,9 @@ export const QuestionAddForm = ({
 
   return (
     <Button
-      colorPalette="brand"
+      variant="solid"
+      bgColor={APP_CONFIG.COLORS.PRIMARY}
+      color={APP_CONFIG.COLORS.WHITE}
       onClick={handleStartAdding}
       size={{ base: 'md', md: 'lg' }}
       w="full"
