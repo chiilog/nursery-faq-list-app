@@ -95,16 +95,57 @@ export class PrivacyManager {
         }
       : updates;
 
+    // 実変更のみ抽出し、必要に応じて consentTimestamp を自動更新
+    const appliedChanges: Partial<PrivacySettings> = {};
+    if (
+      'googleAnalytics' in sanitizedUpdates &&
+      sanitizedUpdates.googleAnalytics !== previous.googleAnalytics
+    ) {
+      appliedChanges.googleAnalytics = sanitizedUpdates.googleAnalytics!;
+    }
+    if (
+      'microsoftClarity' in sanitizedUpdates &&
+      sanitizedUpdates.microsoftClarity !== previous.microsoftClarity
+    ) {
+      appliedChanges.microsoftClarity = sanitizedUpdates.microsoftClarity!;
+    }
+    if (
+      'consentVersion' in sanitizedUpdates &&
+      sanitizedUpdates.consentVersion !== previous.consentVersion
+    ) {
+      appliedChanges.consentVersion = sanitizedUpdates.consentVersion!;
+    }
+    // 明示指定があればそれを採用
+    if (
+      'consentTimestamp' in sanitizedUpdates &&
+      sanitizedUpdates.consentTimestamp !== previous.consentTimestamp
+    ) {
+      appliedChanges.consentTimestamp = sanitizedUpdates.consentTimestamp!;
+    } else if (
+      // 同意設定 or バージョンが変わった場合は現在時刻に更新
+      'googleAnalytics' in appliedChanges ||
+      'microsoftClarity' in appliedChanges ||
+      'consentVersion' in appliedChanges
+    ) {
+      appliedChanges.consentTimestamp = new Date();
+    }
+
+    // 実質的に何も変わらない場合は副作用なしで終了
+    if (Object.keys(appliedChanges).length === 0) {
+      return;
+    }
+
     this.settings = {
       ...this.settings,
-      ...sanitizedUpdates,
+      ...appliedChanges,
     };
 
     this.saveToStorage();
     this.notifyListeners({
       previous,
       current: this.settings,
-      changes: updates,
+      // リスナーには「実際に適用された（サニタイズ済み＋暗黙的に補完された）差分」を渡す
+      changes: appliedChanges,
     });
   }
 
