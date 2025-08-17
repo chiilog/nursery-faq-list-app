@@ -31,6 +31,11 @@ export const ActionButtons = ({
   gap = 4,
   fullWidth = false,
 }: ActionButtonsProps) => {
+  // flex値を事前に計算して責務を分離
+  const secondaryFlex = fullWidth ? 1 : undefined;
+  const primaryFlex = fullWidth ? (secondaryAction ? 2 : 1) : undefined;
+  const primaryFontWeight = fullWidth ? 'bold' : undefined;
+
   return (
     <HStack gap={gap} justify={justify} width={fullWidth ? 'full' : 'auto'}>
       {secondaryAction && (
@@ -42,7 +47,7 @@ export const ActionButtons = ({
           disabled={secondaryAction.disabled || primaryAction.loading}
           loading={secondaryAction.loading}
           size={size}
-          flex={fullWidth ? 1 : undefined}
+          flex={secondaryFlex}
         >
           {secondaryAction.label}
         </Button>
@@ -55,8 +60,8 @@ export const ActionButtons = ({
         disabled={primaryAction.disabled || primaryAction.loading}
         loading={primaryAction.loading}
         size={size}
-        flex={fullWidth ? (secondaryAction ? 2 : 1) : undefined}
-        fontWeight={fullWidth ? 'bold' : undefined}
+        flex={primaryFlex}
+        fontWeight={primaryFontWeight}
       >
         {primaryAction.label}
       </Button>

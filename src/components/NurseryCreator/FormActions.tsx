@@ -14,15 +14,14 @@ const commonButtonStyles = {
 
 const primarySaveButtonStyles = {
   ...commonButtonStyles,
-  flex: 2,
   fontWeight: 'bold',
   shadow: 'sm',
   bgColor: APP_CONFIG.COLORS.PRIMARY,
+  color: APP_CONFIG.COLORS.WHITE,
 };
 
 const primaryCancelButtonStyles = {
   ...commonButtonStyles,
-  flex: 1,
   bgColor: APP_CONFIG.COLORS.PRIMARY_LIGHT,
   color: APP_CONFIG.COLORS.PRIMARY_DARK,
 };
@@ -55,6 +54,7 @@ export const PrimaryFormActions = ({
         variant="subtle"
         size={size}
         data-size={size}
+        flex={1}
         {...primaryCancelButtonStyles}
       >
         {cancelLabel}
@@ -64,6 +64,7 @@ export const PrimaryFormActions = ({
         disabled={isDisabled}
         size={size}
         data-size={size}
+        flex={2}
         {...primarySaveButtonStyles}
       >
         {saveLabel}
@@ -129,7 +130,6 @@ export const VerticalFormActions = ({
         size={size}
         data-size={size}
         {...primarySaveButtonStyles}
-        flex={undefined} // flex設定をリセット
         w="full"
       >
         {saveLabel}
@@ -140,7 +140,6 @@ export const VerticalFormActions = ({
         size={size}
         data-size={size}
         {...primaryCancelButtonStyles}
-        flex={undefined} // flex設定をリセット
         w="full"
         py={3} // 縦並びでは異なるパディングを維持
       >
