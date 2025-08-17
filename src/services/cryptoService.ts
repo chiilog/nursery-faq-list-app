@@ -19,6 +19,7 @@ const CRYPTO_CONFIG = {
 
 import { CryptoServiceError } from '../types/errors';
 import { defaultStorageService, type StorageService } from './storageService';
+import { ensureError, getErrorMessage } from '../utils/errorUtils';
 
 /**
  * 暗号化済みデータの型定義
@@ -52,7 +53,7 @@ export async function generateEncryptionKey(): Promise<CryptoKey> {
     throw new CryptoServiceError(
       '暗号化キーの生成に失敗しました',
       'KEY_GENERATION_FAILED',
-      error instanceof Error ? error : new Error(String(error))
+      ensureError(error)
     );
   }
 }
@@ -123,7 +124,7 @@ export async function encryptData(
     throw new CryptoServiceError(
       'データの暗号化に失敗しました',
       'ENCRYPTION_FAILED',
-      error instanceof Error ? error : new Error(String(error))
+      ensureError(error)
     );
   }
 }
@@ -200,7 +201,7 @@ export async function decryptData(
     throw new CryptoServiceError(
       'データの復号化に失敗しました。データが破損しているか、キーが不正です',
       'DECRYPTION_FAILED',
-      error instanceof Error ? error : new Error(String(error))
+      ensureError(error)
     );
   }
 }
@@ -225,7 +226,7 @@ export async function getOrCreateEncryptionKey(
     // 既存キーの読み込み失敗をログ出力（本番環境では適切なログサービスを使用）
     console.warn(
       'Stored encryption key could not be loaded, generating new key:',
-      error instanceof Error ? error.message : String(error)
+      getErrorMessage(error)
     );
   }
 
@@ -268,7 +269,7 @@ async function loadStoredKey(
     throw new CryptoServiceError(
       'ローカルストレージからのキー読み込みに失敗しました',
       'KEY_IMPORT_FAILED',
-      error instanceof Error ? error : new Error(String(error))
+      ensureError(error)
     );
   }
 }
@@ -298,7 +299,7 @@ async function createAndStoreNewKey(
     throw new CryptoServiceError(
       '新しい暗号化キーの作成・保存に失敗しました',
       'KEY_CREATION_FAILED',
-      error instanceof Error ? error : new Error(String(error))
+      ensureError(error)
     );
   }
 }
@@ -318,7 +319,7 @@ export function deleteEncryptionKey(
     throw new CryptoServiceError(
       '暗号化キーの削除に失敗しました',
       'KEY_DELETION_FAILED',
-      error instanceof Error ? error : new Error(String(error))
+      ensureError(error)
     );
   }
 }
@@ -347,7 +348,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
     throw new CryptoServiceError(
       'Base64エンコードに失敗しました',
       'BASE64_ENCODE_FAILED',
-      error instanceof Error ? error : new Error(String(error))
+      ensureError(error)
     );
   }
 }
@@ -381,7 +382,7 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
     throw new CryptoServiceError(
       'Base64デコードに失敗しました。不正なBase64文字列です',
       'BASE64_DECODE_FAILED',
-      error instanceof Error ? error : new Error(String(error))
+      ensureError(error)
     );
   }
 }

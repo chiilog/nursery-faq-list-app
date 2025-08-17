@@ -7,6 +7,7 @@ import { Box, Text, VStack, HStack, Flex } from '@chakra-ui/react';
 import type { Nursery } from '../types/entities';
 import { InsightTag } from './InsightTag';
 import { useNurseryStatus } from '../hooks/useNurseryStatus';
+import { getErrorMessage } from '../utils/errorUtils';
 
 interface NurseryCardProps {
   /** 表示する保育園の情報 */
@@ -34,7 +35,7 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
       }
     } catch (error) {
       // エラーをコンソールに記録するが、UIには影響させない
-      console.error('NurseryCard onClick error:', error);
+      console.error('NurseryCard onClick error:', getErrorMessage(error));
     }
   };
 
