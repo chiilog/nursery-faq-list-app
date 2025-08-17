@@ -164,9 +164,14 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
   );
 
   // Props経由で提供されない場合は新規インスタンスを作成（型安全なエラーハンドリング付き）
-  const [manager] = useState<PrivacyManager | FallbackPrivacyManager>(() => {
+  const [{ manager, initError }] = useState(() => {
     try {
-      return privacyManager ?? new PrivacyManager();
+      return {
+        manager: (privacyManager ?? new PrivacyManager()) as
+          | PrivacyManager
+          | FallbackPrivacyManager,
+        initError: null as PrivacyManagerError | null,
+      };
     } catch (error) {
       const categorizedError = categorizePrivacyManagerError(error);
       console.error(
@@ -175,11 +180,17 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
           ? String(categorizedError.error)
           : categorizedError.error.message
       );
-      setManagerError(categorizedError);
-      // 型安全なフォールバックマネージャーを返す
-      return createFallbackPrivacyManager();
+      return {
+        manager: createFallbackPrivacyManager(),
+        initError: categorizedError,
+      };
     }
   });
+
+  // 初期化エラーはエフェクトで反映（レンダーフェーズの更新を避ける）
+  useEffect(() => {
+    if (initError) setManagerError(initError);
+  }, [initError]);
 
   // レスポンシブデザインの設定（型推論を活用した簡潔化）
   const responsiveConfig: ResponsiveConfig =
