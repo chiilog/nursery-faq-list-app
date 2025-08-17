@@ -86,3 +86,36 @@ src/
 
 各ステップの終わりに`npm run test` でテストがグリーンであることを確認してから次のステップに進んでください。  
 各ファイルには適切なコメントを含め、TDDのどのフェーズで作成されたかを明記してください。
+
+### **重要：コメントとドキュメンテーション**
+
+- **TDDコメント（"TDD Red:", "TDD Green:", "TDD Refactor:"など）は最終的には削除してください**
+- **すべての関数とクラスには以下のJSDocコメントを付けてください**：
+  - `@description` - 関数やクラスの目的と動作の説明
+  - `@param` - 各パラメータの型と説明
+  - `@returns` - 戻り値の型と説明
+  - `@throws` - 投げる可能性のある例外（該当する場合）
+  - `@example` - 使用例（複雑な関数の場合）
+- **ファイルの最終バージョンではプロダクション品質のコメントのみを残してください**
+
+**JSDocの例**：
+
+````typescript
+/**
+ * @description ユーザーの年齢から成人かどうかを判定する
+ * @param age - ユーザーの年齢
+ * @returns 成人の場合true、未成年の場合false
+ * @throws {Error} 年齢が負の数の場合
+ * @example
+ * ```typescript
+ * const isAdult = checkAdult(20); // true
+ * const isMinor = checkAdult(17); // false
+ * ```
+ */
+function checkAdult(age: number): boolean {
+  // ...
+}
+````
+
+各ステップの終わりに`npm run test` でテストがグリーンであることを確認してから次のステップに進んでください。  
+開発中はTDDフェーズを明記したコメントを使用し、完了時には本番用のJSDocに置き換えてください。
