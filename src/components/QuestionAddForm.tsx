@@ -11,6 +11,7 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { useCallback } from 'react';
+import { APP_CONFIG } from '../constants/app';
 
 interface QuestionAddFormProps {
   isAddingQuestion: boolean;
@@ -42,15 +43,7 @@ export const QuestionAddForm = ({
   }, [onToggleAddForm]);
   if (isAddingQuestion) {
     return (
-      <VStack
-        align="stretch"
-        p={4}
-        border="2px"
-        borderColor="brand.200"
-        borderRadius="lg"
-        bg="brand.50"
-        shadow="sm"
-      >
+      <VStack align="stretch">
         <Input
           size="lg"
           placeholder="新しい質問を入力してください"
@@ -59,8 +52,10 @@ export const QuestionAddForm = ({
           value={newQuestionText}
           onChange={(e) => onNewQuestionTextChange(e.target.value)}
           bg="white"
-          borderColor="brand.300"
-          _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
+          _focus={{
+            borderColor: APP_CONFIG.COLORS.SECONDARY,
+            shadow: 'outline',
+          }}
         />
         <Textarea
           size="lg"
@@ -69,13 +64,17 @@ export const QuestionAddForm = ({
           value={newAnswerText}
           onChange={(e) => onNewAnswerTextChange(e.target.value)}
           bg="white"
-          borderColor="brand.300"
-          _focus={{ borderColor: 'brand.500', shadow: 'outline' }}
+          _focus={{
+            borderColor: APP_CONFIG.COLORS.SECONDARY,
+            shadow: 'outline',
+          }}
           rows={3}
           resize="vertical"
         />
         <HStack justify="flex-end" gap={2}>
           <Button
+            bgColor={APP_CONFIG.COLORS.PRIMARY_LIGHT}
+            color={APP_CONFIG.COLORS.PRIMARY_DARK}
             variant="ghost"
             onClick={handleCancel}
             size={{ base: 'sm', md: 'md' }}
@@ -83,7 +82,7 @@ export const QuestionAddForm = ({
             キャンセル
           </Button>
           <Button
-            colorPalette="brand"
+            bgColor={APP_CONFIG.COLORS.PRIMARY}
             onClick={onAddQuestion}
             disabled={!newQuestionText.trim()}
             size={{ base: 'sm', md: 'md' }}
@@ -97,7 +96,7 @@ export const QuestionAddForm = ({
 
   return (
     <Button
-      colorPalette="brand"
+      bgColor={APP_CONFIG.COLORS.PRIMARY}
       onClick={handleStartAdding}
       size={{ base: 'md', md: 'lg' }}
       w="full"

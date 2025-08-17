@@ -5,6 +5,7 @@
 
 import { Button, HStack, VStack } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
+import { APP_CONFIG } from '../../constants/app';
 
 // 共通のボタンスタイル
 const commonButtonStyles = {
@@ -16,27 +17,14 @@ const primarySaveButtonStyles = {
   flex: 2,
   fontWeight: 'bold',
   shadow: 'sm',
-  _hover: {
-    shadow: 'md',
-    transform: 'translateY(-1px)',
-  },
-  _active: {
-    transform: 'translateY(0)',
-    shadow: 'sm',
-  },
+  bgColor: APP_CONFIG.COLORS.PRIMARY,
 };
 
 const primaryCancelButtonStyles = {
   ...commonButtonStyles,
   flex: 1,
-  color: 'gray.600',
-  _hover: {
-    bg: 'gray.50',
-    color: 'gray.800',
-  },
-  _active: {
-    bg: 'gray.100',
-  },
+  bgColor: APP_CONFIG.COLORS.PRIMARY_LIGHT,
+  color: APP_CONFIG.COLORS.PRIMARY_DARK,
 };
 
 // 基本的なProps型
@@ -64,7 +52,7 @@ export const PrimaryFormActions = ({
     <HStack gap={4} justify="space-between">
       <Button
         onClick={onCancel}
-        variant="outline"
+        variant="subtle"
         size={size}
         data-size={size}
         {...primaryCancelButtonStyles}
@@ -74,7 +62,6 @@ export const PrimaryFormActions = ({
       <Button
         onClick={onSave}
         disabled={isDisabled}
-        colorPalette="brand"
         size={size}
         data-size={size}
         {...primarySaveButtonStyles}
@@ -100,19 +87,21 @@ export const InlineFormActions = ({
     <HStack gap={2}>
       <Button
         onClick={onCancel}
-        variant="ghost"
+        variant="subtle"
         size={size}
         data-size={size}
         {...commonButtonStyles}
+        bgColor={APP_CONFIG.COLORS.PRIMARY_LIGHT}
+        color={APP_CONFIG.COLORS.PRIMARY_DARK}
       >
         {cancelLabel}
       </Button>
       <Button
         onClick={onSave}
         disabled={isDisabled}
-        colorPalette="brand"
         size={size}
         data-size={size}
+        bgColor={APP_CONFIG.COLORS.PRIMARY}
         {...commonButtonStyles}
       >
         {saveLabel}
@@ -137,7 +126,6 @@ export const VerticalFormActions = ({
       <Button
         onClick={onSave}
         disabled={isDisabled}
-        colorPalette="brand"
         size={size}
         data-size={size}
         {...primarySaveButtonStyles}
@@ -148,7 +136,7 @@ export const VerticalFormActions = ({
       </Button>
       <Button
         onClick={onCancel}
-        variant="outline"
+        variant="subtle"
         size={size}
         data-size={size}
         {...primaryCancelButtonStyles}

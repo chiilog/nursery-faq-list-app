@@ -6,6 +6,8 @@ import { ErrorDisplay } from '../components/ErrorDisplay';
 import { EmptyState } from '../components/EmptyState';
 import { Layout } from '../components/Layout';
 import { useNurseryStore } from '../stores/nurseryStore';
+import { showToast } from '../utils/toaster';
+import { APP_CONFIG } from '../constants/app';
 import type { Nursery } from '../types/entities';
 
 interface HomePageProps {
@@ -33,6 +35,10 @@ export const HomePage = ({ onCreateNew }: HomePageProps) => {
       void navigate(`/nursery/${nursery.id}`);
     } catch (error) {
       console.error('保育園選択エラー:', error);
+      showToast.error(
+        '保育園選択エラー',
+        '保育園の選択に失敗しました。もう一度お試しください。'
+      );
     }
   };
 
@@ -57,7 +63,7 @@ export const HomePage = ({ onCreateNew }: HomePageProps) => {
         <VStack gap={4} align="stretch">
           <Box textAlign="center">
             <Button
-              colorPalette="brand"
+              bgColor={APP_CONFIG.COLORS.PRIMARY}
               size="lg"
               onClick={onCreateNew}
               borderRadius="full"

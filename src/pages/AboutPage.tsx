@@ -1,14 +1,14 @@
 import { Box, Heading, Text, VStack } from '@chakra-ui/react';
 import { Layout } from '../components/Layout';
-import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
+import { APP_CONFIG } from '../constants/app';
 
 export const AboutPage = () => {
   const navigate = useNavigate();
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     void navigate(-1);
-  }, [navigate]);
+  };
 
   return (
     <Layout
@@ -23,18 +23,21 @@ export const AboutPage = () => {
     >
       <Box maxW="container.md" mx="auto" py={4}>
         <VStack gap={6} align="stretch">
-          <Heading as="h2" color="teal.600">
-            このアプリについて
-          </Heading>
-
           <Box>
+            <Heading as="h2" color={APP_CONFIG.COLORS.PRIMARY}>
+              保活手帳について
+            </Heading>
+
             <Text lineHeight={1.7}>
               保育園や幼稚園の見学のときに、ササっとスマホで質問管理したい！という自分のニーズから生まれました。
+            </Text>
+            <Text lineHeight={1.7}>
+              全て無料でお使いいただけます。（今後、パートナーとの共有機能などを有料で提供する予定です）
             </Text>
           </Box>
 
           <Box>
-            <Heading as="h3" size="md" color="teal.600" mb={3}>
+            <Heading as="h3" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
               個人情報について
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -43,8 +46,7 @@ export const AboutPage = () => {
             </Text>
             <Text lineHeight={1.7} mb={4}>
               インターネットにつながっていなくても使えます。Wi-Fiがない場所や圏外でも、一度開けばアプリは動作します。
-            </Text>
-            <Text lineHeight={1.7}>
+              <br />
               ただし、ブラウザの設定で「閲覧履歴を削除」や「キャッシュを削除」をすると、入力したデータも一緒に消えてしまいますのでご注意ください。
             </Text>
           </Box>

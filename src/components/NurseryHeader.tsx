@@ -5,6 +5,7 @@
 import { Box, Button, Heading, HStack, IconButton } from '@chakra-ui/react';
 import { IoHelpCircleOutline } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
+import { APP_CONFIG } from '../constants/app';
 import type { HeaderButton, HeaderVariant } from '../types/header';
 
 interface NurseryHeaderProps {
@@ -32,7 +33,7 @@ export const NurseryHeader = ({
       <Heading
         as="h1"
         size={{ base: 'md', md: 'lg' }}
-        color="teal.600"
+        color={APP_CONFIG.COLORS.PRIMARY}
         textAlign="center"
       >
         {title}
@@ -71,7 +72,7 @@ export const NurseryHeader = ({
       <Heading
         as="h1"
         size={{ base: 'md', md: 'lg' }}
-        color="teal.600"
+        color={APP_CONFIG.COLORS.PRIMARY}
         flex={1}
         textAlign="center"
       >
@@ -82,8 +83,12 @@ export const NurseryHeader = ({
         const buttonToShow = rightButton || defaultHelpButton;
         const shouldShow = buttonToShow && !buttonToShow.hidden;
 
-        return shouldShow ? (
-          buttonToShow.icon ? (
+        if (!shouldShow) {
+          return <Box w="40px" />;
+        }
+
+        if (buttonToShow.icon) {
+          return (
             <IconButton
               onClick={buttonToShow.onClick}
               variant={buttonToShow.variant || 'ghost'}
@@ -94,17 +99,17 @@ export const NurseryHeader = ({
             >
               {buttonToShow.icon}
             </IconButton>
-          ) : (
-            <Button
-              variant={buttonToShow.variant || 'ghost'}
-              onClick={buttonToShow.onClick}
-              size={{ base: 'sm', md: 'md' }}
-            >
-              {buttonToShow.text}
-            </Button>
-          )
-        ) : (
-          <Box w="40px" />
+          );
+        }
+
+        return (
+          <Button
+            variant={buttonToShow.variant || 'ghost'}
+            onClick={buttonToShow.onClick}
+            size={{ base: 'sm', md: 'md' }}
+          >
+            {buttonToShow.text}
+          </Button>
         );
       })()}
     </HStack>
