@@ -14,7 +14,6 @@ interface NurseryCreatorPageProps {
 export const NurseryCreatorPage = ({ onCancel }: NurseryCreatorPageProps) => {
   return (
     <Layout
-      headerTitle="新しい保育園を追加"
       headerVariant="with-buttons"
       leftButton={{
         icon: <IoClose />,
@@ -22,7 +21,6 @@ export const NurseryCreatorPage = ({ onCancel }: NurseryCreatorPageProps) => {
         variant: 'ghost',
         'aria-label': '閉じる',
       }}
-      showDefaultTitle={false}
     >
       <NurseryCreator onCancel={onCancel} />
     </Layout>
