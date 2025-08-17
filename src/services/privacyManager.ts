@@ -45,11 +45,11 @@ export type PrivacySettingsChangeEvent = {
  * ユーザーの同意状態を管理し、LocalStorageに永続化する
  */
 export class PrivacyManager {
-  private settings: PrivacySettings;
+  private settings: PrivacySettings | null;
   private listeners: Array<(event: PrivacySettingsChangeEvent) => void> = [];
 
   constructor() {
-    this.settings = this.loadFromStorage() ?? createDefaultPrivacySettings();
+    this.settings = this.loadFromStorage();
   }
 
   /**
@@ -71,9 +71,12 @@ export class PrivacyManager {
 
   /**
    * 現在の設定を取得
+   * 初回訪問時（設定なし）の場合はデフォルト設定を返す
    */
   getSettings(): PrivacySettings {
-    return { ...this.settings };
+    return this.settings
+      ? { ...this.settings }
+      : createDefaultPrivacySettings();
   }
 
   /**
@@ -85,7 +88,9 @@ export class PrivacyManager {
       return;
     }
 
-    const previous = { ...this.settings };
+    // 初回更新時（設定なし）の場合はデフォルト設定をベースとする
+    const currentSettings = this.settings ?? createDefaultPrivacySettings();
+    const previous = { ...currentSettings };
 
     // consentVersionがある場合はサニタイズを適用
     const sanitizedUpdates = updates.consentVersion
@@ -136,14 +141,14 @@ export class PrivacyManager {
     }
 
     this.settings = {
-      ...this.settings,
+      ...currentSettings,
       ...appliedChanges,
     };
 
     this.saveToStorage();
     this.notifyListeners({
       previous,
-      current: this.settings,
+      current: this.settings, // この時点でthis.settingsは必ず存在する
       // リスナーには「実際に適用された（サニタイズ済み＋暗黙的に補完された）差分」を渡す
       changes: appliedChanges,
     });
@@ -219,9 +224,14 @@ export class PrivacyManager {
 
   /**
    * 同意が有効期限内かどうかを判定
-   * 現在は1年を有効期限とする
+   * 初回訪問時（設定なし）または期限切れの場合はfalseを返す
    */
   isConsentValid(): boolean {
+    // 初回訪問時（設定なし）の場合はfalse
+    if (!this.settings) {
+      return false;
+    }
+
     const now = new Date();
     const consentDate = this.settings.consentTimestamp;
 
