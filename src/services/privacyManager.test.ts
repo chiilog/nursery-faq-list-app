@@ -22,6 +22,9 @@ describe('PrivacyManager', () => {
       writable: true,
     });
 
+    // console.warnをモック
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
     privacyManager = new PrivacyManager();
   });
 
@@ -127,13 +130,17 @@ describe('PrivacyManager', () => {
         expect(privacyManager.isConsentValid()).toBe(true);
       });
 
-      it('1年+1分後（有効期限切れ）', () => {
-        const oneYearLater = new Date();
-        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-        oneYearLater.setMinutes(oneYearLater.getMinutes() + 1); // 1分後
+      it('1年+1分前（有効期限切れ）', () => {
+        const oneYearAndOneMinuteAgo = new Date();
+        oneYearAndOneMinuteAgo.setFullYear(
+          oneYearAndOneMinuteAgo.getFullYear() - 1
+        );
+        oneYearAndOneMinuteAgo.setMinutes(
+          oneYearAndOneMinuteAgo.getMinutes() - 1
+        ); // さらに1分前
 
         privacyManager.updateSettings({
-          consentTimestamp: oneYearLater,
+          consentTimestamp: oneYearAndOneMinuteAgo,
         });
 
         expect(privacyManager.isConsentValid()).toBe(false);
@@ -342,7 +349,8 @@ describe('PrivacyManager', () => {
 
       // フォールバック処理の確認（警告ログが出力される）
       expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('storage')
+        'Failed to save privacy settings to localStorage:',
+        expect.any(Error)
       );
     });
 
@@ -360,7 +368,8 @@ describe('PrivacyManager', () => {
       }).not.toThrow();
 
       expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('storage')
+        'Failed to save privacy settings to localStorage:',
+        expect.any(Error)
       );
     });
 
