@@ -104,6 +104,24 @@ describe('PrivacyManager', () => {
       expect(isValid).toBe(false);
     });
 
+    it('初回拒否時もconsentTimestampが記録され、次回はバナーが表示されない', () => {
+      // 初回は無効
+      expect(privacyManager.isConsentValid()).toBe(false);
+
+      // 拒否操作（デフォルトと同じfalse値だが、明示的なユーザー操作）
+      privacyManager.setGoogleAnalyticsConsent(false);
+      privacyManager.setMicrosoftClarityConsent(false);
+
+      // 拒否後は有効（consentTimestampが記録されている）
+      expect(privacyManager.isConsentValid()).toBe(true);
+
+      // 設定値も確認（デフォルトと同じfalse）
+      const settings = privacyManager.getSettings();
+      expect(settings.googleAnalytics).toBe(false);
+      expect(settings.microsoftClarity).toBe(false);
+      expect(settings.consentTimestamp).toBeInstanceOf(Date);
+    });
+
     it('同意が期限切れであることを判定する', () => {
       // 1年前の日付で設定
       const oldDate = new Date();

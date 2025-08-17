@@ -135,6 +135,18 @@ export class PrivacyManager {
       appliedChanges.consentTimestamp = new Date();
     }
 
+    // 初回更新（this.settings が null）時は、デフォルト値と同一でも
+    // 明示的なユーザー操作があれば consentTimestamp を記録する
+    if (!this.settings) {
+      const hasExplicitConsentAction =
+        'googleAnalytics' in sanitizedUpdates ||
+        'microsoftClarity' in sanitizedUpdates ||
+        'consentVersion' in sanitizedUpdates;
+      if (hasExplicitConsentAction && !('consentTimestamp' in appliedChanges)) {
+        appliedChanges.consentTimestamp = new Date();
+      }
+    }
+
     // 実質的に何も変わらない場合は副作用なしで終了
     if (Object.keys(appliedChanges).length === 0) {
       return;

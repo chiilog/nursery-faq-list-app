@@ -104,6 +104,8 @@ describe('usePrivacySettings', () => {
       const { result } = renderHook(() => usePrivacySettings());
 
       expect(typeof result.current.isConsentValid).toBe('function');
+      // フックが初期化時にgetSettings()を呼ぶため、デフォルト設定が作成され、
+      // この時点では有効な状態になる
       expect(result.current.isConsentValid()).toBe(true);
     });
   });
