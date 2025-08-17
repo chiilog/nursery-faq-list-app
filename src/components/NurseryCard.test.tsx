@@ -311,10 +311,10 @@ describe('NurseryCard コンポーネント', () => {
       await user.click(card);
       expect(screen.getByText('テスト保育園')).toBeInTheDocument();
 
-      // コンソールエラーが記録されることを確認
+      // コンソールエラーが記録されることを確認（getErrorMessage関数で文字列化される）
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'NurseryCard onClick error:',
-        expect.any(Error)
+        'テスト用エラー'
       );
 
       consoleErrorSpy.mockRestore();
