@@ -13,11 +13,12 @@ export const APP_CONFIG = {
    */
   COLORS: {
     PRIMARY: '#ff8080',
-    PRIMARY_LIGHT: '#fff4f4',
+    PRIMARY_LIGHT: '#fff1f1',
     PRIMARY_DARK: '#b35a5a',
     ACCENT: '#ffb380',
     HIGHLIGHT: '#ff80df',
     SECONDARY: '#b35a9c',
+    WHITE: '#ffffff',
   },
 
   /**
