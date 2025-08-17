@@ -241,7 +241,11 @@ export class PrivacyManager {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.settings));
     } catch (error) {
-      console.warn('Failed to save privacy settings to localStorage:', error);
+      // 保存エラー時は警告ログを出す（テスト期待：'storage' を含む単一文字列）
+      const msg =
+        '[privacy] storage write error: ' +
+        (error instanceof Error ? error.message : String(error));
+      console.warn(msg);
     }
   }
 }
