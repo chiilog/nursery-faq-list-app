@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import type { Nursery, VisitSession } from '../types/entities';
+import type { Nursery, VisitSession, Question } from '../types/entities';
 import type {
   CreateNurseryInput,
   UpdateNurseryInput,
@@ -8,23 +8,26 @@ import type {
 } from '../types/inputs';
 
 // テスト用の型定義
+interface MockVisitSession {
+  id: string;
+  visitDate: string;
+  status: string;
+  questions: Question[];
+  insights: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface MockNursery {
+  id: string;
+  name: string;
+  visitSessions: MockVisitSession[];
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
 interface MockLocalStorageData {
-  [key: string]: {
-    id: string;
-    name: string;
-    visitSessions: {
-      id: string;
-      visitDate: string;
-      status: string;
-      questions: any[];
-      createdAt: string;
-      updatedAt: string;
-      [key: string]: any;
-    }[];
-    createdAt: string | Date;
-    updatedAt: string | Date;
-    [key: string]: any;
-  };
+  [key: string]: MockNursery;
 }
 
 // モック化したlocalStorage

@@ -5,6 +5,13 @@ import { renderWithProviders } from '../../test/test-utils';
 import { DeleteNurseryDialog } from './DeleteNurseryDialog';
 import type { Nursery } from '../../types/entities';
 
+// DeleteNurseryDialogコンポーネントのProps型定義
+interface DeleteNurseryDialogProps {
+  nursery: Nursery;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 // React Routerのモック
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -80,7 +87,7 @@ describe('DeleteNurseryDialog', () => {
     vi.clearAllMocks();
   });
 
-  const renderDialog = (props: any) => {
+  const renderDialog = (props: DeleteNurseryDialogProps) => {
     return renderWithProviders(<DeleteNurseryDialog {...props} />);
   };
 
