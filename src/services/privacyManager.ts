@@ -23,7 +23,10 @@
  */
 
 import type { PrivacySettings } from '../types/privacy';
-import { createDefaultPrivacySettings } from '../types/privacy';
+import {
+  createDefaultPrivacySettings,
+  sanitizeConsentVersion,
+} from '../utils/privacyUtils';
 
 const STORAGE_KEY = 'privacySettings';
 const CONSENT_VALID_PERIOD_MS = 365 * 24 * 60 * 60 * 1000; // 1年
@@ -83,9 +86,18 @@ export class PrivacyManager {
     }
 
     const previous = { ...this.settings };
+
+    // consentVersionがある場合はサニタイズを適用
+    const sanitizedUpdates = updates.consentVersion
+      ? {
+          ...updates,
+          consentVersion: sanitizeConsentVersion(updates.consentVersion),
+        }
+      : updates;
+
     this.settings = {
       ...this.settings,
-      ...updates,
+      ...sanitizedUpdates,
     };
 
     this.saveToStorage();
@@ -187,10 +199,11 @@ export class PrivacyManager {
 
       // 型ガードで安全に型チェック
       if (this.isValidStoredSettings(parsed)) {
-        // Date オブジェクトを復元
+        // Date オブジェクトを復元し、consentVersionをサニタイズ
         return {
           ...parsed,
           consentTimestamp: new Date(parsed.consentTimestamp),
+          consentVersion: sanitizeConsentVersion(parsed.consentVersion),
         };
       }
 
@@ -227,8 +240,8 @@ export class PrivacyManager {
   private saveToStorage(): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.settings));
-    } catch {
-      // 保存エラーは無視（プライベートブラウジングモード等）
+    } catch (error) {
+      console.warn('Failed to save privacy settings to localStorage:', error);
     }
   }
 }
