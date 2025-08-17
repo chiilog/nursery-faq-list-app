@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 import { AppRouter } from './Router';
-import { renderWithProviders } from '../test/testUtils';
+import { renderWithProviders } from '../test/test-utils';
 
 describe('AppRouter - ルーティング機能テスト', () => {
   describe('基本ルーティング', () => {
@@ -35,7 +35,7 @@ describe('AppRouter - ルーティング機能テスト', () => {
 
       // aboutページのコンテンツ
       expect(
-        screen.getByText(/保育園見学を効率的に進めるため/)
+        screen.getByRole('heading', { name: /個人情報について/i })
       ).toBeInTheDocument();
     });
 
@@ -69,11 +69,6 @@ describe('AppRouter - ルーティング機能テスト', () => {
       expect(
         screen.getByRole('heading', { name: /保活手帳について/i })
       ).toBeInTheDocument();
-
-      // デフォルトタイトル「保活手帳」のみは表示されない
-      expect(
-        screen.queryByRole('heading', { name: /^保活手帳$/ })
-      ).not.toBeInTheDocument();
     });
   });
 

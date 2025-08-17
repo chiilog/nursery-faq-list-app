@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, test } from 'vitest';
 import { Layout } from './Layout';
-import { renderWithProviders } from '../test/testUtils';
+import { renderWithProviders } from '../test/test-utils';
 
 describe('Layout', () => {
   describe('基本レイアウト', () => {
