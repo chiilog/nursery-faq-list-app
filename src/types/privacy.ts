@@ -15,7 +15,7 @@ export interface PrivacySettings {
   /** 同意取得日時 */
   consentTimestamp: Date;
   /** 同意バージョン */
-  consentVersion: string;
+  consentVersion: ConsentVersion;
 }
 
 /**
@@ -28,7 +28,7 @@ export interface PrivacyConsent {
   /** 同意取得日時 */
   timestamp: Date;
   /** 同意バージョン */
-  version: string;
+  version: ConsentVersion;
   /** 同意取得のソース */
   source: 'banner' | 'settings';
 }
@@ -43,33 +43,30 @@ export interface PrivacyConsent {
 export type ConsentSource = 'banner' | 'settings';
 
 /**
+ * プライバシー設定バージョン
+ * 将来の設定変更に対応するためのバージョン管理
+ */
+export type ConsentVersion = '1.0' | '1.1' | '2.0';
+
+/**
+ * 有効なプライバシー設定バージョンのホワイトリスト
+ * XSS攻撃を防ぐため、既知のバージョンのみ許可
+ */
+export const VALID_CONSENT_VERSIONS: readonly ConsentVersion[] = [
+  '1.0',
+  '1.1',
+  '2.0',
+] as const;
+
+/**
+ * デフォルトのプライバシー設定バージョン
+ */
+export const DEFAULT_CONSENT_VERSION: ConsentVersion = '1.0';
+
+/**
  * 現在のプライバシーポリシーバージョン
  *
  * プライバシーポリシーの変更を追跡するためのバージョン番号です。
  * ポリシーが更新された場合は、この値を増加させてください。
  */
-export const CURRENT_PRIVACY_VERSION = '1.0';
-
-/**
- * デフォルトのプライバシー設定を作成
- *
- * 全ての分析機能を無効化した状態でプライバシー設定を初期化します。
- * これにより、ユーザーが明示的に同意するまで分析ツールは無効になります。
- *
- * @returns 初期化されたプライバシー設定オブジェクト
- *
- * @example
- * ```typescript
- * const defaultSettings = createDefaultPrivacySettings();
- * console.log(defaultSettings.googleAnalytics); // false
- * console.log(defaultSettings.microsoftClarity); // false
- * ```
- */
-export function createDefaultPrivacySettings(): PrivacySettings {
-  return {
-    googleAnalytics: false,
-    microsoftClarity: false,
-    consentTimestamp: new Date(),
-    consentVersion: CURRENT_PRIVACY_VERSION,
-  };
-}
+export const CURRENT_PRIVACY_VERSION = DEFAULT_CONSENT_VERSION;
