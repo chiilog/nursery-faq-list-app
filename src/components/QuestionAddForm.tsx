@@ -52,10 +52,6 @@ export const QuestionAddForm = ({
           value={newQuestionText}
           onChange={(e) => onNewQuestionTextChange(e.target.value)}
           bg="white"
-          _focus={{
-            borderColor: APP_CONFIG.COLORS.SECONDARY,
-            shadow: 'outline',
-          }}
         />
         <Textarea
           size="lg"
@@ -64,25 +60,23 @@ export const QuestionAddForm = ({
           value={newAnswerText}
           onChange={(e) => onNewAnswerTextChange(e.target.value)}
           bg="white"
-          _focus={{
-            borderColor: APP_CONFIG.COLORS.SECONDARY,
-            shadow: 'outline',
-          }}
           rows={3}
           resize="vertical"
         />
         <HStack justify="flex-end" gap={2}>
           <Button
+            variant="subtle"
             bgColor={APP_CONFIG.COLORS.PRIMARY_LIGHT}
             color={APP_CONFIG.COLORS.PRIMARY_DARK}
-            variant="ghost"
             onClick={handleCancel}
             size={{ base: 'sm', md: 'md' }}
           >
             キャンセル
           </Button>
           <Button
+            variant="solid"
             bgColor={APP_CONFIG.COLORS.PRIMARY}
+            color={APP_CONFIG.COLORS.WHITE}
             onClick={onAddQuestion}
             disabled={!newQuestionText.trim()}
             size={{ base: 'sm', md: 'md' }}
@@ -96,7 +90,9 @@ export const QuestionAddForm = ({
 
   return (
     <Button
+      variant="solid"
       bgColor={APP_CONFIG.COLORS.PRIMARY}
+      color={APP_CONFIG.COLORS.WHITE}
       onClick={handleStartAdding}
       size={{ base: 'md', md: 'lg' }}
       w="full"

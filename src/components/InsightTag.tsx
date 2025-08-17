@@ -47,6 +47,7 @@ export const InsightTag = ({
     <Tag.Root
       variant="solid"
       bgColor={APP_CONFIG.COLORS.ACCENT}
+      color={APP_CONFIG.COLORS.WHITE}
       size={UI_SIZES.MEDIUM}
       opacity={opacity}
       py={1}
