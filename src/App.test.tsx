@@ -1,5 +1,5 @@
 import { screen, waitFor } from '@testing-library/react';
-import { renderWithChakra } from './test/testUtils';
+import { renderWithChakra } from './test/test-utils';
 import App from './App';
 
 describe('App', () => {
