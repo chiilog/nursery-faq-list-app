@@ -247,6 +247,10 @@ export class PrivacyManager {
     const now = new Date();
     const consentDate = this.settings.consentTimestamp;
 
+    if (!consentDate) {
+      return false; // null の場合は無効
+    }
+
     return now.getTime() - consentDate.getTime() < CONSENT_VALID_PERIOD_MS;
   }
 
