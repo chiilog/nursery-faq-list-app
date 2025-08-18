@@ -93,7 +93,9 @@ export const waitForAsync = (ms: number = 0): Promise<void> => {
 /**
  * React RouterのuseNavigateモック作成
  */
-export const createMockNavigate = () => {
+export const createMockNavigate = (): MockedFunction<
+  ReturnType<typeof import('react-router-dom').useNavigate>
+> => {
   const mockNavigate = vi.fn();
 
   vi.mock('react-router-dom', async () => {

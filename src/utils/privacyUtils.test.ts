@@ -52,31 +52,15 @@ describe('privacyUtils', () => {
 
       expect(settings.googleAnalytics).toBe(false);
       expect(settings.microsoftClarity).toBe(false);
-      expect(settings.consentTimestamp).toBeInstanceOf(Date);
+      expect(settings.consentTimestamp).toBeNull();
       expect(settings.consentVersion).toBe('1.0');
-      expect(settings.hasExplicitConsent).toBe(true);
+      expect(settings.hasExplicitConsent).toBe(false);
     });
 
-    it('新しいDateオブジェクトを生成する', () => {
-      const settings1 = createDefaultPrivacySettings();
-      const settings2 = createDefaultPrivacySettings();
-
-      // 異なるDateオブジェクトであることを確認
-      expect(settings1.consentTimestamp).not.toBe(settings2.consentTimestamp);
-    });
-
-    it('現在時刻に近いタイムスタンプを設定する', () => {
-      const before = new Date();
+    it('初期状態では consentTimestamp は null を設定する', () => {
       const settings = createDefaultPrivacySettings();
-      const after = new Date();
 
-      expect(settings.consentTimestamp).not.toBeNull();
-      expect(settings.consentTimestamp!.getTime()).toBeGreaterThanOrEqual(
-        before.getTime()
-      );
-      expect(settings.consentTimestamp!.getTime()).toBeLessThanOrEqual(
-        after.getTime()
-      );
+      expect(settings.consentTimestamp).toBeNull();
     });
   });
 });

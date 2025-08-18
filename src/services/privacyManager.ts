@@ -148,13 +148,14 @@ export class PrivacyManager {
       }
     }
 
-    // ユーザーが明示的に設定を変更した場合はhasExplicitConsentを true に設定
-    if (
-      'googleAnalytics' in appliedChanges ||
-      'microsoftClarity' in appliedChanges ||
-      'consentVersion' in appliedChanges ||
-      'consentTimestamp' in appliedChanges
-    ) {
+    // 明示的操作（同意設定／バージョン／タイムスタンプの更新）があったタイミングで
+    // hasExplicitConsent = true をセット
+    const explicitAction =
+      'googleAnalytics' in sanitizedUpdates ||
+      'microsoftClarity' in sanitizedUpdates ||
+      'consentVersion' in sanitizedUpdates ||
+      'consentTimestamp' in sanitizedUpdates;
+    if (explicitAction) {
       appliedChanges.hasExplicitConsent = true;
     }
 
