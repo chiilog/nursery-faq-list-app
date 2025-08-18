@@ -3,6 +3,12 @@ import { vi } from 'vitest';
 import { renderWithChakra } from './test/test-utils';
 import App from './App';
 
+// window.scrollTo をモック
+Object.defineProperty(window, 'scrollTo', {
+  value: vi.fn(),
+  writable: true,
+});
+
 // PrivacyManager をモック
 vi.mock('./services/privacyManager', () => ({
   PrivacyManager: vi.fn().mockImplementation(() => ({
