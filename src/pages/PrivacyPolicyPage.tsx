@@ -13,9 +13,10 @@
 
 import { Box, Heading, Text, VStack, Button } from '@chakra-ui/react';
 import { Layout } from '../components/Layout';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
 import { APP_CONFIG } from '../constants/app';
+import { ROUTES } from '../constants/routes';
 
 /**
  * @description プライバシーポリシーページコンポーネント
@@ -133,11 +134,11 @@ export const PrivacyPolicyPage = () => {
               いつでも設定を変更することが可能で、変更は即座に反映されます。
             </Text>
             <Box textAlign="center">
-              <Link to="/privacy-settings">
-                <Button colorScheme="blue" size="md">
+              <Button colorScheme="blue" size="md" asChild>
+                <RouterLink to={ROUTES.PRIVACY_SETTINGS}>
                   プライバシー設定を変更する
-                </Button>
-              </Link>
+                </RouterLink>
+              </Button>
             </Box>
           </Box>
 

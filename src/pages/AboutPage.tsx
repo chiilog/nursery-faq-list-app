@@ -1,16 +1,9 @@
-import {
-  Box,
-  Heading,
-  Text,
-  VStack,
-  Button,
-  Link,
-  HStack,
-} from '@chakra-ui/react';
+import { Box, Heading, Text, VStack, Button, HStack } from '@chakra-ui/react';
 import { Layout } from '../components/Layout';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
 import { APP_CONFIG } from '../constants/app';
+import { ROUTES } from '../constants/routes';
 
 export const AboutPage = () => {
   const navigate = useNavigate();
@@ -71,29 +64,17 @@ export const AboutPage = () => {
             <Text lineHeight={1.7} mb={4}>
               個人を特定する情報は一切収集しません。また、入力されたデータ（保育園名、質問、回答など）が分析ツールに送信されることはありません。
             </Text>
-            <HStack gap={4} justify="center" wrap="wrap">
-              <Link
-                asChild
-                textDecoration="none"
-                _hover={{ textDecoration: 'none' }}
-              >
-                <RouterLink to="/privacy-settings">
-                  <Button colorScheme="blue" size="md">
-                    プライバシー設定を変更する
-                  </Button>
+            <HStack gap={4} justify="center" wrap="wrap" pt={4}>
+              <Button colorScheme="blue" size="md" asChild>
+                <RouterLink to={ROUTES.PRIVACY_SETTINGS}>
+                  プライバシー設定を変更する
                 </RouterLink>
-              </Link>
-              <Link
-                asChild
-                textDecoration="none"
-                _hover={{ textDecoration: 'none' }}
-              >
-                <RouterLink to="/privacy-policy">
-                  <Button variant="outline" colorScheme="blue" size="md">
-                    プライバシーポリシーを見る
-                  </Button>
+              </Button>
+              <Button variant="outline" colorScheme="blue" size="md" asChild>
+                <RouterLink to={ROUTES.PRIVACY_POLICY}>
+                  プライバシーポリシーを見る
                 </RouterLink>
-              </Link>
+              </Button>
             </HStack>
           </Box>
         </VStack>
