@@ -1,6 +1,14 @@
-import { Box, Heading, Text, VStack } from '@chakra-ui/react';
+import {
+  Box,
+  Heading,
+  Text,
+  VStack,
+  Button,
+  Link,
+  HStack,
+} from '@chakra-ui/react';
 import { Layout } from '../components/Layout';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
 import { APP_CONFIG } from '../constants/app';
 
@@ -49,6 +57,44 @@ export const AboutPage = () => {
               <br />
               ただし、ブラウザの設定で「閲覧履歴を削除」や「キャッシュを削除」をすると、入力したデータも一緒に消えてしまいますのでご注意ください。
             </Text>
+          </Box>
+
+          <Box>
+            <Heading as="h3" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+              プライバシー設定
+            </Heading>
+            <Text lineHeight={1.7} mb={4}>
+              このアプリでは、サービス向上のためにGoogle Analytics 4とMicrosoft
+              Clarityを使用しています。
+              これらの分析ツールは、ページの表示回数や機能の使用状況を匿名で収集し、アプリの改善に役立てています。
+            </Text>
+            <Text lineHeight={1.7} mb={4}>
+              個人を特定する情報は一切収集しません。また、入力されたデータ（保育園名、質問、回答など）が分析ツールに送信されることはありません。
+            </Text>
+            <HStack gap={4} justify="center" wrap="wrap">
+              <Link
+                asChild
+                textDecoration="none"
+                _hover={{ textDecoration: 'none' }}
+              >
+                <RouterLink to="/privacy-settings">
+                  <Button colorScheme="blue" size="md">
+                    プライバシー設定を変更する
+                  </Button>
+                </RouterLink>
+              </Link>
+              <Link
+                asChild
+                textDecoration="none"
+                _hover={{ textDecoration: 'none' }}
+              >
+                <RouterLink to="/privacy-policy">
+                  <Button variant="outline" colorScheme="blue" size="md">
+                    プライバシーポリシーを見る
+                  </Button>
+                </RouterLink>
+              </Link>
+            </HStack>
           </Box>
         </VStack>
       </Box>

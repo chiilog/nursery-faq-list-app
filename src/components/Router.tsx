@@ -3,6 +3,8 @@ import { HomePage } from '../pages/HomePage';
 import { NurseryCreatorPage } from '../pages/NurseryCreatorPage';
 import { NurseryDetailPage } from '../pages/NurseryDetailPage';
 import { AboutPage } from '../pages/AboutPage';
+import { PrivacySettingsPage } from '../pages/PrivacySettingsPage';
+import { PrivacyPolicyPage } from '../pages/PrivacyPolicyPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { useCreateNurseryFlow } from '../hooks/useCreateNurseryFlow';
 
@@ -22,6 +24,8 @@ export const AppRouter = () => {
         }
       />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/privacy-settings" element={<PrivacySettingsPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       <Route path="/nursery/:nurseryId" element={<NurseryDetailPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
