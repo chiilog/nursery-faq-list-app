@@ -40,12 +40,12 @@ import { useLocation } from 'react-router-dom';
  * ```
  */
 export const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const location = useLocation();
 
   useEffect(() => {
-    // シンプルで確実なスクロール実装
+    // パス、検索クエリ、ハッシュのいずれかが変更された際にスクロール
     window.scrollTo(0, 0);
-  }, [pathname]);
+  }, [location.pathname, location.search, location.hash]);
 
   return null;
 };
