@@ -49,7 +49,7 @@ const testHelpers = {
    * @description モックセットアップヘルパー
    */
   setupMocks: () => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
 
     const mockManager: MockedPrivacyManagerInstance = {
       getSettings: vi.fn(),

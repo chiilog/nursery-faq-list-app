@@ -1,13 +1,11 @@
 import { screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { renderWithChakra } from './test/test-utils';
+import { createMockScrollTo } from './test/test-helpers';
 import App from './App';
 
 // window.scrollTo をモック
-Object.defineProperty(window, 'scrollTo', {
-  value: vi.fn(),
-  writable: true,
-});
+createMockScrollTo();
 
 // PrivacyManager をモック
 vi.mock('./services/privacyManager', () => ({
