@@ -19,6 +19,7 @@ import { Layout } from '../components/Layout';
 import { IoArrowBack } from 'react-icons/io5';
 import { APP_CONFIG } from '../constants/app';
 import { usePrivacySettings } from '../hooks/usePrivacySettings';
+import { ROUTES } from '../constants/routes';
 
 /**
  * @description プライバシー設定ページコンポーネント
@@ -137,7 +138,9 @@ export const PrivacySettingsPage = () => {
               設定情報
             </Heading>
             <Text lineHeight={1.7} mb={2}>
-              最終更新: {settings.consentTimestamp.toLocaleDateString('ja-JP')}
+              最終更新:{' '}
+              {settings.consentTimestamp?.toLocaleDateString('ja-JP') ||
+                '未設定'}
             </Text>
             <Text lineHeight={1.7} mb={2}>
               設定はいつでも変更できます。変更は即座に反映されます。
@@ -145,7 +148,7 @@ export const PrivacySettingsPage = () => {
             <Text lineHeight={1.7}>
               詳細については
               <Link color="blue.500" textDecoration="underline" ml={1} asChild>
-                <RouterLink to="/privacy-policy">
+                <RouterLink to={ROUTES.PRIVACY_POLICY}>
                   プライバシーポリシー
                 </RouterLink>
               </Link>
