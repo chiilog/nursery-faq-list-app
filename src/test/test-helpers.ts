@@ -78,6 +78,7 @@ export const createMockPrivacySettings = (
     microsoftClarity: false,
     consentTimestamp: new Date('2024-01-01T00:00:00Z'),
     consentVersion: '1.0' as const,
+    hasExplicitConsent: false,
     ...overrides,
   };
 };

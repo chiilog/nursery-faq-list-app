@@ -54,6 +54,7 @@ describe('privacyUtils', () => {
       expect(settings.microsoftClarity).toBe(false);
       expect(settings.consentTimestamp).toBeInstanceOf(Date);
       expect(settings.consentVersion).toBe('1.0');
+      expect(settings.hasExplicitConsent).toBe(true);
     });
 
     it('新しいDateオブジェクトを生成する', () => {
@@ -69,10 +70,11 @@ describe('privacyUtils', () => {
       const settings = createDefaultPrivacySettings();
       const after = new Date();
 
-      expect(settings.consentTimestamp.getTime()).toBeGreaterThanOrEqual(
+      expect(settings.consentTimestamp).not.toBeNull();
+      expect(settings.consentTimestamp!.getTime()).toBeGreaterThanOrEqual(
         before.getTime()
       );
-      expect(settings.consentTimestamp.getTime()).toBeLessThanOrEqual(
+      expect(settings.consentTimestamp!.getTime()).toBeLessThanOrEqual(
         after.getTime()
       );
     });
