@@ -32,7 +32,7 @@ export const ROUTES = Object.freeze({
   PRIVACY_POLICY: '/privacy-policy',
 
   /** 保育園詳細ページ（パラメータ付き） */
-  NURSERY_DETAIL: '/nursery/:id',
+  NURSERY_DETAIL: '/nursery/:nurseryId',
 
   /** 404ページ */
   NOT_FOUND: '*',

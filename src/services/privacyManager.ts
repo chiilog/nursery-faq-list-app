@@ -23,13 +23,14 @@
  */
 
 import type { PrivacySettings } from '../types/privacy';
+import { CONSENT_TTL_DAYS } from '../types/privacy';
 import {
   createDefaultPrivacySettings,
   sanitizeConsentVersion,
 } from '../utils/privacyUtils';
 
 const STORAGE_KEY = 'privacySettings';
-const CONSENT_VALID_PERIOD_MS = 365 * 24 * 60 * 60 * 1000; // 1年
+const CONSENT_VALID_PERIOD_MS = CONSENT_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 /**
  * プライバシー設定の変更イベント
@@ -145,6 +146,16 @@ export class PrivacyManager {
       if (hasExplicitConsentAction && !('consentTimestamp' in appliedChanges)) {
         appliedChanges.consentTimestamp = new Date();
       }
+    }
+
+    // ユーザーが明示的に設定を変更した場合はhasExplicitConsentを true に設定
+    if (
+      'googleAnalytics' in appliedChanges ||
+      'microsoftClarity' in appliedChanges ||
+      'consentVersion' in appliedChanges ||
+      'consentTimestamp' in appliedChanges
+    ) {
+      appliedChanges.hasExplicitConsent = true;
     }
 
     // 実質的に何も変わらない場合は副作用なしで終了
@@ -269,7 +280,10 @@ export class PrivacyManager {
         // Date オブジェクトを復元し、consentVersionをサニタイズ
         return {
           ...parsed,
-          consentTimestamp: new Date(parsed.consentTimestamp),
+          consentTimestamp:
+            parsed.consentTimestamp === null
+              ? null
+              : new Date(parsed.consentTimestamp),
           consentVersion: sanitizeConsentVersion(parsed.consentVersion),
         };
       }
@@ -287,7 +301,7 @@ export class PrivacyManager {
     PrivacySettings,
     'consentTimestamp'
   > & {
-    consentTimestamp: string;
+    consentTimestamp: string | null;
   } {
     if (typeof data !== 'object' || data === null) return false;
 
@@ -296,8 +310,11 @@ export class PrivacyManager {
     return (
       typeof obj.googleAnalytics === 'boolean' &&
       typeof obj.microsoftClarity === 'boolean' &&
-      typeof obj.consentTimestamp === 'string' &&
-      typeof obj.consentVersion === 'string'
+      (typeof obj.consentTimestamp === 'string' ||
+        obj.consentTimestamp === null) &&
+      typeof obj.consentVersion === 'string' &&
+      (obj.hasExplicitConsent === undefined ||
+        typeof obj.hasExplicitConsent === 'boolean')
     );
   }
 
