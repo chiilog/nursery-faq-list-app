@@ -3,6 +3,13 @@
  * プライバシー設定やCookie同意状態の管理を一元化
  */
 
+import {
+  CURRENT_PRIVACY_VERSION,
+  CONSENT_TTL_DAYS,
+  type PrivacySettings,
+  type ConsentVersion,
+} from '../types/privacy';
+
 /**
  * Result型: 関数型エラーハンドリングパターン
  */
@@ -15,29 +22,19 @@ export type Result<T, E = Error> =
  */
 export const STORAGE_KEYS = {
   PRIVACY_SETTINGS: 'privacySettings',
-  CONSENT_TIMESTAMP: 'consentTimestamp',
-  CONSENT_VERSION: 'consentVersion',
 } as const satisfies Record<string, string>;
 
 /**
- * プライバシー設定の型定義
+ * デフォルトのプライバシー設定を取得（外部変更を防ぐため関数形式）
+ * 未記録状態を表現し、明示的な同意のみを記録する
  */
-export interface PrivacySettings {
-  googleAnalytics: boolean;
-  microsoftClarity: boolean;
-  consentTimestamp: Date;
-  consentVersion: string;
-}
-
-/**
- * デフォルトのプライバシー設定
- */
-const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
+const getDefaultPrivacySettings = (): PrivacySettings => ({
   googleAnalytics: false,
   microsoftClarity: false,
-  consentTimestamp: new Date(),
-  consentVersion: '1.0',
-};
+  consentTimestamp: null, // 未記録状態
+  consentVersion: CURRENT_PRIVACY_VERSION,
+  hasExplicitConsent: false, // 明示的同意なし
+});
 
 /**
  * localStorageから取得した生データの型
@@ -45,8 +42,9 @@ const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
 interface RawPrivacySettings {
   googleAnalytics?: boolean;
   microsoftClarity?: boolean;
-  consentTimestamp?: string;
+  consentTimestamp?: string | null;
   consentVersion?: string;
+  hasExplicitConsent?: boolean;
 }
 
 /**
@@ -63,67 +61,75 @@ const isValidRawSettings = (obj: unknown): obj is RawPrivacySettings => {
     (candidate.microsoftClarity === undefined ||
       typeof candidate.microsoftClarity === 'boolean') &&
     (candidate.consentTimestamp === undefined ||
+      candidate.consentTimestamp === null ||
       typeof candidate.consentTimestamp === 'string') &&
     (candidate.consentVersion === undefined ||
-      typeof candidate.consentVersion === 'string')
+      typeof candidate.consentVersion === 'string') &&
+    (candidate.hasExplicitConsent === undefined ||
+      typeof candidate.hasExplicitConsent === 'boolean')
   );
 };
 
 /**
  * localStorageからプライバシー設定を取得
+ * @returns プライバシー設定オブジェクト（未記録の場合はデフォルト設定）
  */
 export const getPrivacySettings = (): PrivacySettings => {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.PRIVACY_SETTINGS);
     if (!stored) {
-      return DEFAULT_PRIVACY_SETTINGS;
+      return getDefaultPrivacySettings();
     }
 
     const parsed: unknown = JSON.parse(stored);
 
     if (!isValidRawSettings(parsed)) {
       console.warn('[StorageUtils] Invalid settings format, using defaults');
-      return DEFAULT_PRIVACY_SETTINGS;
+      return getDefaultPrivacySettings();
     }
 
-    // Date型への安全な変換
-    const timestamp = parsed.consentTimestamp
-      ? new Date(parsed.consentTimestamp)
-      : DEFAULT_PRIVACY_SETTINGS.consentTimestamp;
-
-    // 無効な日付の場合はデフォルトを使用
-    if (isNaN(timestamp.getTime())) {
-      console.warn('[StorageUtils] Invalid timestamp, using default');
-      return DEFAULT_PRIVACY_SETTINGS;
+    // Date型への安全な変換（nullの場合はそのまま維持）
+    let timestamp: Date | null = null;
+    if (parsed.consentTimestamp) {
+      const parsedTimestamp = new Date(parsed.consentTimestamp);
+      if (!isNaN(parsedTimestamp.getTime())) {
+        timestamp = parsedTimestamp;
+      } else {
+        console.warn('[StorageUtils] Invalid timestamp format');
+      }
     }
 
+    const defaults = getDefaultPrivacySettings();
     return {
-      googleAnalytics:
-        parsed.googleAnalytics ?? DEFAULT_PRIVACY_SETTINGS.googleAnalytics,
-      microsoftClarity:
-        parsed.microsoftClarity ?? DEFAULT_PRIVACY_SETTINGS.microsoftClarity,
+      googleAnalytics: parsed.googleAnalytics ?? defaults.googleAnalytics,
+      microsoftClarity: parsed.microsoftClarity ?? defaults.microsoftClarity,
       consentTimestamp: timestamp,
-      consentVersion:
-        parsed.consentVersion ?? DEFAULT_PRIVACY_SETTINGS.consentVersion,
+      consentVersion: (parsed.consentVersion ??
+        defaults.consentVersion) as ConsentVersion,
+      hasExplicitConsent:
+        parsed.hasExplicitConsent ?? defaults.hasExplicitConsent,
     };
   } catch (error) {
     console.warn('[StorageUtils] Failed to get privacy settings:', error);
-    return DEFAULT_PRIVACY_SETTINGS;
+    return getDefaultPrivacySettings();
   }
 };
 
 /**
  * プライバシー設定をlocalStorageに保存
+ * @param settings 更新するプライバシー設定の部分的オブジェクト
  */
 export const setPrivacySettings = (
   settings: Partial<PrivacySettings>
 ): void => {
   try {
     const current = getPrivacySettings();
-    const updated = {
+    const updated: PrivacySettings = {
       ...current,
       ...settings,
-      consentTimestamp: new Date(),
+      consentTimestamp: new Date(), // 明示的同意の記録
+      consentVersion: CURRENT_PRIVACY_VERSION, // 現在バージョンに更新
+      hasExplicitConsent: true, // 明示的同意フラグ
     };
 
     localStorage.setItem(
@@ -147,16 +153,23 @@ export const setAllConsent = (granted: boolean): void => {
 };
 
 /**
- * 同意が有効期限内かチェック（90日）
+ * 同意が有効期限内かチェック
+ * @returns 明示的同意が記録されており、かつ有効期限内の場合のみtrue
  */
 export const isConsentValid = (): boolean => {
   try {
     const settings = getPrivacySettings();
+
+    // 明示的な同意が記録されていない場合はfalse
+    if (!settings.hasExplicitConsent || !settings.consentTimestamp) {
+      return false;
+    }
+
     const daysSinceConsent =
       (new Date().getTime() - settings.consentTimestamp.getTime()) /
       (1000 * 60 * 60 * 24);
 
-    return daysSinceConsent <= 90;
+    return daysSinceConsent <= CONSENT_TTL_DAYS;
   } catch (error) {
     console.warn('[StorageUtils] Failed to check consent validity:', error);
     return false;
@@ -191,10 +204,12 @@ export const getPrivacySettingsSafe = (): Result<PrivacySettings> => {
 
 /**
  * プライバシー設定を安全に保存（Result型を返す）
+ * @param settings 更新するプライバシー設定の部分的オブジェクト
+ * @returns 成功時はsuccess: true、失敗時はerror情報
  */
 export const setPrivacySettingsSafe = (
   settings: Partial<PrivacySettings>
-): Result<void> => {
+): Result<undefined> => {
   try {
     setPrivacySettings(settings);
     return { success: true, data: undefined };
@@ -208,8 +223,10 @@ export const setPrivacySettingsSafe = (
 
 /**
  * すべての同意を安全に設定（Result型を返す）
+ * @param granted すべての分析ツールに対する同意状態
+ * @returns 成功時はsuccess: true、失敗時はerror情報
  */
-export const setAllConsentSafe = (granted: boolean): Result<void> => {
+export const setAllConsentSafe = (granted: boolean): Result<undefined> => {
   try {
     setAllConsent(granted);
     return { success: true, data: undefined };

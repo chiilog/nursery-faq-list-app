@@ -56,5 +56,6 @@ export function createDefaultPrivacySettings(): PrivacySettings {
     microsoftClarity: false,
     consentTimestamp: new Date(),
     consentVersion: CURRENT_PRIVACY_VERSION,
+    hasExplicitConsent: true, // この関数は明示的に設定作成時に使用
   };
 }
