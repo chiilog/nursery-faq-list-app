@@ -10,7 +10,7 @@
 import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useBreakpointValue } from '@chakra-ui/react';
-import { renderWithChakra } from '../test/test-utils';
+import { renderWithProviders } from '../test/test-utils';
 import { CookieConsentBanner } from './CookieConsentBanner';
 import { PrivacyManager } from '../services/privacyManager';
 import type { PrivacySettings } from '../types/privacy';
@@ -72,7 +72,7 @@ const testHelpers = {
    * @description バナーをレンダリングするヘルパー
    */
   renderBanner: (mockManager: MockedPrivacyManagerInstance) => {
-    return renderWithChakra(
+    return renderWithProviders(
       <CookieConsentBanner
         privacyManager={mockManager as unknown as PrivacyManager}
       />
@@ -269,7 +269,7 @@ describe('CookieConsentBanner', () => {
 
       // コンポーネントがクラッシュしないことを確認
       expect(() => {
-        renderWithChakra(<CookieConsentBanner />);
+        renderWithProviders(<CookieConsentBanner />);
       }).not.toThrow();
 
       // エラーログが出力されることを確認（実際のPrivacyManagerではない模擬テスト）
