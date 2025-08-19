@@ -37,3 +37,24 @@ VITE_GA4_MEASUREMENT_ID=G-あなたの測定ID
    - 値: `G-あなたの測定ID`
 
 **注意:** GA4測定IDはGoogle Analytics 4のプロパティ設定から取得できます（例: G-XXXXXXXXXX）
+
+### Microsoft Clarity 設定
+
+Microsoft Clarityでユーザーエクスペリエンス分析を行う場合は、以下の手順でプロジェクトIDを設定してください：
+
+#### ローカル開発環境
+
+```bash
+# .env.local ファイルに追加
+VITE_CLARITY_PROJECT_ID=あなたのプロジェクトID
+```
+
+#### 本番環境（AWS Amplify）
+
+1. AWS Amplify Console → アプリを選択
+2. 「環境変数」タブを開く
+3. 新しい環境変数を追加：
+   - キー: `VITE_CLARITY_PROJECT_ID`
+   - 値: `あなたのプロジェクトID`
+
+**注意:** Microsoft ClarityプロジェクトIDはMicrosoft Clarityダッシュボードのプロジェクト設定から取得できます（例: abcdef1234）
