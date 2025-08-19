@@ -24,11 +24,11 @@ interface InsightsSectionProps {
   isReadOnly?: boolean;
 }
 
-export const InsightsSection: React.FC<InsightsSectionProps> = ({
+export const InsightsSection = ({
   insights,
   onInsightsChange,
   isReadOnly = false,
-}) => {
+}: InsightsSectionProps) => {
   const {
     inputValue,
     setInputValue,

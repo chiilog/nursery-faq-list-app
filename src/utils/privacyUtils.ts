@@ -35,11 +35,11 @@ export function sanitizeConsentVersion(version: unknown): ConsentVersion {
 }
 
 /**
- * デフォルトのプライバシー設定を作成
+ * デフォルトのプライバシー設定を作成（初期状態）
  *
- * 全ての分析機能を無効化した状態でプライバシー設定を初期化します。
- * この関数はユーザーの初回訪問時（設定なし）および同意操作時に呼び出され、
- * 現在時刻のタイムスタンプが設定されます。
+ * 全ての分析機能を無効化し、未同意状態でプライバシー設定を初期化します。
+ * この関数はユーザーの初回訪問時やデフォルト状態の作成時に使用します。
+ * タイムスタンプはnull（未記録状態）で初期化されます。
  *
  * @returns 初期化されたプライバシー設定オブジェクト
  *
@@ -48,13 +48,16 @@ export function sanitizeConsentVersion(version: unknown): ConsentVersion {
  * const defaultSettings = createDefaultPrivacySettings();
  * console.log(defaultSettings.googleAnalytics); // false
  * console.log(defaultSettings.microsoftClarity); // false
+ * console.log(defaultSettings.consentTimestamp); // null
+ * console.log(defaultSettings.hasExplicitConsent); // false
  * ```
  */
 export function createDefaultPrivacySettings(): PrivacySettings {
   return {
     googleAnalytics: false,
     microsoftClarity: false,
-    consentTimestamp: new Date(),
+    consentTimestamp: null, // 初期状態は未記録
     consentVersion: CURRENT_PRIVACY_VERSION,
+    hasExplicitConsent: false, // 初期状態は明示的同意なし
   };
 }

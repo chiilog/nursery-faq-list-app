@@ -1,7 +1,21 @@
 import { screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
-import { renderWithChakra } from './test/test-utils';
-import App from './App';
+import { renderWithProviders } from './test/test-utils';
+import { createMockScrollTo } from './test/test-helpers';
+import { AppRouter } from './components/Router';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
+
+// window.scrollTo をモック
+createMockScrollTo();
+
+// react-router-dom をモック
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  };
+});
 
 // PrivacyManager をモック
 vi.mock('./services/privacyManager', () => ({
@@ -14,17 +28,17 @@ vi.mock('./services/privacyManager', () => ({
 
 describe('App', () => {
   test('アプリのタイトルが表示される', () => {
-    renderWithChakra(<App />);
+    renderWithProviders(<AppRouter />);
     expect(screen.getByText('保活手帳')).toBeInTheDocument();
   });
 
   test('ヘッダーが表示される', () => {
-    renderWithChakra(<App />);
+    renderWithProviders(<AppRouter />);
     expect(screen.getByRole('banner')).toBeInTheDocument();
   });
 
   test('保育園を追加するボタンが表示される', async () => {
-    renderWithChakra(<App />);
+    renderWithProviders(<AppRouter />);
 
     // ローディング完了を待つ
     await waitFor(() => {
@@ -35,7 +49,12 @@ describe('App', () => {
   });
 
   test('CookieConsentBannerが統合されている（同意済みの場合は非表示）', () => {
-    renderWithChakra(<App />);
+    renderWithProviders(
+      <>
+        <AppRouter />
+        <CookieConsentBanner />
+      </>
+    );
 
     // PrivacyManagerのモックで同意済み(true)に設定しているため、バナーは表示されない
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

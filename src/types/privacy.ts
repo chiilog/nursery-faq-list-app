@@ -12,10 +12,12 @@ export interface PrivacySettings {
   googleAnalytics: boolean;
   /** Microsoft Clarity の有効化状態 */
   microsoftClarity: boolean;
-  /** 同意取得日時 */
-  consentTimestamp: Date;
+  /** 同意取得日時（nullの場合は未記録） */
+  consentTimestamp: Date | null;
   /** 同意バージョン */
   consentVersion: ConsentVersion;
+  /** 明示的な同意が記録されているか */
+  hasExplicitConsent: boolean;
 }
 
 /**
@@ -70,3 +72,9 @@ export const DEFAULT_CONSENT_VERSION: ConsentVersion = '1.0';
  * ポリシーが更新された場合は、この値を増加させてください。
  */
 export const CURRENT_PRIVACY_VERSION = DEFAULT_CONSENT_VERSION;
+
+/**
+ * 同意の有効期限（日数）
+ * GDPR等のプライバシー法に準拠した期限設定
+ */
+export const CONSENT_TTL_DAYS = 90;

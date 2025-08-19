@@ -8,17 +8,18 @@
  * ```
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Text,
   Button,
   HStack,
   VStack,
-  Link,
   Container,
   useBreakpointValue,
+  Link,
 } from '@chakra-ui/react';
+import { Link as RouterLink } from 'react-router-dom';
 import { PrivacyManager } from '../services/privacyManager';
 
 /**
@@ -155,23 +156,24 @@ interface CookieConsentBannerProps {
  * テストでのモック使用:
  * <CookieConsentBanner privacyManager={mockPrivacyManager} />
  */
-export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
+export const CookieConsentBanner = ({
   privacyManager,
-}) => {
+}: CookieConsentBannerProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [managerError, setManagerError] = useState<PrivacyManagerError | null>(
     null
   );
 
-  // Props経由で提供されない場合は新規インスタンスを作成（型安全なエラーハンドリング付き）
-  const [{ manager, initError }] = useState(() => {
+  // PrivacyManagerインスタンスをuseMemoで管理（React推奨パターン）
+  const privacyManagerInstance = useMemo(() => {
+    // Props経由で提供された場合はそれを使用
+    if (privacyManager) {
+      return privacyManager;
+    }
+
+    // 新規インスタンスの作成を試みる
     try {
-      return {
-        manager: (privacyManager ?? new PrivacyManager()) as
-          | PrivacyManager
-          | FallbackPrivacyManager,
-        initError: null as PrivacyManagerError | null,
-      };
+      return new PrivacyManager();
     } catch (error) {
       const categorizedError = categorizePrivacyManagerError(error);
       console.error(
@@ -180,17 +182,16 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
           ? String(categorizedError.error)
           : categorizedError.error.message
       );
-      return {
-        manager: createFallbackPrivacyManager(),
-        initError: categorizedError,
-      };
-    }
-  });
 
-  // 初期化エラーはエフェクトで反映（レンダーフェーズの更新を避ける）
-  useEffect(() => {
-    if (initError) setManagerError(initError);
-  }, [initError]);
+      // エラー状態を設定
+      setManagerError(categorizedError);
+
+      // フォールバック実装を使用
+      return createFallbackPrivacyManager();
+    }
+  }, [privacyManager]);
+
+  const manager = privacyManagerInstance;
 
   // レスポンシブデザインの設定（型推論を活用した簡潔化）
   const responsiveConfig: ResponsiveConfig =
@@ -294,7 +295,7 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
             fontWeight="semibold"
             textAlign={{ base: 'center', md: 'left' }}
           >
-            🍪 クッキーの使用について
+            クッキーの使用について
           </Text>
           <Text
             fontSize={responsiveConfig.fontSize}
@@ -302,21 +303,13 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
             textAlign={{ base: 'center', md: 'left' }}
           >
             このサイトではサービス向上のためクッキーを使用しています。詳細については
-            <Link
-              href="/privacy-policy"
-              color="blue.500"
-              textDecoration="underline"
-              mx={1}
-              _hover={{ color: 'blue.600' }}
-              _focus={{
-                outline: '2px solid',
-                outlineColor: 'blue.500',
-                outlineOffset: '2px',
-              }}
-            >
-              プライバシーポリシー
+            <Link asChild color="blue.500" textDecoration="underline" mx={1}>
+              <RouterLink to="/privacy-policy">プライバシーポリシー</RouterLink>
             </Link>
             をご確認ください。
+            <Link asChild color="blue.500" textDecoration="underline" ml={2}>
+              <RouterLink to="/privacy-settings">設定を変更</RouterLink>
+            </Link>
           </Text>
           <HStack
             gap={responsiveConfig.spacing}

@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PrivacyManager } from './privacyManager';
-import type { PrivacySettings } from '../types/privacy';
+import { CONSENT_TTL_DAYS, type PrivacySettings } from '../types/privacy';
 
 describe('PrivacyManager', () => {
   let privacyManager: PrivacyManager;
@@ -136,52 +136,36 @@ describe('PrivacyManager', () => {
     });
 
     describe('境界値テスト', () => {
-      it('ちょうど1年後（有効期限内）', () => {
-        const oneYearLater = new Date();
-        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-        oneYearLater.setMinutes(oneYearLater.getMinutes() - 1); // 1分手前
+      it('90日+1分前（有効期限切れ）', () => {
+        const ninetyDaysAndOneMinuteAgo = new Date(
+          Date.now() - CONSENT_TTL_DAYS * 24 * 60 * 60 * 1000 - 60 * 1000
+        ); // 90日 + 1分前
 
         privacyManager.updateSettings({
-          consentTimestamp: oneYearLater,
-        });
-
-        expect(privacyManager.isConsentValid()).toBe(true);
-      });
-
-      it('1年+1分前（有効期限切れ）', () => {
-        const oneYearAndOneMinuteAgo = new Date();
-        oneYearAndOneMinuteAgo.setFullYear(
-          oneYearAndOneMinuteAgo.getFullYear() - 1
-        );
-        oneYearAndOneMinuteAgo.setMinutes(
-          oneYearAndOneMinuteAgo.getMinutes() - 1
-        ); // さらに1分前
-
-        privacyManager.updateSettings({
-          consentTimestamp: oneYearAndOneMinuteAgo,
+          consentTimestamp: ninetyDaysAndOneMinuteAgo,
         });
 
         expect(privacyManager.isConsentValid()).toBe(false);
       });
 
-      it('ちょうど1年前（有効期限切れ）', () => {
-        const exactlyOneYearAgo = new Date();
-        exactlyOneYearAgo.setFullYear(exactlyOneYearAgo.getFullYear() - 1);
+      it('ちょうど90日前（有効期限切れ）', () => {
+        const exactlyNinetyDaysAgo = new Date();
+        exactlyNinetyDaysAgo.setDate(exactlyNinetyDaysAgo.getDate() - 90);
 
         privacyManager.updateSettings({
-          consentTimestamp: exactlyOneYearAgo,
+          consentTimestamp: exactlyNinetyDaysAgo,
         });
 
         expect(privacyManager.isConsentValid()).toBe(false);
       });
 
-      it('1年-1分前（有効期限内）', () => {
-        const almostOneYearAgo = new Date();
-        almostOneYearAgo.setFullYear(almostOneYearAgo.getFullYear() - 1);
-        almostOneYearAgo.setMinutes(almostOneYearAgo.getMinutes() + 1); // 1分前
+      it('90日-1分前（有効期限内）', () => {
+        const almostNinetyDaysAgo = new Date(
+          Date.now() - CONSENT_TTL_DAYS * 24 * 60 * 60 * 1000 + 60 * 1000
+        ); // 90日 - 1分前（境界内）
 
         privacyManager.updateSettings({
-          consentTimestamp: almostOneYearAgo,
+          consentTimestamp: almostNinetyDaysAgo,
         });
 
         expect(privacyManager.isConsentValid()).toBe(true);
