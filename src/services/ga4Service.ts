@@ -28,7 +28,11 @@ export type LoadResult =
  * ```
  */
 export const createMeasurementId = (id: string | undefined): MeasurementId => {
-  if (!id || id.trim() === '') {
+  if (!id) {
+    throw new Error('Invalid measurement ID');
+  }
+  const normalized = id.trim();
+  if (normalized === '') {
     throw new Error('Invalid measurement ID');
   }
 
@@ -43,11 +47,17 @@ export const createMeasurementId = (id: string | undefined): MeasurementId => {
     /[<>"'`]/,
   ];
 
-  if (dangerousPatterns.some((pattern) => pattern.test(id))) {
+  if (dangerousPatterns.some((pattern) => pattern.test(normalized))) {
     throw new Error('Invalid measurement ID');
   }
 
-  return id as MeasurementId;
+  // 許可リスト（英数・ハイフン・アンダースコアのみ）
+  const allowedPattern = /^[A-Za-z0-9_-]+$/;
+  if (!allowedPattern.test(normalized)) {
+    throw new Error('Invalid measurement ID');
+  }
+
+  return normalized as MeasurementId;
 };
 
 /**
@@ -118,15 +128,18 @@ const loadGA4Script = async (
   measurementId: MeasurementId
 ): Promise<LoadResult> => {
   try {
-    // 既に読み込み済みかチェック
-    if (window.gtag) {
+    // 既にGA4スクリプトがDOMに追加済みかをチェック（gtag存在は初期スタブの可能性がある）
+    if (document.querySelector('script[data-ga4="true"]')) {
       return { success: true };
     }
 
     return new Promise((resolve) => {
       const script = document.createElement('script');
       script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(
+        measurementId
+      )}`;
+      script.setAttribute('data-ga4', 'true');
 
       let resolved = false;
 
