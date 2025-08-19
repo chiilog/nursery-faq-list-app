@@ -68,13 +68,16 @@ export interface ConsentModeSettings {
 }
 
 /**
- * Google Analytics gtag関数の型定義
+ * Google Analytics gtag関数の型定義（関数オーバーロード）
  */
-type GtagFunction = (
-  command: 'config' | 'event' | 'consent',
-  targetId: string,
-  config?: Record<string, unknown>
-) => void;
+interface GtagFunction {
+  (command: 'js', date: Date): void;
+  (
+    command: 'config' | 'event' | 'consent',
+    targetId: string,
+    config?: Record<string, unknown>
+  ): void;
+}
 
 // グローバルオブジェクトの拡張定義
 declare global {
@@ -208,9 +211,12 @@ export function useGA4Service(): UseGA4ServiceReturn {
 
       // テスト環境で既にgtagが設定されている場合はそれを保持
       if (!window.gtag) {
-        const gtagFunction: GtagFunction = function (...args) {
-          window.dataLayer?.push(args);
-        };
+        const gtagFunction: GtagFunction = function (
+          command: 'js' | 'config' | 'event' | 'consent',
+          ...args: [Date] | [string, Record<string, unknown>?]
+        ) {
+          window.dataLayer?.push([command, ...args]);
+        } as GtagFunction;
         window.gtag = gtagFunction;
       }
 
@@ -220,6 +226,9 @@ export function useGA4Service(): UseGA4ServiceReturn {
         // 現在のgtag関数を取得
         const currentGtag = window.gtag;
         if (currentGtag) {
+          // GA4公式スニペット準拠の初期化
+          currentGtag('js', new Date());
+
           // Consent Mode v2の初期設定（全て denied）
           currentGtag('consent', 'default', {
             analytics_storage: 'denied',
@@ -310,7 +319,9 @@ export function useGA4Service(): UseGA4ServiceReturn {
    */
   const trackPageView = useCallback(
     (pageTitle: string, pagePath?: string) => {
-      const parameters: Record<string, unknown> = { page_title: pageTitle };
+      const parameters: Record<string, unknown> = {
+        page_title: pageTitle,
+      };
       if (pagePath) {
         parameters.page_location = pagePath;
       }
