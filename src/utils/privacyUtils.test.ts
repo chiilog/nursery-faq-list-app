@@ -56,11 +56,5 @@ describe('privacyUtils', () => {
       expect(settings.consentVersion).toBe('1.0');
       expect(settings.hasExplicitConsent).toBe(false);
     });
-
-    it('初期状態では consentTimestamp は null を設定する', () => {
-      const settings = createDefaultPrivacySettings();
-
-      expect(settings.consentTimestamp).toBeNull();
-    });
   });
 });

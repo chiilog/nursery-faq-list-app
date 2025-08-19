@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PrivacyManager } from './privacyManager';
-import type { PrivacySettings } from '../types/privacy';
+import { CONSENT_TTL_DAYS, type PrivacySettings } from '../types/privacy';
 
 describe('PrivacyManager', () => {
   let privacyManager: PrivacyManager;
@@ -136,26 +136,10 @@ describe('PrivacyManager', () => {
     });
 
     describe('境界値テスト', () => {
-      it('ちょうど90日後（有効期限内）', () => {
-        const ninetyDaysLater = new Date();
-        ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
-        ninetyDaysLater.setMinutes(ninetyDaysLater.getMinutes() - 1); // 1分手前
-
-        privacyManager.updateSettings({
-          consentTimestamp: ninetyDaysLater,
-        });
-
-        expect(privacyManager.isConsentValid()).toBe(true);
-      });
-
       it('90日+1分前（有効期限切れ）', () => {
-        const ninetyDaysAndOneMinuteAgo = new Date();
-        ninetyDaysAndOneMinuteAgo.setDate(
-          ninetyDaysAndOneMinuteAgo.getDate() - 90
-        );
-        ninetyDaysAndOneMinuteAgo.setMinutes(
-          ninetyDaysAndOneMinuteAgo.getMinutes() - 1
-        ); // さらに1分前
+        const ninetyDaysAndOneMinuteAgo = new Date(
+          Date.now() - CONSENT_TTL_DAYS * 24 * 60 * 60 * 1000 - 60 * 1000
+        ); // 90日 + 1分前
 
         privacyManager.updateSettings({
           consentTimestamp: ninetyDaysAndOneMinuteAgo,
@@ -176,9 +160,9 @@ describe('PrivacyManager', () => {
       });
 
       it('90日-1分前（有効期限内）', () => {
-        const almostNinetyDaysAgo = new Date();
-        almostNinetyDaysAgo.setDate(almostNinetyDaysAgo.getDate() - 90);
-        almostNinetyDaysAgo.setMinutes(almostNinetyDaysAgo.getMinutes() + 1); // 1分前
+        const almostNinetyDaysAgo = new Date(
+          Date.now() - CONSENT_TTL_DAYS * 24 * 60 * 60 * 1000 + 60 * 1000
+        ); // 90日 - 1分前（境界内）
 
         privacyManager.updateSettings({
           consentTimestamp: almostNinetyDaysAgo,

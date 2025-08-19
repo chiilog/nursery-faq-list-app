@@ -25,7 +25,9 @@ export const createMockLocalStorage = (): MockedStorage => {
   const store: Record<string, string> = {};
 
   const mockLocalStorage: MockedStorage = {
-    getItem: vi.fn((key: string): string | null => store[key] || null),
+    getItem: vi.fn((key: string): string | null =>
+      Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null
+    ),
     setItem: vi.fn((key: string, value: string): void => {
       store[key] = value;
     }),
@@ -56,12 +58,17 @@ export const createMockLocalStorage = (): MockedStorage => {
 /**
  * window.scrollToのモック作成
  */
-export const createMockScrollTo = () => {
-  const mockScrollTo = vi.fn();
+export const createMockScrollTo = (): MockedFunction<
+  typeof window.scrollTo
+> => {
+  const mockScrollTo = vi.fn() as unknown as MockedFunction<
+    typeof window.scrollTo
+  >;
 
   Object.defineProperty(window, 'scrollTo', {
     value: mockScrollTo,
     writable: true,
+    configurable: true,
   });
 
   return mockScrollTo;
