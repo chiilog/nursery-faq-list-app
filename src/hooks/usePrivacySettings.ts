@@ -29,7 +29,7 @@
  * ```
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PrivacyManager } from '../services/privacyManager';
 import type { PrivacySettings } from '../types/privacy';
 
@@ -92,17 +92,8 @@ export interface UsePrivacySettingsReturn {
  * @throws {Error} PrivacyManagerの初期化に失敗した場合
  */
 export function usePrivacySettings(): UsePrivacySettingsReturn {
-  const privacyManager = useMemo(() => {
-    try {
-      return getPrivacyManager();
-    } catch (error) {
-      console.error(
-        '[usePrivacySettings] Failed to get PrivacyManager instance:',
-        error
-      );
-      throw error; // React Error Boundaryでキャッチ可能
-    }
-  }, []);
+  // 軽量なシングルトン取得にはuseMemoは不要
+  const privacyManager = getPrivacyManager();
 
   const [settings, setSettings] = useState(() => privacyManager.getSettings()); // 型推論: PrivacySettings
 
@@ -147,22 +138,13 @@ export function usePrivacySettings(): UsePrivacySettingsReturn {
     return privacyManager.isConsentValid();
   }, [privacyManager]);
 
-  return useMemo(
-    () => ({
-      settings,
-      updateSettings,
-      setGoogleAnalyticsConsent,
-      setMicrosoftClarityConsent,
-      setAllConsent,
-      isConsentValid,
-    }),
-    [
-      settings,
-      updateSettings,
-      setGoogleAnalyticsConsent,
-      setMicrosoftClarityConsent,
-      setAllConsent,
-      isConsentValid,
-    ]
-  );
+  // 軽量なオブジェクト作成にはuseMemoは不要
+  return {
+    settings,
+    updateSettings,
+    setGoogleAnalyticsConsent,
+    setMicrosoftClarityConsent,
+    setAllConsent,
+    isConsentValid,
+  };
 }

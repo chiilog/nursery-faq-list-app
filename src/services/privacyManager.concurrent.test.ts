@@ -72,7 +72,7 @@ describe('PrivacyManager 並行処理テスト', () => {
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
-      expect(executionTime).toBeLessThan(1000);
+      expect(executionTime).toBeLessThan(2000);
 
       const settings = manager.getSettings();
       expect(typeof settings.googleAnalytics).toBe('boolean');

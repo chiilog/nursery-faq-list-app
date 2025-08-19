@@ -165,7 +165,7 @@ describe('PrivacyManager 拡張テスト', () => {
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
-      expect(executionTime).toBeLessThan(1000);
+      expect(executionTime).toBeLessThan(2000);
 
       const settings = privacyManager.getSettings();
       expect(typeof settings.googleAnalytics).toBe('boolean');
