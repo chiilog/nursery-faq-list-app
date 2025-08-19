@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 /**
  * Branded type for measurement ID
@@ -191,6 +191,9 @@ export function useGA4Service(): UseGA4ServiceReturn {
     }
   });
 
+  // コンポーネントのマウント状態をトラック
+  const isMountedRef = useRef(true);
+
   /**
    * GA4サービスを初期化
    */
@@ -204,7 +207,6 @@ export function useGA4Service(): UseGA4ServiceReturn {
     // Do Not Track設定が有効な場合は初期化しない
     if (navigator.doNotTrack === '1') return;
 
-    let ignore = false;
     try {
       // gtag関数とdataLayerを先に初期化（テスト環境対応）
       window.dataLayer = window.dataLayer || [];
@@ -222,10 +224,10 @@ export function useGA4Service(): UseGA4ServiceReturn {
 
       const loadResult = await loadGA4Script(measurementId);
 
-      if (!ignore && loadResult.success) {
+      if (isMountedRef.current && loadResult.success) {
         // 現在のgtag関数を取得
         const currentGtag = window.gtag;
-        if (currentGtag) {
+        if (currentGtag && isMountedRef.current) {
           // GA4公式スニペット準拠の初期化
           currentGtag('js', new Date());
 
@@ -244,17 +246,15 @@ export function useGA4Service(): UseGA4ServiceReturn {
           });
         }
 
-        setIsServiceEnabled(true);
+        if (isMountedRef.current) {
+          setIsServiceEnabled(true);
+        }
       }
     } catch (error) {
       if (import.meta.env.DEV) {
         console.warn('GA4 initialization failed:', error);
       }
     }
-
-    return () => {
-      ignore = true;
-    };
   }, [consentGiven, measurementId]);
 
   /**
@@ -350,6 +350,13 @@ export function useGA4Service(): UseGA4ServiceReturn {
       void initialize();
     }
   }, [initialize, consentGiven]);
+
+  // アンマウント時にフラグを倒す
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   return {
     isEnabled: isServiceEnabled,
