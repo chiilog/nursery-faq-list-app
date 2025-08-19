@@ -69,9 +69,16 @@ describe('GA4Service Security Tests', () => {
         });
       });
 
-      // イベントが正常に処理されることを確認
+      // イベントが正常に処理され、内容が渡っていることを確認
       expect(mockGtag).toHaveBeenCalledTimes(1);
-      expect(() => mockGtag.mock.calls[0]).not.toThrow();
+      const [command, eventName, params] = mockGtag.mock.calls[0];
+      expect(command).toBe('event');
+      expect(eventName).toBe('sql_injection_test');
+      expect(params).toMatchObject({
+        sqlInjection1: expect.any(String),
+        sqlInjection2: expect.any(String),
+        sqlInjection3: expect.any(String),
+      });
     });
 
     it('極端に長い文字列でのバッファオーバーフロー攻撃を防ぐ', async () => {
@@ -170,7 +177,7 @@ describe('GA4Service Security Tests', () => {
         act(() => {
           result.current.trackEvent('circular_test', {
             normal: 'value',
-            // circular: circularObject, // この行はエラーを避けるためコメントアウト
+            circular: circularObject,
             safe: { nested: { value: 'test' } },
           });
         });
@@ -327,6 +334,7 @@ describe('GA4Service Security Tests', () => {
 
       // gtag関数を削除
       (window as any).gtag = null;
+      mockGtag.mockClear();
 
       // イベント送信を試行
       act(() => {
@@ -337,6 +345,8 @@ describe('GA4Service Security Tests', () => {
       expect(() => {
         result.current.trackEvent('another_test');
       }).not.toThrow();
+      // 送信されていないことを確認
+      expect(mockGtag).not.toHaveBeenCalled();
     });
 
     it('無効な環境設定での処理', async () => {
