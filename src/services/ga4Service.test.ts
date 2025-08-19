@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGA4Service } from './ga4Service';
 import {
   setupGA4TestEnvironment,
@@ -50,14 +50,14 @@ describe('useGA4Service', () => {
     it('同意後にサービスが初期化される', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        // useEffectの実行を待つ
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result.current.hasConsent).toBe(true);
-      expect(result.current.isEnabled).toBe(true);
+      await waitFor(() => {
+        expect(result.current.hasConsent).toBe(true);
+        expect(result.current.isEnabled).toBe(true);
+      });
     });
 
     it('Do Not Track設定時は初期化されない', async () => {
@@ -68,22 +68,24 @@ describe('useGA4Service', () => {
 
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result.current.hasConsent).toBe(true);
-      expect(result.current.isEnabled).toBe(false);
+      await waitFor(() => {
+        expect(result.current.hasConsent).toBe(true);
+        expect(result.current.isEnabled).toBe(false);
+      });
     });
 
     it('trackEventが正しく動作する', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // 初期化時に consent 'default' と config が実行されるため、モックをクリアしてから測定
       mockGtag.mockClear();
@@ -98,10 +100,11 @@ describe('useGA4Service', () => {
     it('trackPageViewが正しく動作する', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // 初期化時のコールをクリア
       mockGtag.mockClear();
@@ -119,10 +122,11 @@ describe('useGA4Service', () => {
     it('updateConsentModeが正しく動作する', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // 初期化時のコールをクリア
       mockGtag.mockClear();
@@ -154,12 +158,11 @@ describe('useGA4Service', () => {
       const { result, rerender } = renderHook(() => useGA4Service());
 
       // 最初の同意設定
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result.current.isEnabled).toBe(true);
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // フックの再レンダリング
       rerender();

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGA4Service } from './ga4Service';
 import { PrivacyManager } from './privacyManager';
 import {
@@ -35,13 +35,14 @@ describe('useGA4Service + PrivacyManager Integration', () => {
       expect(privacyManager.getSettings().googleAnalytics).toBe(true);
 
       // useGA4Serviceに同意を反映
-      await act(async () => {
+      act(() => {
         result.current.setConsent(privacyManager.getSettings().googleAnalytics);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result.current.hasConsent).toBe(true);
-      expect(result.current.isEnabled).toBe(true);
+      await waitFor(() => {
+        expect(result.current.hasConsent).toBe(true);
+        expect(result.current.isEnabled).toBe(true);
+      });
     });
 
     it('PrivacyManagerが同意を取り消した時にuseGA4Serviceが無効化される', async () => {
@@ -50,13 +51,14 @@ describe('useGA4Service + PrivacyManager Integration', () => {
       // 最初に同意を与えて初期化
       privacyManager.setGoogleAnalyticsConsent(true);
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result.current.isEnabled).toBe(true);
-      expect(result.current.hasConsent).toBe(true);
+      await waitFor(() => {
+        expect(result.current.isEnabled).toBe(true);
+        expect(result.current.hasConsent).toBe(true);
+      });
 
       // 同意を取り消し
       privacyManager.setGoogleAnalyticsConsent(false);
@@ -88,10 +90,7 @@ describe('useGA4Service + PrivacyManager Integration', () => {
       expect(result.current.hasConsent).toBe(true);
 
       // 初期化の完了を待つ
-      await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      });
-      expect(result.current.isEnabled).toBe(true);
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // 同意を取り消し
       privacyManager.setGoogleAnalyticsConsent(false);
@@ -106,10 +105,11 @@ describe('useGA4Service + PrivacyManager Integration', () => {
       const { result } = renderHook(() => useGA4Service());
 
       // 同意を設定して初期化
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // 初期化時のコールをクリア
       mockGtag.mockClear();
@@ -165,13 +165,14 @@ describe('useGA4Service + PrivacyManager Integration', () => {
       expect(settings.hasExplicitConsent).toBe(true);
 
       // 3. useGA4Serviceに同意状態を反映
-      await act(async () => {
+      act(() => {
         result.current.setConsent(settings.googleAnalytics);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result.current.hasConsent).toBe(true);
-      expect(result.current.isEnabled).toBe(true);
+      await waitFor(() => {
+        expect(result.current.hasConsent).toBe(true);
+        expect(result.current.isEnabled).toBe(true);
+      });
 
       // 4. イベント送信が可能な状態になる
       expect(() => {
@@ -187,12 +188,11 @@ describe('useGA4Service + PrivacyManager Integration', () => {
       // 1. 全て同意した状態から開始
       privacyManager.setAllConsent(true);
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result.current.isEnabled).toBe(true);
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // 2. プライバシー設定画面でGoogleAnalyticsのみ無効化
       privacyManager.setGoogleAnalyticsConsent(false);
@@ -207,13 +207,14 @@ describe('useGA4Service + PrivacyManager Integration', () => {
       // 3. 再度有効化
       privacyManager.setGoogleAnalyticsConsent(true);
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(privacyManager.getSettings().googleAnalytics);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result.current.hasConsent).toBe(true);
-      expect(result.current.isEnabled).toBe(true);
+      await waitFor(() => {
+        expect(result.current.hasConsent).toBe(true);
+        expect(result.current.isEnabled).toBe(true);
+      });
     });
 
     it('useGA4Serviceのメモリリーク防止とクリーンアップ', () => {

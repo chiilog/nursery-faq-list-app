@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGA4Service } from './ga4Service';
 import { createMeasurementId } from './ga4Service';
 import {
@@ -21,10 +21,11 @@ describe('GA4Service Security Tests', () => {
     it('悪意のあるスクリプトタグを含むパラメータをサニタイズできる', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 
@@ -52,10 +53,11 @@ describe('GA4Service Security Tests', () => {
     it('SQLインジェクション攻撃パターンを含むパラメータを処理できる', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 
@@ -75,10 +77,11 @@ describe('GA4Service Security Tests', () => {
     it('極端に長い文字列でのバッファオーバーフロー攻撃を防ぐ', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 
@@ -149,10 +152,11 @@ describe('GA4Service Security Tests', () => {
     it('循環参照を含むオブジェクトを安全に処理する', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 
@@ -178,10 +182,11 @@ describe('GA4Service Security Tests', () => {
     it('特殊文字を含むイベント名とパラメータを処理できる', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 
@@ -227,10 +232,11 @@ describe('GA4Service Security Tests', () => {
       const { result } = renderHook(() => useGA4Service());
 
       // 一度同意を与える
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 
@@ -264,14 +270,15 @@ describe('GA4Service Security Tests', () => {
 
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      // サービスが初期化されていないことを確認
-      expect(result.current.isEnabled).toBe(false);
-      expect(result.current.hasConsent).toBe(true); // 同意はあるが
+      // Do Not Track有効時はサービスが初期化されないことを確認
+      await waitFor(() => {
+        expect(result.current.hasConsent).toBe(true); // 同意はあるが
+        expect(result.current.isEnabled).toBe(false); // サービスは無効
+      });
 
       // イベント送信を試行
       act(() => {
@@ -290,13 +297,15 @@ describe('GA4Service Security Tests', () => {
 
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      // サービスが無効のままであることを確認
-      expect(result.current.isEnabled).toBe(false);
+      // 分析機能無効時はサービスが無効のままであることを確認
+      await waitFor(() => {
+        expect(result.current.hasConsent).toBe(true);
+        expect(result.current.isEnabled).toBe(false);
+      });
 
       // イベント送信を試行（失敗するはず）
       act(() => {
@@ -310,10 +319,11 @@ describe('GA4Service Security Tests', () => {
     it('gtag関数が利用できない場合のエラーハンドリング', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // gtag関数を削除
       (window as any).gtag = null;
@@ -335,10 +345,11 @@ describe('GA4Service Security Tests', () => {
 
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // フォールバック値で初期化されることを確認
       expect(result.current.isEnabled).toBe(true);
@@ -362,10 +373,11 @@ describe('GA4Service Security Tests', () => {
     it('大量のイベント送信でのパフォーマンステスト', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 
@@ -396,10 +408,11 @@ describe('GA4Service Security Tests', () => {
     it('境界値テスト - null・undefined・空値の組み合わせ', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 
@@ -427,10 +440,11 @@ describe('GA4Service Security Tests', () => {
     it('数値の境界値を処理する', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      await act(async () => {
+      act(() => {
         result.current.setConsent(true);
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       mockGtag.mockClear();
 

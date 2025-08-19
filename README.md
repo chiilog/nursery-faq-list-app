@@ -8,6 +8,19 @@
 
 GA4でアクセス解析を行う場合は、以下の手順で測定IDを設定してください：
 
+#### 追加の環境変数
+
+GA4機能の有効/無効を切り替えるため、以下の環境変数も設定可能です。
+
+```bash
+# 有効化（デフォルト想定）
+VITE_ANALYTICS_ENABLED=true
+# 明示的に無効化したい場合（例: ステージングやPRプレビュー）
+VITE_ANALYTICS_ENABLED=false
+```
+
+アプリは `VITE_ANALYTICS_ENABLED === 'false'` のときは同意があっても初期化を行いません。
+
 #### ローカル開発環境
 
 ```bash
