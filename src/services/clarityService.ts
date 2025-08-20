@@ -46,17 +46,6 @@ export const updateState = (
   });
 
 /**
- * @description 純粋関数によるClarityスクリプト生成
- */
-const createClarityScript = (projectId: ClarityProjectId): string => `
-  (function(c,l,a,r,i,t,y){
-    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-  })(window, document, "clarity", "script", "${projectId}");
-`;
-
-/**
  * @description 純粋関数による環境判定
  */
 const shouldSkipClarityInitialization = (
@@ -82,10 +71,11 @@ const hasExistingClarityScript = (
   projectId: ClarityProjectId,
   scripts: readonly HTMLScriptElement[]
 ): boolean => {
+  const clarityUrl = `https://www.clarity.ms/tag/${projectId}`;
   return scripts.some(
     (script) =>
-      script.innerHTML.includes('clarity') &&
-      script.innerHTML.includes(projectId)
+      script.src === clarityUrl ||
+      script.getAttribute('data-clarity-id') === projectId
   );
 };
 
@@ -162,9 +152,9 @@ const loadClarityScript = async (
 ): Promise<Result<void>> => {
   try {
     return await new Promise((resolve, reject) => {
-      // 既存スクリプトのチェック
+      // 既存スクリプトのチェック（document全体を検索）
       const existingScripts = Array.from(
-        document.head.querySelectorAll('script')
+        document.querySelectorAll('script')
       ) as readonly HTMLScriptElement[];
 
       if (hasExistingClarityScript(projectId, existingScripts)) {
@@ -173,7 +163,12 @@ const loadClarityScript = async (
       }
 
       const script = document.createElement('script');
-      script.innerHTML = createClarityScript(projectId);
+
+      // 外部スクリプトとして設定（CSP対応・セキュリティ向上）
+      script.src = `https://www.clarity.ms/tag/${projectId}`;
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      script.setAttribute('data-clarity-id', projectId);
 
       // テスト環境での処理
       const isTestEnv =
@@ -191,6 +186,12 @@ const loadClarityScript = async (
         return;
       }
 
+      // ロード成功ハンドラー
+      script.onload = () => {
+        resolve(createSuccess(undefined));
+      };
+
+      // エラーハンドラー
       script.onerror = (errorEvent) => {
         const error =
           errorEvent instanceof ErrorEvent
@@ -206,7 +207,6 @@ const loadClarityScript = async (
       };
 
       document.head.appendChild(script);
-      setTimeout(() => resolve(createSuccess(undefined)), 10);
     });
   } catch (error) {
     return createFailure(
