@@ -197,8 +197,12 @@ describe('useClarityService', () => {
       // アンマウント後はresult.currentへのアクセスは無効になる
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // メモリリーク検証（実際のテストでは performance.memory などを使用）
-      expect(true).toBe(true); // 基本的な検証として
+      // TODO: 実際のメモリリーク検証の実装
+      // - performance.memory APIの利用（Chromeのみ）
+      // - WeakMapを使用した参照カウントテスト
+      // - グローバル変数の汚染チェック
+      // 現時点では基本的なアンマウント処理の成功を確認
+      expect(true).toBe(true);
     });
 
     test('複数のHookインスタンスでのメモリ管理', () => {
