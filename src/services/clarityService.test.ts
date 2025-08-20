@@ -433,6 +433,9 @@ describe('Clarityサービス関数型API', () => {
 
   describe('非同期処理とエラーハンドリング', () => {
     test('スクリプト読み込み失敗時の適切な処理', async () => {
+      const prevNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'e2e'; // test分岐を回避
+
       const mockCreateElement = vi.spyOn(document, 'createElement');
       const mockScript: Partial<HTMLScriptElement> = {
         src: '',
@@ -465,6 +468,7 @@ describe('Clarityサービス関数型API', () => {
       }
 
       mockCreateElement.mockRestore();
+      process.env.NODE_ENV = prevNodeEnv; // 復元
     });
 
     test('競合状態：同時初期化リクエストの処理', async () => {

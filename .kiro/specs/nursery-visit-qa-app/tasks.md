@@ -301,7 +301,7 @@
       - EEA 等の地域別挙動に備えた拡張余地を確保
   - _要件: 9.1, 9.2, 9.6, 9.7_
 
-- [ ] 8.6 Microsoft Clarity 統合の実装（TDD）
+- [x] 8.6 Microsoft Clarity 統合の実装（TDD）
   - **Red**: Clarity 機能のテストを先に作成
     - Clarity スクリプト読み込みのテスト
     - データマスキング機能のテスト
