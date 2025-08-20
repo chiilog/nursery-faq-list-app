@@ -173,33 +173,45 @@ describe('useClarityService 統合テスト', () => {
 
   describe('エラー復旧統合テスト', () => {
     test('エラー状態からの復旧処理', async () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
+      const consoleLogSpy = vi
+        .spyOn(console, 'log')
+        .mockImplementation(() => {});
 
       // 最初は無効なプロジェクトIDで失敗
       vi.stubEnv('VITE_CLARITY_PROJECT_ID', '');
 
-      const { rerender } = renderHook(() => useClarityService());
+      const { unmount } = renderHook(() => useClarityService());
 
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
       // 初期化失敗のログが出力されること
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
         'VITE_CLARITY_PROJECT_ID が設定されていないため、Clarityを初期化できません'
       );
 
       // 有効なプロジェクトIDに変更（実際には動的変更は困難だが、テスト設計として）
       vi.stubEnv('VITE_CLARITY_PROJECT_ID', 'valid-recovery-id');
 
-      // 新しいレンダリングで復旧をシミュレート
-      rerender();
+      // 新しいマウントで復旧をシミュレート
+      unmount();
+      renderHook(() => useClarityService());
 
       await act(async () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
-      consoleSpy.mockRestore();
+      // 初期化成功ログが出力されることを確認
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        'Microsoft Clarity が正常に初期化されました'
+      );
+
+      consoleWarnSpy.mockRestore();
+      consoleLogSpy.mockRestore();
     });
   });
 
