@@ -65,6 +65,41 @@ const shouldSkipClarityInitialization = (
 };
 
 /**
+ * @description プロジェクトID許可リストの取得（純粋関数）
+ */
+const getAllowedProjectIds = (importMeta: ImportMeta): readonly string[] => {
+  const allowListEnv = importMeta.env?.VITE_CLARITY_ALLOWED_PROJECT_IDS;
+
+  if (!allowListEnv || typeof allowListEnv !== 'string') {
+    return [];
+  }
+
+  // カンマ区切りで許可リストをパース
+  return allowListEnv
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+};
+
+/**
+ * @description プロジェクトIDが許可リストに含まれるかチェック（純粋関数）
+ */
+const isAllowedProjectId = (
+  projectId: ClarityProjectId,
+  importMeta: ImportMeta
+): boolean => {
+  const allowedIds = getAllowedProjectIds(importMeta);
+
+  // 許可リストが空の場合は、全ての有効なIDを許可
+  if (allowedIds.length === 0) {
+    return true;
+  }
+
+  // 許可リストに含まれるかチェック
+  return allowedIds.includes(projectId);
+};
+
+/**
  * @description 純粋関数による既存スクリプト検出
  */
 const hasExistingClarityScript = (
@@ -237,6 +272,14 @@ export const computeClarityInitializationPlan = (
   try {
     // バリデーション（純粋関数）
     const validatedProjectId = createClarityProjectId(projectId);
+
+    // プロジェクトID許可リストチェック
+    if (!isAllowedProjectId(validatedProjectId, importMeta)) {
+      throw new ClarityError(
+        'INVALID_PROJECT_ID',
+        '許可されていないプロジェクトIDです'
+      );
+    }
 
     // 環境判定（純粋関数）
     if (shouldSkipClarityInitialization(importMeta, navigatorObj)) {

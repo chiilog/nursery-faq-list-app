@@ -70,6 +70,7 @@ export interface WindowWithClarity extends Window {
 export interface ImportMetaEnv {
   readonly VITE_ANALYTICS_ENABLED?: string;
   readonly VITE_CLARITY_PROJECT_ID?: string;
+  readonly VITE_CLARITY_ALLOWED_PROJECT_IDS?: string;
 }
 
 /**
@@ -79,9 +80,6 @@ export interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-/**
- * @description Clarityプロジェクト設定の型
- */
 /**
  * @description Clarityプロジェクト設定の型（不変性保証）
  */
@@ -93,9 +91,6 @@ export interface ClarityConfig {
   readonly enableDataMasking: boolean;
 }
 
-/**
- * @description Clarityサービス初期化オプション
- */
 /**
  * @description Clarityサービス初期化オプション（不変性保証）
  */

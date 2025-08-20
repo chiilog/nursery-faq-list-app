@@ -67,6 +67,7 @@ describe('Clarityサービス関数型API', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   describe('状態管理機能', () => {
@@ -268,6 +269,86 @@ describe('Clarityサービス関数型API', () => {
     });
 
     describe('プロジェクトID検証', () => {
+      describe('許可リスト機能', () => {
+        test('許可リストが設定されている場合、リスト外のIDは拒否される', async () => {
+          // 許可リストを設定
+          vi.stubEnv(
+            'VITE_CLARITY_ALLOWED_PROJECT_IDS',
+            'allowed-id-1,allowed-id-2'
+          );
+
+          // 許可リスト外のIDで初期化を試行
+          const result = await initializeClarity(
+            initialState,
+            'not-allowed-id'
+          );
+
+          expect(result.success).toBe(false);
+          if (!result.success) {
+            expect(result.error.type).toBe('INVALID_PROJECT_ID');
+            expect(result.error.message).toContain('許可されていない');
+          }
+        });
+
+        test('許可リストに含まれるIDは許可される', async () => {
+          // 許可リストを設定
+          vi.stubEnv(
+            'VITE_CLARITY_ALLOWED_PROJECT_IDS',
+            'allowed-id-1,allowed-id-2,test-project'
+          );
+
+          // 許可リスト内のIDで初期化
+          const result = await initializeClarity(initialState, 'allowed-id-1');
+
+          expect(result.success).toBe(true);
+          if (result.success) {
+            expect(selectors.getProjectId(result.data)).toBe('allowed-id-1');
+          }
+        });
+
+        test('許可リストが空の場合、全ての有効なIDが許可される', async () => {
+          // 許可リストを未設定
+          vi.stubEnv('VITE_CLARITY_ALLOWED_PROJECT_IDS', undefined);
+
+          // 任意の有効なIDで初期化
+          const result = await initializeClarity(initialState, 'any-valid-id');
+
+          expect(result.success).toBe(true);
+          if (result.success) {
+            expect(selectors.getProjectId(result.data)).toBe('any-valid-id');
+          }
+        });
+
+        test('許可リストの空白とトリミングが正しく処理される', async () => {
+          // 空白を含む許可リスト
+          vi.stubEnv(
+            'VITE_CLARITY_ALLOWED_PROJECT_IDS',
+            '  allowed-id-1  ,  allowed-id-2  '
+          );
+
+          // トリミング後のIDで初期化
+          const result = await initializeClarity(initialState, 'allowed-id-2');
+
+          expect(result.success).toBe(true);
+          if (result.success) {
+            expect(selectors.getProjectId(result.data)).toBe('allowed-id-2');
+          }
+        });
+
+        test('空文字列の許可リストは全てを許可する', async () => {
+          // 空文字列の許可リスト
+          vi.stubEnv('VITE_CLARITY_ALLOWED_PROJECT_IDS', '');
+
+          // 任意の有効なIDで初期化
+          const result = await initializeClarity(initialState, 'any-valid-id');
+
+          expect(result.success).toBe(true);
+          if (result.success) {
+            expect(selectors.getProjectId(result.data)).toBe('any-valid-id');
+          }
+        });
+      });
+
       test.each(TEST_DATA.INVALID_PROJECT_IDS)(
         '無効なプロジェクトID: $description',
         async ({ id }) => {
