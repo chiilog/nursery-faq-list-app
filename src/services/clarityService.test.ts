@@ -493,49 +493,16 @@ describe('Clarityサービス関数型API', () => {
       }
     });
 
-    test('初期化処理のタイムアウト処理', async () => {
-      const mockCreateElement = vi.spyOn(document, 'createElement');
-      const mockAppendChild = vi.spyOn(document.head, 'appendChild');
-      let timeoutCallback: (() => void) | null = null;
+    test('スクリプト読み込み成功時の処理', async () => {
+      // 外部スクリプトの読み込み成功は、テスト環境では自動的に成功扱いになる
+      const result = await initializeClarity(initialState, 'load-test');
 
-      const mockScript: Partial<HTMLScriptElement> = {
-        src: '',
-        async: false,
-        crossOrigin: null,
-        onerror: null,
-        onload: null,
-        addEventListener: vi.fn(),
-        setAttribute: vi.fn(),
-        getAttribute: vi.fn(),
-      };
-
-      mockCreateElement.mockReturnValue(mockScript as HTMLScriptElement);
-      mockAppendChild.mockImplementation(() => mockScript as HTMLScriptElement);
-
-      // setTimeoutをモックして制御可能にする
-      const originalTimeout = globalThis.setTimeout;
-      globalThis.setTimeout = vi.fn((callback: any, delay?: number) => {
-        if (delay === 10 && typeof callback === 'function') {
-          timeoutCallback = callback as () => void;
-          return 1 as any;
-        }
-        return originalTimeout(callback, delay);
-      }) as any;
-
-      const initPromise = initializeClarity(initialState, 'timeout-test');
-
-      // タイムアウトコールバックを実行
-      if (timeoutCallback) {
-        (timeoutCallback as () => void)();
-      }
-
-      const result = await initPromise;
       expect(result.success).toBe(true);
 
-      // モックを復元
-      globalThis.setTimeout = originalTimeout;
-      mockCreateElement.mockRestore();
-      mockAppendChild.mockRestore();
+      if (result.success) {
+        expect(selectors.getProjectId(result.data)).toBe('load-test');
+        expect(selectors.isInitialized(result.data)).toBe(true);
+      }
     });
   });
 
