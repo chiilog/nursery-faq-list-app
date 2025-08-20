@@ -315,21 +315,38 @@ describe('Clarityサービス関数型API', () => {
     describe('スクリプトインジェクション対策', () => {
       test('スクリプト作成時のXSS対策', async () => {
         const mockCreateElement = vi.spyOn(document, 'createElement');
-        const mockScript = {
+
+        // HTMLScriptElementの型定義に準拠したモックオブジェクト
+        const mockScript: Partial<HTMLScriptElement> = {
           innerHTML: '',
-          onerror: null as ((event: ErrorEvent) => void) | null,
+          src: '',
+          async: false,
+          crossOrigin: null,
+          onerror: null,
           addEventListener: vi.fn(),
           setAttribute: vi.fn(),
-        } as unknown as HTMLScriptElement;
+        };
 
-        mockCreateElement.mockReturnValue(mockScript);
+        mockCreateElement.mockReturnValue(mockScript as HTMLScriptElement);
 
         await initializeClarity(initialState, 'safe-project-id');
 
-        // スクリプトのinnerHTMLが安全であることを確認
-        expect(mockScript.innerHTML).toContain('safe-project-id');
-        expect(mockScript.innerHTML).not.toContain('<script>');
-        expect(mockScript.innerHTML).not.toContain('</script>');
+        // 現在の実装ではinnerHTMLを使用しているが、
+        // 将来的には外部スクリプト（src属性）への移行を推奨
+        if (mockScript.src) {
+          // 外部scriptのsrcが正しいことを検証
+          expect(mockScript.src).toContain(
+            'https://www.clarity.ms/tag/safe-project-id'
+          );
+          // 安全属性（async/crossOrigin）付与の検証
+          expect(mockScript.async).toBe(true);
+          expect(mockScript.crossOrigin).toBe('anonymous');
+        } else {
+          // 現在のインラインスクリプト実装の検証
+          expect(mockScript.innerHTML).toContain('safe-project-id');
+          expect(mockScript.innerHTML).not.toContain('<script>');
+          expect(mockScript.innerHTML).not.toContain('</script>');
+        }
 
         mockCreateElement.mockRestore();
       });
@@ -339,14 +356,17 @@ describe('Clarityサービス関数型API', () => {
   describe('非同期処理とエラーハンドリング', () => {
     test('スクリプト読み込み失敗時の適切な処理', async () => {
       const mockCreateElement = vi.spyOn(document, 'createElement');
-      const mockScript = {
+      const mockScript: Partial<HTMLScriptElement> = {
         innerHTML: '',
-        onerror: null as ((event: ErrorEvent) => void) | null,
+        src: '',
+        async: false,
+        crossOrigin: null,
+        onerror: null,
         addEventListener: vi.fn(),
         setAttribute: vi.fn(),
-      } as unknown as HTMLScriptElement;
+      };
 
-      mockCreateElement.mockReturnValue(mockScript);
+      mockCreateElement.mockReturnValue(mockScript as HTMLScriptElement);
 
       const initPromise = initializeClarity(initialState, 'test-id');
 
@@ -399,15 +419,18 @@ describe('Clarityサービス関数型API', () => {
       const mockAppendChild = vi.spyOn(document.head, 'appendChild');
       let timeoutCallback: (() => void) | null = null;
 
-      const mockScript = {
+      const mockScript: Partial<HTMLScriptElement> = {
         innerHTML: '',
-        onerror: null as ((event: ErrorEvent) => void) | null,
+        src: '',
+        async: false,
+        crossOrigin: null,
+        onerror: null,
         addEventListener: vi.fn(),
         setAttribute: vi.fn(),
-      } as unknown as HTMLScriptElement;
+      };
 
-      mockCreateElement.mockReturnValue(mockScript);
-      mockAppendChild.mockImplementation(() => mockScript);
+      mockCreateElement.mockReturnValue(mockScript as HTMLScriptElement);
+      mockAppendChild.mockImplementation(() => mockScript as HTMLScriptElement);
 
       // setTimeoutをモックして制御可能にする
       const originalTimeout = globalThis.setTimeout;
