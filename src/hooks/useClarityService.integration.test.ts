@@ -303,8 +303,8 @@ describe('useClarityService 統合テスト', () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      // 手動での同意設定が最終的に有効になることを確認
-      // プライバシー設定が無効でも手動設定は維持される
+      // プライバシー設定が優先され、手動設定は上書きされることを確認
+      // プライバシー設定が無効の場合、同意状態もfalseになる
       expect(result.current.hasConsent).toBe(false);
       expect(result.current.isDisabled).toBe(false);
     });
