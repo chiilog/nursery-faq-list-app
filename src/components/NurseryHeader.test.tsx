@@ -525,7 +525,12 @@ describe('NurseryHeader', () => {
       await user.keyboard('{Enter}');
       expect(mockLeftClick).toHaveBeenCalledTimes(1);
 
-      // Tabキーで右ボタンにフォーカス
+      // Tabキーでタイトルリンクにフォーカス（新しく追加された）
+      await user.tab();
+      const titleLink = screen.getByRole('link');
+      expect(titleLink).toHaveFocus();
+
+      // もう一度Tabキーで右ボタンにフォーカス
       await user.tab();
       const rightBtn = screen.getByRole('button', { name: '保存' });
       expect(rightBtn).toHaveFocus();

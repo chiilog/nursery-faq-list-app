@@ -4,17 +4,36 @@
 
 import { Box, Button, Heading, HStack, IconButton } from '@chakra-ui/react';
 import { IoHelpCircleOutline } from 'react-icons/io5';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { APP_CONFIG } from '../constants/app';
 import type { HeaderButton, HeaderVariant } from '../types/header';
 
+/**
+ * @description ヘッダーコンポーネントのプロパティ
+ */
 interface NurseryHeaderProps {
+  /** ヘッダーのタイトル */
   title: string;
+  /** 左側のボタン設定（オプション） */
   leftButton?: HeaderButton;
+  /** 右側のボタン設定（オプション） */
   rightButton?: HeaderButton;
+  /** ヘッダーの表示バリアント */
   variant?: HeaderVariant;
 }
 
+/**
+ * @description 共通ヘッダーコンポーネント - アプリケーションの上部に表示される
+ * @param props - ヘッダーコンポーネントのプロパティ
+ * @returns ヘッダーのJSX要素
+ * @example
+ * ```tsx
+ * <NurseryHeader
+ *   title="保活手帳"
+ *   variant="centered"
+ * />
+ * ```
+ */
 export const NurseryHeader = ({
   title,
   leftButton,
@@ -30,14 +49,19 @@ export const NurseryHeader = ({
   };
   if (variant === 'centered') {
     return (
-      <Heading
-        as="h1"
-        size={{ base: 'md', md: 'lg' }}
-        color={APP_CONFIG.COLORS.PRIMARY}
-        textAlign="center"
-      >
-        {title}
-      </Heading>
+      <Link to="/" style={{ textDecoration: 'none' }}>
+        <Heading
+          as="h1"
+          size={{ base: 'md', md: 'lg' }}
+          color={APP_CONFIG.COLORS.PRIMARY}
+          textAlign="center"
+          cursor="pointer"
+          transition="opacity 0.2s"
+          css={{ '&:hover': { opacity: 0.8 } }}
+        >
+          {title}
+        </Heading>
+      </Link>
     );
   }
 
@@ -51,7 +75,7 @@ export const NurseryHeader = ({
             aria-label={leftButton['aria-label'] || 'Action button'}
             size={{ base: 'sm', md: 'md' }}
             borderRadius="full"
-            _hover={{ bg: 'gray.100' }}
+            css={{ '&:hover': { bg: 'gray.100' } }}
           >
             {leftButton.icon}
           </IconButton>
@@ -69,15 +93,19 @@ export const NurseryHeader = ({
         <Box w="40px" />
       )}
 
-      <Heading
-        as="h1"
-        size={{ base: 'md', md: 'lg' }}
-        color={APP_CONFIG.COLORS.PRIMARY}
-        flex={1}
-        textAlign="center"
-      >
-        {title}
-      </Heading>
+      <Link to="/" style={{ textDecoration: 'none', flex: 1 }}>
+        <Heading
+          as="h1"
+          size={{ base: 'md', md: 'lg' }}
+          color={APP_CONFIG.COLORS.PRIMARY}
+          textAlign="center"
+          cursor="pointer"
+          transition="opacity 0.2s"
+          css={{ '&:hover': { opacity: 0.8 } }}
+        >
+          {title}
+        </Heading>
+      </Link>
 
       {(() => {
         const buttonToShow = rightButton || defaultHelpButton;
@@ -95,7 +123,7 @@ export const NurseryHeader = ({
               aria-label={buttonToShow['aria-label'] || 'Action button'}
               size={{ base: 'sm', md: 'md' }}
               borderRadius="full"
-              _hover={{ bg: 'gray.100' }}
+              css={{ '&:hover': { bg: 'gray.100' } }}
             >
               {buttonToShow.icon}
             </IconButton>
