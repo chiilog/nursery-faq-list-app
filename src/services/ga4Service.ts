@@ -6,14 +6,9 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 export type MeasurementId = string & { readonly brand: unique symbol };
 
 /**
- * Branded type for consent state
- */
-export type ConsentState = boolean & { readonly brand: unique symbol };
-
-/**
  * Result type for async operations
  */
-export type LoadResult =
+export type GA4LoadResult =
   | { readonly success: true }
   | { readonly success: false; readonly error: Error };
 
@@ -36,22 +31,7 @@ export const createMeasurementId = (id: string | undefined): MeasurementId => {
     throw new Error('Invalid measurement ID');
   }
 
-  // セキュリティチェック：潜在的に危険なパターンを検証
-  const dangerousPatterns = [
-    /javascript:/i,
-    /<script/i,
-    /\.\.\//,
-    /drop\s+table/i,
-    /exec\s+/i,
-    /fetch\s*\(/i,
-    /[<>"'`]/,
-  ];
-
-  if (dangerousPatterns.some((pattern) => pattern.test(normalized))) {
-    throw new Error('Invalid measurement ID');
-  }
-
-  // 許可リスト（英数・ハイフン・アンダースコアのみ）
+  // 基本的な文字チェック（英数・ハイフン・アンダースコアのみ）
   const allowedPattern = /^[A-Za-z0-9_-]+$/;
   if (!allowedPattern.test(normalized)) {
     throw new Error('Invalid measurement ID');
@@ -60,40 +40,11 @@ export const createMeasurementId = (id: string | undefined): MeasurementId => {
   return normalized as MeasurementId;
 };
 
-/**
- * @description 型付き同意状態を作成するファクトリー関数
- * @param consent - 真偽値の同意値
- * @returns 同意状態ブランド型
- */
-const createConsentState = (consent: boolean): ConsentState => {
-  return consent as ConsentState;
-};
-
-/**
- * Consent Mode v2の同意設定
- */
-export interface ConsentModeSettings {
-  analytics_storage: 'granted' | 'denied';
-  ad_storage: 'granted' | 'denied';
-}
-
-/**
- * Google Analytics gtag関数の型定義（関数オーバーロード）
- */
-interface GtagFunction {
-  (command: 'js', date: Date): void;
-  (
-    command: 'config' | 'event' | 'consent',
-    targetId: string,
-    config?: Record<string, unknown>
-  ): void;
-}
-
 // グローバルオブジェクトの拡張定義
 declare global {
   interface Window {
     dataLayer?: unknown[];
-    gtag?: GtagFunction;
+    gtag?: (command: string, ...args: unknown[]) => void;
   }
 }
 
@@ -106,14 +57,10 @@ export interface UseGA4ServiceReturn {
   setConsent: (consent: boolean) => void;
   trackEvent: (eventName: string, parameters?: Record<string, unknown>) => void;
   trackPageView: (pageTitle: string, pagePath?: string) => void;
-  updateConsentMode: (
-    settings: ConsentModeSettings,
-    regions?: string[]
-  ) => void;
 }
 
 /**
- * @description 競合状態対策付きでGA4スクリプトを動的に読み込む
+ * @description GA4スクリプトを動的に読み込む
  * @param measurementId - 検証済みの測定ID
  * @returns 成功状態またはエラーを含む読み込み結果のPromise
  * @example
@@ -126,7 +73,7 @@ export interface UseGA4ServiceReturn {
  */
 const loadGA4Script = async (
   measurementId: MeasurementId
-): Promise<LoadResult> => {
+): Promise<GA4LoadResult> => {
   try {
     // 既にGA4スクリプトがDOMに追加済みかをチェック（gtag存在は初期スタブの可能性がある）
     if (document.querySelector('script[data-ga4="true"]')) {
@@ -182,14 +129,24 @@ const loadGA4Script = async (
 /**
  * @description Google Analytics 4統合カスタムフック
  * プライバシーを考慮したGA4イベント送信とスクリプト管理を提供
- * Consent Mode v2に対応
  * @returns GA4サービス操作用の関数とステート
+ * @example
+ * ```typescript
+ * const { isEnabled, hasConsent, setConsent, trackEvent, trackPageView } = useGA4Service();
+ *
+ * // 同意を設定
+ * setConsent(true);
+ *
+ * // イベントを送信
+ * trackEvent('button_click', { button_name: 'signup' });
+ *
+ * // ページビューを送信
+ * trackPageView('Home Page', '/');
+ * ```
  */
 export function useGA4Service(): UseGA4ServiceReturn {
   const [isServiceEnabled, setIsServiceEnabled] = useState(false);
-  const [consentGiven, setConsentGiven] = useState<ConsentState>(
-    createConsentState(false)
-  );
+  const [consentGiven, setConsentGiven] = useState(false);
   const [measurementId] = useState<MeasurementId>(() => {
     const id = import.meta.env.VITE_GA4_MEASUREMENT_ID as unknown;
     const measurementIdStr = typeof id === 'string' ? id : undefined;
@@ -221,47 +178,28 @@ export function useGA4Service(): UseGA4ServiceReturn {
     if (navigator.doNotTrack === '1') return;
 
     try {
-      // gtag関数とdataLayerを先に初期化（テスト環境対応）
+      // gtag関数とdataLayerを先に初期化
       window.dataLayer = window.dataLayer || [];
 
-      // テスト環境で既にgtagが設定されている場合はそれを保持
       if (!window.gtag) {
-        const gtagFunction: GtagFunction = function (
-          command: 'js' | 'config' | 'event' | 'consent',
-          ...args: [Date] | [string, Record<string, unknown>?]
-        ) {
-          window.dataLayer?.push([command, ...args]);
-        } as GtagFunction;
-        window.gtag = gtagFunction;
+        window.gtag = function (...args: unknown[]) {
+          window.dataLayer?.push(args);
+        };
       }
 
       const loadResult = await loadGA4Script(measurementId);
 
       if (isMountedRef.current && loadResult.success) {
-        // 現在のgtag関数を取得
-        const currentGtag = window.gtag;
-        if (currentGtag && isMountedRef.current) {
-          // GA4公式スニペット準拠の初期化
-          currentGtag('js', new Date());
-
-          // Consent Mode v2の初期設定（全て denied）
-          currentGtag('consent', 'default', {
-            analytics_storage: 'denied',
-            ad_storage: 'denied',
-          });
-
-          // GA4プライバシー保護設定
-          currentGtag('config', measurementId, {
+        // GA4初期化
+        if (window.gtag) {
+          window.gtag('js', new Date());
+          window.gtag('config', measurementId, {
             anonymize_ip: true,
-            allow_google_signals: false,
-            allow_ad_personalization_signals: false,
             cookie_expires: 60 * 60 * 24 * 30, // 30日
           });
         }
 
-        if (isMountedRef.current) {
-          setIsServiceEnabled(true);
-        }
+        setIsServiceEnabled(true);
       }
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -271,50 +209,23 @@ export function useGA4Service(): UseGA4ServiceReturn {
   }, [consentGiven, measurementId]);
 
   /**
-   * GA4関数の安全な実行ヘルパー
-   */
-  const executeGA4Command = useCallback(
-    (command: 'event' | 'config' | 'consent', ...args: unknown[]): boolean => {
-      try {
-        // サービスが無効または同意がない場合（consentコマンド以外）
-        if (command !== 'consent' && (!isServiceEnabled || !consentGiven)) {
-          return false;
-        }
-
-        const gtag = window.gtag;
-        if (!gtag) {
-          return false;
-        }
-
-        gtag(command, args[0] as string, args[1] as Record<string, unknown>);
-        return true;
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.warn(`GA4 ${command} command failed:`, error);
-        }
-        return false;
-      }
-    },
-    [isServiceEnabled, consentGiven]
-  );
-
-  /**
-   * 同意状態の変更を処理
+   * 同意状態を設定
    */
   const setConsent = useCallback(
     (consent: boolean) => {
-      const consentState = createConsentState(consent);
-      setConsentGiven(consentState);
-      if (!consent) {
+      setConsentGiven(consent);
+
+      if (consent) {
+        void initialize();
+      } else {
         setIsServiceEnabled(false);
-        // 同意取り消し時にConsent Modeを更新
-        executeGA4Command('consent', 'update', {
-          analytics_storage: 'denied',
-          ad_storage: 'denied',
-        });
+      }
+
+      if (import.meta.env.DEV) {
+        console.log('[GA4Service] Consent updated:', consent);
       }
     },
-    [executeGA4Command]
+    [initialize]
   );
 
   /**
@@ -322,9 +233,19 @@ export function useGA4Service(): UseGA4ServiceReturn {
    */
   const trackEvent = useCallback(
     (eventName: string, parameters?: Record<string, unknown>) => {
-      executeGA4Command('event', eventName, parameters);
+      if (!isServiceEnabled || !consentGiven || !window.gtag) {
+        return;
+      }
+
+      try {
+        window.gtag('event', eventName, parameters);
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn('[GA4Service] Track event failed:', error);
+        }
+      }
     },
-    [executeGA4Command]
+    [isServiceEnabled, consentGiven]
   );
 
   /**
@@ -343,28 +264,14 @@ export function useGA4Service(): UseGA4ServiceReturn {
     [trackEvent]
   );
 
-  /**
-   * Consent Mode v2の設定を更新
-   */
-  const updateConsentMode = useCallback(
-    (settings: ConsentModeSettings, regions?: string[]) => {
-      const consentParams: Record<string, unknown> = { ...settings };
-      if (regions && regions.length > 0) {
-        consentParams.region = regions;
-      }
-      executeGA4Command('consent', 'update', consentParams);
-    },
-    [executeGA4Command]
-  );
-
-  // 同意状態の変更に応じて初期化を実行
+  // 初期化処理
   useEffect(() => {
     if (consentGiven) {
       void initialize();
     }
-  }, [initialize, consentGiven]);
+  }, [consentGiven, initialize]);
 
-  // アンマウント時にフラグを倒す
+  // クリーンアップ
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
@@ -377,6 +284,5 @@ export function useGA4Service(): UseGA4ServiceReturn {
     setConsent,
     trackEvent,
     trackPageView,
-    updateConsentMode,
   };
 }

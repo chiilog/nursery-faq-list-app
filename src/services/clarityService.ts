@@ -1,505 +1,252 @@
-import type {
-  WindowWithClarity,
-  ClarityFunction,
-  ClarityProjectId,
-  Result,
-} from '../types/clarity';
-import {
-  createClarityProjectId,
-  ClarityError,
-  createSuccess,
-  createFailure,
-} from '../types/clarity';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 /**
- * @description Clarityサービスの状態を表すimmutableなオブジェクト
+ * Branded type for clarity project ID
  */
-export interface ClarityServiceState {
-  readonly projectId: ClarityProjectId | null;
-  readonly isInitialized: boolean;
-  readonly hasConsent: boolean;
-  readonly isDisabled: boolean;
+export type ClarityProjectId = string & { readonly brand: unique symbol };
+
+/**
+ * Result type for async operations
+ */
+export type ClarityLoadResult =
+  | { readonly success: true }
+  | { readonly success: false; readonly error: Error };
+
+/**
+ * @description セキュリティ検証付きのプロジェクトIDを作成するファクトリー関数
+ * @param id - 検証するプロジェクトID文字列
+ * @returns 検証済みのプロジェクトIDブランド型
+ * @throws {Error} プロジェクトIDが無効または危険なパターンを含む場合
+ * @example
+ * ```typescript
+ * const projectId = createClarityProjectId('test12345');
+ * ```
+ */
+export const createClarityProjectId = (
+  id: string | undefined
+): ClarityProjectId => {
+  if (!id) {
+    throw new Error('Invalid clarity project ID');
+  }
+  const normalized = id.trim();
+  if (normalized === '') {
+    throw new Error('Invalid clarity project ID');
+  }
+
+  // 基本的な文字チェック（英数字のみ）
+  const allowedPattern = /^[A-Za-z0-9]+$/;
+  if (!allowedPattern.test(normalized)) {
+    throw new Error('Invalid clarity project ID');
+  }
+
+  return normalized as ClarityProjectId;
+};
+
+// グローバルオブジェクトの拡張定義
+declare global {
+  interface Window {
+    clarity?: (command: string, ...args: unknown[]) => void;
+  }
 }
 
 /**
- * @description 初期状態を作成（不変オブジェクト）
+ * ClarityServiceの返り値型定義
  */
-export const createInitialState = (): ClarityServiceState =>
-  Object.freeze({
-    projectId: null,
-    isInitialized: false,
-    hasConsent: false,
-    isDisabled: false,
-  });
+export interface UseClarityServiceReturn {
+  isInitialized: boolean;
+  hasConsent: boolean;
+  setConsent: (consent: boolean) => void;
+}
 
 /**
- * @description 状態を更新（不変性を保持）
- */
-export const updateState = (
-  currentState: ClarityServiceState,
-  updates: Partial<ClarityServiceState>
-): ClarityServiceState =>
-  Object.freeze({
-    ...currentState,
-    ...updates,
-  });
-
-/**
- * @description 純粋関数による環境判定
- */
-const shouldSkipClarityInitialization = (
-  importMeta: ImportMeta,
-  navigator: Navigator
-): boolean => {
-  const analyticsEnabled = importMeta.env?.VITE_ANALYTICS_ENABLED;
-  if (analyticsEnabled === 'false') {
-    return true;
-  }
-
-  if (navigator.doNotTrack === '1') {
-    return true;
-  }
-
-  return false;
-};
-
-/**
- * @description プロジェクトID許可リストの取得（純粋関数）
- */
-const getAllowedProjectIds = (importMeta: ImportMeta): readonly string[] => {
-  const allowListEnv = importMeta.env?.VITE_CLARITY_ALLOWED_PROJECT_IDS;
-
-  if (!allowListEnv || typeof allowListEnv !== 'string') {
-    return [];
-  }
-
-  // カンマ区切りで許可リストをパース
-  return allowListEnv
-    .split(',')
-    .map((id) => id.trim())
-    .filter((id) => id.length > 0);
-};
-
-/**
- * @description プロジェクトIDが許可リストに含まれるかチェック（純粋関数）
- */
-const isAllowedProjectId = (
-  projectId: ClarityProjectId,
-  importMeta: ImportMeta
-): boolean => {
-  const allowedIds = getAllowedProjectIds(importMeta);
-
-  // 許可リストが空の場合は、全ての有効なIDを許可
-  if (allowedIds.length === 0) {
-    return true;
-  }
-
-  // 許可リストに含まれるかチェック
-  return allowedIds.includes(projectId);
-};
-
-/**
- * @description 純粋関数による既存スクリプト検出
- */
-const hasExistingClarityScript = (
-  projectId: ClarityProjectId,
-  scripts: readonly HTMLScriptElement[]
-): boolean => {
-  const clarityUrl = `https://www.clarity.ms/tag/${projectId}`;
-  return scripts.some(
-    (script) =>
-      script.src === clarityUrl ||
-      script.getAttribute('data-clarity-id') === projectId
-  );
-};
-
-/**
- * @description 純粋関数による重複初期化判定
- */
-const isDuplicateInitialization = (
-  currentState: ClarityServiceState,
-  projectId: ClarityProjectId
-): boolean => {
-  return currentState.isInitialized && currentState.projectId === projectId;
-};
-
-/**
- * @description window.clarityが利用可能かチェック（純粋関数）
- */
-const isWindowClarityAvailable = (): boolean => {
-  const windowWithClarity = window as WindowWithClarity;
-  return typeof windowWithClarity.clarity === 'function';
-};
-
-/**
- * @description Clarityの同意状態を設定（副作用を含む関数）
- */
-const setClarityConsent = (consent: boolean): void => {
-  if (isWindowClarityAvailable()) {
-    const windowWithClarity = window as WindowWithClarity;
-    windowWithClarity.clarity?.('consent', consent);
-  }
-};
-
-/**
- * @description Clarityを停止（副作用を含む関数）
- */
-const stopClarity = (): void => {
-  if (isWindowClarityAvailable()) {
-    const windowWithClarity = window as WindowWithClarity;
-    windowWithClarity.clarity?.('stop');
-  }
-};
-
-/**
- * @description センシティブなデータのマスキングを設定（副作用を含む関数）
- */
-const setupDataMasking = (): void => {
-  const sensitiveSelectors: readonly string[] = Object.freeze([
-    'input[type="text"]',
-    'input[type="email"]',
-    'input[type="tel"]',
-    'input[type="password"]',
-    'input[type="date"]',
-    'input[type="datetime-local"]',
-    'textarea',
-    '[data-sensitive]',
-  ]);
-
-  sensitiveSelectors.forEach((selector) => {
-    document.querySelectorAll(selector).forEach((element) => {
-      element.setAttribute('data-clarity-mask', 'true');
-    });
-  });
-
-  if (isWindowClarityAvailable()) {
-    const windowWithClarity = window as WindowWithClarity;
-    windowWithClarity.clarity?.('set', 'maskText', true);
-  }
-};
-
-/**
- * @description Clarityスクリプトを動的に読み込む（副作用を含む関数）
+ * @description Clarityスクリプトを動的に読み込む
+ * @param projectId - 検証済みのプロジェクトID
+ * @returns 成功状態またはエラーを含む読み込み結果のPromise
+ * @example
+ * ```typescript
+ * const result = await loadClarityScript(projectId);
+ * if (result.success) {
+ *   console.log('Clarityスクリプトの読み込みが成功しました');
+ * }
+ * ```
  */
 const loadClarityScript = async (
   projectId: ClarityProjectId
-): Promise<Result<void>> => {
+): Promise<ClarityLoadResult> => {
   try {
-    return await new Promise((resolve, reject) => {
-      // 既存スクリプトのチェック（document全体を検索）
-      const existingScripts = Array.from(
-        document.querySelectorAll('script')
-      ) as readonly HTMLScriptElement[];
+    // 既にClarityスクリプトが読み込まれているかチェック
+    if (document.querySelector('script[data-clarity="true"]')) {
+      return { success: true };
+    }
 
-      if (hasExistingClarityScript(projectId, existingScripts)) {
-        resolve(createSuccess(undefined));
-        return;
-      }
-
+    return new Promise((resolve) => {
       const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.setAttribute('data-clarity', 'true');
+      script.innerHTML = `
+        (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "${projectId}");
+      `;
 
-      // 外部スクリプトとして設定（CSP対応・セキュリティ向上）
-      script.src = `https://www.clarity.ms/tag/${projectId}`;
-      script.async = true;
-      script.crossOrigin = 'anonymous';
-      script.setAttribute('data-clarity-id', projectId);
+      let resolved = false;
 
-      // テスト環境での処理
-      const isTestEnv =
-        typeof globalThis !== 'undefined' &&
-        (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process
-          ?.env?.NODE_ENV === 'test';
-
-      if (isTestEnv) {
-        document.head.appendChild(script);
-        const windowWithClarity = window as WindowWithClarity;
-        if (!windowWithClarity.clarity) {
-          windowWithClarity.clarity = (() => {}) as ClarityFunction;
-        }
-        resolve(createSuccess(undefined));
-        return;
-      }
-
-      // ロード成功ハンドラー
       script.onload = () => {
-        resolve(createSuccess(undefined));
+        if (!resolved) {
+          resolved = true;
+          resolve({ success: true });
+        }
       };
 
-      // エラーハンドラー
-      script.onerror = (errorEvent) => {
-        const error =
-          errorEvent instanceof ErrorEvent
-            ? new Error(errorEvent.message)
-            : new Error('スクリプト読み込みエラー');
-
-        const clarityError = new ClarityError(
-          'SCRIPT_LOAD_FAILED',
-          'Clarityスクリプトの読み込みに失敗しました',
-          error
-        );
-        reject(clarityError);
+      script.onerror = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve({
+            success: false,
+            error: new Error('Failed to load Clarity script'),
+          });
+        }
       };
 
       document.head.appendChild(script);
-    });
-  } catch (error) {
-    return createFailure(
-      error instanceof ClarityError
-        ? error
-        : new ClarityError(
-            'SCRIPT_LOAD_FAILED',
-            'Clarityスクリプトの読み込みに失敗しました',
-            error instanceof Error ? error : undefined
-          )
-    );
-  }
-};
 
-/**
- * @description Clarity初期化の純粋関数部分（副作用なし）
- */
-export const computeClarityInitializationPlan = (
-  currentState: ClarityServiceState,
-  projectId: string,
-  importMeta: ImportMeta,
-  navigatorObj: Navigator
-): Result<{
-  shouldSkip: boolean;
-  validatedProjectId: ClarityProjectId | null;
-  newState: ClarityServiceState;
-}> => {
-  try {
-    // バリデーション（純粋関数）
-    const validatedProjectId = createClarityProjectId(projectId);
-
-    // プロジェクトID許可リストチェック
-    if (!isAllowedProjectId(validatedProjectId, importMeta)) {
-      throw new ClarityError(
-        'INVALID_PROJECT_ID',
-        '許可されていないプロジェクトIDです'
-      );
-    }
-
-    // 環境判定（純粋関数）
-    if (shouldSkipClarityInitialization(importMeta, navigatorObj)) {
-      return createSuccess({
-        shouldSkip: true,
-        validatedProjectId: null,
-        newState: currentState,
-      });
-    }
-
-    // 重複初期化判定（純粋関数）
-    if (isDuplicateInitialization(currentState, validatedProjectId)) {
-      return createSuccess({
-        shouldSkip: true,
-        validatedProjectId,
-        newState: currentState,
-      });
-    }
-
-    // 新しい状態を計算（純粋関数）
-    const newState = updateState(currentState, {
-      projectId: validatedProjectId,
-      isInitialized: true,
-    });
-
-    return createSuccess({ shouldSkip: false, validatedProjectId, newState });
-  } catch (error) {
-    return createFailure(
-      error instanceof ClarityError
-        ? error
-        : new ClarityError(
-            'INITIALIZATION_FAILED',
-            'Clarityの初期化計算に失敗しました',
-            error instanceof Error ? error : undefined
-          )
-    );
-  }
-};
-
-/**
- * @description Clarity初期化の副作用実行部分
- */
-export const executeClarityInitializationEffects = async (
-  validatedProjectId: ClarityProjectId
-): Promise<Result<void>> => {
-  try {
-    // 副作用処理（スクリプト読み込み）
-    try {
-      const loadResult = await loadClarityScript(validatedProjectId);
-      if (!loadResult.success) {
-        return loadResult;
+      // テスト環境での即座解決
+      if (import.meta.env.MODE === 'test') {
+        if (!resolved) {
+          resolved = true;
+          resolve({ success: true });
+        }
       }
-    } catch (clarityError) {
-      return createFailure(
-        clarityError instanceof ClarityError
-          ? clarityError
-          : new ClarityError(
-              'SCRIPT_LOAD_FAILED',
-              'Clarityスクリプトの読み込みに失敗しました',
-              clarityError instanceof Error ? clarityError : undefined
-            )
-      );
-    }
-
-    // 副作用処理（データマスキング設定）
-    setupDataMasking();
-
-    // 副作用処理（初期同意状態設定）
-    setClarityConsent(false);
-
-    return createSuccess(undefined);
+    });
   } catch (error) {
-    return createFailure(
-      error instanceof ClarityError
-        ? error
-        : new ClarityError(
-            'SCRIPT_LOAD_FAILED',
-            'Clarity副作用の実行に失敗しました',
-            error instanceof Error ? error : undefined
-          )
-    );
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error : new Error('Unknown error occurred'),
+    };
   }
 };
 
 /**
- * @description Clarityサービスを初期化（純粋関数 + 副作用分離済み）
+ * @description Microsoft Clarity統合カスタムフック
+ * プライバシーを考慮したClarity統合とスクリプト管理を提供
+ * @returns Clarityサービス操作用の関数とステート
+ * @example
+ * ```typescript
+ * const { isInitialized, hasConsent, setConsent } = useClarityService();
+ *
+ * // 同意を設定
+ * setConsent(true);
+ *
+ * // 初期化状態を確認
+ * if (isInitialized) {
+ *   console.log('Clarityが正常に初期化されました');
+ * }
+ * ```
  */
-export const initializeClarity = async (
-  currentState: ClarityServiceState,
-  projectId: string
-): Promise<Result<ClarityServiceState>> => {
-  // 純粋関数部分の実行
-  const planResult = computeClarityInitializationPlan(
-    currentState,
-    projectId,
-    import.meta,
-    navigator
+export function useClarityService(): UseClarityServiceReturn {
+  const [isServiceInitialized, setIsServiceInitialized] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [projectId] = useState<ClarityProjectId>(() => {
+    const id = import.meta.env.VITE_CLARITY_PROJECT_ID as unknown;
+    const projectIdStr = typeof id === 'string' ? id : undefined;
+    try {
+      return createClarityProjectId(projectIdStr);
+    } catch {
+      // 開発環境でのみエラーログを出力
+      if (import.meta.env.DEV) {
+        console.warn('Clarity project ID is not configured properly');
+      }
+      return createClarityProjectId('test12345'); // フォールバック値
+    }
+  });
+
+  // コンポーネントのマウント状態をトラック
+  const isMountedRef = useRef(true);
+
+  /**
+   * Clarityサービスを初期化
+   */
+  const initialize = useCallback(async () => {
+    // 同意がない場合は初期化しない
+    if (!consentGiven) return;
+
+    // 分析機能が無効化されている場合は初期化しない
+    if (import.meta.env.VITE_ANALYTICS_ENABLED === 'false') return;
+
+    // Do Not Track設定が有効な場合は初期化しない
+    if (navigator.doNotTrack === '1') return;
+
+    try {
+      const loadResult = await loadClarityScript(projectId);
+
+      if (isMountedRef.current && loadResult.success) {
+        // 初期化完了
+        setIsServiceInitialized(true);
+
+        // 基本的な設定を適用
+        if (window.clarity) {
+          // 入力フィールドの自動マスキング
+          window.clarity('set', 'maskInputs', true);
+          // テキスト内容のマスキング
+          window.clarity('set', 'maskText', true);
+        }
+
+        if (import.meta.env.DEV) {
+          console.log('[ClarityService] Initialized successfully');
+        }
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[ClarityService] Failed to initialize:', error);
+      }
+    }
+  }, [consentGiven, projectId]);
+
+  /**
+   * 同意状態を設定
+   */
+  const setConsent = useCallback(
+    (consent: boolean) => {
+      setConsentGiven(consent);
+
+      if (consent) {
+        void initialize();
+      } else {
+        setIsServiceInitialized(false);
+        // Clarityを停止
+        if (window.clarity) {
+          window.clarity('consent', false);
+          window.clarity('stop');
+        }
+      }
+
+      if (import.meta.env.DEV) {
+        console.log('[ClarityService] Consent updated:', consent);
+      }
+    },
+    [initialize]
   );
 
-  if (!planResult.success) {
-    return planResult;
-  }
-
-  const { shouldSkip, validatedProjectId, newState } = planResult.data;
-
-  if (shouldSkip) {
-    return createSuccess(newState);
-  }
-
-  // 副作用部分の実行
-  const effectsResult = await executeClarityInitializationEffects(
-    validatedProjectId!
-  );
-
-  if (!effectsResult.success) {
-    return effectsResult;
-  }
-
-  return createSuccess(newState);
-};
-
-/**
- * @description 同意状態設定の純粋関数部分
- */
-export const computeConsentChange = (
-  currentState: ClarityServiceState,
-  consent: boolean
-): ClarityServiceState => {
-  if (currentState.isDisabled) {
-    return currentState;
-  }
-
-  // 新しい状態を返す（純粋関数）
-  return updateState(currentState, { hasConsent: consent });
-};
-
-/**
- * @description 同意状態変更の副作用実行部分
- */
-export const executeConsentEffects = (consent: boolean): void => {
-  // 副作用処理（Clarity設定）
-  setClarityConsent(consent);
-
-  // 拒否時の録画停止（副作用処理）
-  if (!consent) {
-    stopClarity();
-  }
-};
-
-/**
- * @description 同意状態を設定（純粋関数 + 副作用分離済み）
- */
-export const setConsent = (
-  currentState: ClarityServiceState,
-  consent: boolean
-): ClarityServiceState => {
-  const newState = computeConsentChange(currentState, consent);
-
-  // 状態が変更された場合のみ副作用を実行
-  if (newState !== currentState) {
-    executeConsentEffects(consent);
-  }
-
-  return newState;
-};
-
-/**
- * @description サービスを無効化（純粋関数 + 副作用分離）
- */
-export const disableService = (
-  currentState: ClarityServiceState
-): ClarityServiceState => {
-  // 副作用処理（Clarity停止）
-  setClarityConsent(false);
-  stopClarity();
-
-  // 新しい状態を返す（純粋関数）
-  return updateState(currentState, { isDisabled: true });
-};
-
-/**
- * @description 状態取得用のセレクター関数群（純粋関数）
- */
-export const selectors = Object.freeze({
-  isInitialized: (state: ClarityServiceState): boolean => state.isInitialized,
-  hasConsent: (state: ClarityServiceState): boolean => state.hasConsent,
-  isDisabled: (state: ClarityServiceState): boolean => state.isDisabled,
-  getProjectId: (state: ClarityServiceState): ClarityProjectId | null =>
-    state.projectId,
-});
-
-/**
- * @description 共通エラーハンドラー - DRY原則に基づく重複除去
- */
-export const createSafeHandler = <TArgs extends unknown[], TReturn>(
-  handler: (...args: TArgs) => TReturn,
-  context = 'Clarity operation'
-) => {
-  return (...args: TArgs): TReturn | undefined => {
-    try {
-      return handler(...args);
-    } catch (error) {
-      console.warn(`${context} failed:`, error);
-      return undefined;
+  // 初期化処理
+  useEffect(() => {
+    if (consentGiven) {
+      void initialize();
     }
-  };
-};
+  }, [consentGiven, initialize]);
 
-/**
- * @description 非同期処理用の安全なハンドラー
- */
-export const createSafeAsyncHandler = <TArgs extends unknown[], TReturn>(
-  handler: (...args: TArgs) => Promise<TReturn>,
-  context = 'Clarity async operation'
-) => {
-  return async (...args: TArgs): Promise<TReturn | undefined> => {
-    try {
-      return await handler(...args);
-    } catch (error) {
-      console.warn(`${context} failed:`, error);
-      return undefined;
-    }
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  return {
+    isInitialized: isServiceInitialized,
+    hasConsent: consentGiven,
+    setConsent,
   };
-};
+}
