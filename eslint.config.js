@@ -41,11 +41,19 @@ export default tseslint.config([
     },
   },
   {
-    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    files: [
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+      '**/test/**/*.{ts,tsx}',
+    ],
     languageOptions: {
       globals: {
         ...globals.browser,
         ...globals.node,
+      },
+      parserOptions: {
+        project: ['./tsconfig.test.json'],
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
