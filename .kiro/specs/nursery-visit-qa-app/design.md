@@ -685,6 +685,22 @@ class CryptoService {
 
 ## 分析・プライバシー機能設計
 
+### 実装方針
+
+#### GA4の実装アプローチ
+
+- **GA4を直接実装**（Google Tag Manager経由ではない）
+- 測定IDはGA4の測定ID（`G-XXXXXXXXXX`形式）を使用
+- GTMコンテナIDは不要
+- `gtag.js`スクリプトを動的に読み込み、gtagコマンドを使用してイベントを送信
+
+#### 実装の利点
+
+1. **シンプルな構成**: GTMの追加レイヤーが不要で、直接GA4と通信
+2. **管理の簡素化**: GTMコンテナの設定・管理が不要
+3. **パフォーマンス**: GTMの追加スクリプトが不要で軽量
+4. **明確な実装**: コード内で何が送信されているか明確
+
 ### 分析機能アーキテクチャ
 
 ```
@@ -737,7 +753,7 @@ interface AnalyticsService {
   trackInsightsViewed(nurseryId: string): void;
 }
 
-// Google Analytics 4 実装
+// Google Analytics 4 実装（GA4を直接利用、GTM経由ではない）
 class GA4Service implements AnalyticsService {
   private isEnabled = false;
   private consentGiven = false;
@@ -786,6 +802,8 @@ class GA4Service implements AnalyticsService {
   private async loadGA4Script(): Promise<void> {
     const script = document.createElement('script');
     script.async = true;
+    // GA4の公式測定スクリプトを直接読み込み
+    // 注: URLは googletagmanager.com だが、これはGA4の正式なエンドポイント
     script.src = `https://www.googletagmanager.com/gtag/js?id=${this.measurementId}`;
     document.head.appendChild(script);
 
@@ -1424,19 +1442,19 @@ const NurseryCreator: React.FC = () => {
 
 #### 環境変数設定
 
-```typescript
-// .env.local
-VITE_GA4_MEASUREMENT_ID = G - XXXXXXXXXX;
-VITE_CLARITY_PROJECT_ID = xxxxxxxxxx;
-VITE_ANALYTICS_ENABLED = true;
+```bash
+# .env.local（ローカル開発用）
+VITE_GA4_MEASUREMENT_ID=G-XXXXXXXXXX  # GA4測定ID（GTMコンテナIDではない）
+VITE_CLARITY_PROJECT_ID=xxxxxxxxxx     # Microsoft ClarityプロジェクトID
+VITE_ANALYTICS_ENABLED=true            # 分析機能の有効化フラグ
 
-// .env.development
-VITE_ANALYTICS_DEBUG = true;
-VITE_ANALYTICS_ENABLED = false;
+# .env.development（開発環境）
+VITE_ANALYTICS_DEBUG=true              # デバッグモード有効化
+VITE_ANALYTICS_ENABLED=false           # 開発環境では分析無効化
 
-// .env.production
-VITE_ANALYTICS_DEBUG = false;
-VITE_ANALYTICS_ENABLED = true;
+# .env.production（本番環境・AWS Amplifyで設定）
+VITE_ANALYTICS_DEBUG=false             # デバッグモード無効化
+VITE_ANALYTICS_ENABLED=true            # 本番環境では分析有効化
 ```
 
 #### セキュリティ設定
