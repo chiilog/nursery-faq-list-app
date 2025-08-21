@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "prepare": "husky",
-    "typecheck": "tsc --noEmit --project tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",

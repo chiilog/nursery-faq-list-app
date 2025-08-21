@@ -1,7 +1,6 @@
 import type {
   WindowWithClarity,
   ClarityFunction,
-  ImportMeta,
   ClarityProjectId,
   Result,
 } from '../types/clarity';
@@ -375,7 +374,7 @@ export const initializeClarity = async (
   const planResult = computeClarityInitializationPlan(
     currentState,
     projectId,
-    import.meta as ImportMeta,
+    import.meta,
     navigator
   );
 

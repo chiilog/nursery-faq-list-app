@@ -65,22 +65,6 @@ export interface WindowWithClarity extends Window {
 }
 
 /**
- * @description Import Meta環境変数の型定義
- */
-export interface ImportMetaEnv {
-  readonly VITE_ANALYTICS_ENABLED?: string;
-  readonly VITE_CLARITY_PROJECT_ID?: string;
-  readonly VITE_CLARITY_ALLOWED_PROJECT_IDS?: string;
-}
-
-/**
- * @description Import Metaオブジェクトの型定義
- */
-export interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
-
-/**
  * @description Clarityプロジェクト設定の型（不変性保証）
  */
 export interface ClarityConfig {

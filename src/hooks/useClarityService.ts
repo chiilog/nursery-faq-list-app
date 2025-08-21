@@ -9,7 +9,6 @@ import {
   type ClarityServiceState,
 } from '../services/clarityService';
 import { usePrivacySettings } from './usePrivacySettings';
-import type { ImportMeta } from '../types/clarity';
 
 /**
  * @description Microsoft Clarity統合のためのReact Hook（関数型API対応）
@@ -72,8 +71,7 @@ export const useClarityService = () => {
      * 環境変数からプロジェクトIDを取得し、初期化を実行
      */
     const initializeClarityService = async () => {
-      const projectId = (import.meta as ImportMeta).env
-        ?.VITE_CLARITY_PROJECT_ID;
+      const projectId = import.meta.env?.VITE_CLARITY_PROJECT_ID;
 
       if (!projectId) {
         console.warn(
