@@ -379,7 +379,7 @@
   - 環境変数の設定（分析機能用の設定を含む）
   - _要件: 全般_
 
-- [ ] 9.2 AWS Amplify デプロイ設定
+- [x] 9.2 AWS Amplify デプロイ設定
   - AWS Amplify プロジェクト作成とGitHub連携
   - ビルド設定の構成（amplify.yml）
   - 環境変数の設定（AWS Amplify Console）
