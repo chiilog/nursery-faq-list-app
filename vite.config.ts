@@ -20,6 +20,25 @@ export default defineConfig({
       'framer-motion',
     ],
   },
+  build: {
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: [
+            '@chakra-ui/react',
+            '@emotion/react',
+            '@emotion/styled',
+            'framer-motion',
+          ],
+          router: ['react-router-dom'],
+        },
+      },
+    },
+    sourcemap: false,
+    minify: 'esbuild',
+  },
   test: {
     globals: true,
     environment: 'jsdom',
