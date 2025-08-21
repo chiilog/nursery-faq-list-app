@@ -2,6 +2,7 @@ import { Box, Container } from '@chakra-ui/react';
 import { Outlet } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { NurseryHeader } from './NurseryHeader';
+import { BottomNavigation } from './BottomNavigation';
 import { APP_CONFIG } from '../constants/app';
 import type { HeaderButton, HeaderVariant } from '../types/header';
 
@@ -40,9 +41,11 @@ export const Layout = ({
         </Container>
       </Box>
 
-      <Container as="main" maxW="container.xl" py={4}>
+      <Container as="main" maxW="container.xl" py={4} pb="80px">
         {children || <Outlet />}
       </Container>
+
+      <BottomNavigation />
     </Box>
   );
 };
