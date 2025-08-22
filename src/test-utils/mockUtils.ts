@@ -4,11 +4,13 @@ export const mockGlobalAnalytics = () => {
   Object.defineProperty(window, 'gtag', {
     value: vi.fn(),
     writable: true,
+    configurable: true,
   });
 
   Object.defineProperty(window, 'clarity', {
     value: vi.fn(),
     writable: true,
+    configurable: true,
   });
 };
 

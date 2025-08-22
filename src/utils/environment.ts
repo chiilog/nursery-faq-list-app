@@ -1,4 +1,9 @@
 export const isDevelopment = (): boolean => {
+  // Vite環境 (ブラウザ側)
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env.DEV;
+  }
+  // Node/SSR fallback
   return (
     typeof process !== 'undefined' && process.env?.NODE_ENV === 'development'
   );
