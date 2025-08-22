@@ -273,21 +273,13 @@ export interface UseGA4ServiceReturn {
 }
 
 /**
- * @description Google Analytics 4統合カスタムフック
- * プライバシーを考慮したGA4イベント送信とスクリプト管理を提供
- * @returns GA4サービス操作用の関数とステート
+ * @description GA4サービスを管理するReactフック。Cookieの同意管理、サービスの初期化、イベント追跡を提供します。
+ * @returns GA4サービスの状態と操作関数を含むオブジェクト
  * @example
  * ```typescript
- * const { isEnabled, hasConsent, setConsent, trackEvent, trackPageView } = useGA4Service();
- *
- * // 同意を設定
+ * const { isEnabled, setConsent, trackEvent } = useGA4Service();
  * setConsent(true);
- *
- * // イベントを送信
- * trackEvent('button_click', { button_name: 'signup' });
- *
- * // ページビューを送信
- * trackPageView('Home Page', '/');
+ * trackEvent('click', { button_name: 'submit' });
  * ```
  */
 export function useGA4Service(): UseGA4ServiceReturn {

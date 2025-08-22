@@ -278,20 +278,12 @@ export interface UseClarityServiceReturn {
 }
 
 /**
- * @description Microsoft Clarity統合カスタムフック
- * プライバシーを考慮したClarity統合とスクリプト管理を提供
- * @returns Clarityサービス操作用の関数とステート
+ * @description Microsoft Clarityサービスを管理するReactフック。Cookieの同意管理とサービスの初期化を提供します。
+ * @returns Clarityサービスの状態と操作関数を含むオブジェクト
  * @example
  * ```typescript
- * const { isInitialized, hasConsent, setConsent } = useClarityService();
- *
- * // 同意を設定
+ * const { isInitialized, setConsent } = useClarityService();
  * setConsent(true);
- *
- * // 初期化状態を確認
- * if (isInitialized) {
- *   console.log('Clarityが正常に初期化されました');
- * }
  * ```
  */
 export function useClarityService(): UseClarityServiceReturn {

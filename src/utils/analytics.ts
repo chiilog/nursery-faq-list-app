@@ -9,6 +9,16 @@ export class AnalyticsError extends Error {
   }
 }
 
+/**
+ * @description 分析サービスのエラーを統一的に処理する関数
+ * @param error - 発生したエラー
+ * @param service - エラーが発生したサービス名
+ * @param operation - 実行していた操作名
+ * @example
+ * ```typescript
+ * handleAnalyticsError(error, 'GA4Service', 'initialize');
+ * ```
+ */
 export const handleAnalyticsError = (
   error: unknown,
   service: string,

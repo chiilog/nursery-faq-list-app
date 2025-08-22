@@ -6,6 +6,17 @@ interface UseCookieConsentReturn {
   loading: boolean;
 }
 
+/**
+ * @description Cookieの同意状態を管理するReactフック。ローカルストレージからの読み込みと保存を行います。
+ * @returns 同意状態とその操作関数を含むオブジェクト
+ * @example
+ * ```typescript
+ * const { consent, setConsent, loading } = useCookieConsent();
+ * if (!loading && consent === null) {
+ *   // 同意バナーを表示
+ * }
+ * ```
+ */
 export const useCookieConsent = (): UseCookieConsentReturn => {
   const [consent, setConsentState] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);

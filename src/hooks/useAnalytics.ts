@@ -9,12 +9,13 @@ import {
 } from '../providers/AnalyticsProvider';
 
 /**
- * @description アナリティクスコンテキストにアクセスするためのフック
- * @returns アナリティクスのコンテキスト値
- * @throws {Error} AnalyticsProviderの外で使用された場合
+ * @description 分析サービス（GA4、Clarity）のContextを取得するReactフック
+ * @returns 分析サービスの状態と操作関数を含むContext
+ * @throws {Error} AnalyticsProvider外で使用された場合
  * @example
  * ```typescript
- * const { ga4, clarity, setAnalyticsConsent } = useAnalytics();
+ * const { trackEvent } = useAnalytics();
+ * trackEvent('button_click', { button_name: 'submit' });
  * ```
  */
 export function useAnalytics(): AnalyticsContextType {
