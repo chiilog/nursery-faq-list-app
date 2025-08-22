@@ -1,4 +1,30 @@
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+
+// Analytics関連のモック（トップレベルでホイストされる）
+vi.mock('../services/ga4Service', () => ({
+  ga4Service: {
+    trackEvent: vi.fn(),
+    trackPageView: vi.fn(),
+    initialize: vi.fn(),
+    setConsent: vi.fn(),
+  },
+}));
+
+vi.mock('../services/clarityService', () => ({
+  clarityService: {
+    trackEvent: vi.fn(),
+    initialize: vi.fn(),
+    setConsent: vi.fn(),
+  },
+}));
+
+vi.mock('../hooks/useCookieConsent', () => ({
+  useCookieConsent: vi.fn(() => ({
+    consent: true,
+    setConsent: vi.fn(),
+  })),
+}));
 
 // ResizeObserverのモック
 Object.defineProperty(globalThis, 'ResizeObserver', {

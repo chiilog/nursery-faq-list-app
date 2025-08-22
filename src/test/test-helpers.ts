@@ -87,7 +87,7 @@ export const waitForAsync = (ms: number = 0): Promise<void> => {
 export const createMockNavigate = (): MockedFunction<
   ReturnType<typeof import('react-router-dom').useNavigate>
 > => {
-  return vi.fn();
+  return vi.fn<ReturnType<typeof import('react-router-dom').useNavigate>>();
 };
 
 /**
@@ -128,39 +128,14 @@ export const suppressConsole = (): ConsoleSuppress => {
 };
 
 /**
- * Analytics関連のモック設定
- * GA4とClarityサービスのモックを一括設定
- */
-export const setupAnalyticsMocks = (): void => {
-  vi.mock('../services/ga4Service', () => ({
-    ga4Service: {
-      trackEvent: vi.fn(),
-      trackPageView: vi.fn(),
-      initialize: vi.fn(),
-    },
-  }));
-
-  vi.mock('../services/clarityService', () => ({
-    clarityService: {
-      trackEvent: vi.fn(),
-      initialize: vi.fn(),
-    },
-  }));
-
-  vi.mock('../hooks/useCookieConsent', () => ({
-    useCookieConsent: vi.fn(() => ({
-      consent: true,
-      setConsent: vi.fn(),
-    })),
-  }));
-};
-
-/**
  * 全体的なテスト環境セットアップ
  * 共通的に必要なモックを一括設定
+ * Analytics関連のモックはsetup.tsで自動適用済み
  */
 export const setupTestEnvironment = (): void => {
-  setupAnalyticsMocks();
   createMockLocalStorage();
   createMockScrollTo();
 };
+
+// setupFilesで自動実行
+setupTestEnvironment();

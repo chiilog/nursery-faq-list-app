@@ -1,12 +1,8 @@
 import { screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { renderWithProviders } from './test/test-utils';
-import { setupTestEnvironment } from './test/test-helpers';
 import { AppRouter } from './components/Router';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
-
-// テスト環境の共通セットアップ
-setupTestEnvironment();
 
 // react-router-dom をモック
 const mockNavigate = vi.fn();
