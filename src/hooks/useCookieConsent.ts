@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-interface UseCookieConsentReturn {
+export interface UseCookieConsentReturn {
   consent: boolean | null;
   setConsent: (consent: boolean) => void;
   loading: boolean;

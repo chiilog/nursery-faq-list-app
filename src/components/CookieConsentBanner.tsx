@@ -143,9 +143,6 @@ export const CookieConsentBanner = () => {
               <RouterLink to="/privacy-policy">プライバシーポリシー</RouterLink>
             </Link>
             をご確認ください。
-            <Link asChild color="blue.500" textDecoration="underline" ml={2}>
-              <RouterLink to="/privacy-settings">設定を変更</RouterLink>
-            </Link>
           </Text>
           <HStack
             gap={responsiveConfig.spacing}

@@ -2,16 +2,19 @@
  * @description CookieConsentBanner コンポーネントのテスト
  */
 
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test/test-utils';
 import { CookieConsentBanner } from './CookieConsentBanner';
+import type { UseCookieConsentReturn } from '../hooks/useCookieConsent';
 
 // useCookieConsentフックのモック
+const setConsentMock = vi.fn();
 vi.mock('../hooks/useCookieConsent', () => ({
   useCookieConsent: vi.fn(() => ({
     consent: null,
-    setConsent: vi.fn(),
+    setConsent: setConsentMock,
     loading: false,
   })),
 }));
@@ -30,88 +33,57 @@ describe('CookieConsentBanner', () => {
   });
 
   it('同意ボタンをクリックするとバナーが非表示になる', async () => {
-    const { useAnalytics } = await import('../hooks/useAnalytics');
-    const mockSetAnalyticsConsent = vi.fn();
-
-    vi.mocked(useAnalytics).mockReturnValue({
-      ga4: {
-        isEnabled: false,
-        hasConsent: false,
-        setConsent: vi.fn(),
-        trackEvent: vi.fn(),
-        trackPageView: vi.fn(),
-      },
-      clarity: {
-        isInitialized: false,
-        hasConsent: false,
-        setConsent: vi.fn(),
-      },
-      setAnalyticsConsent: mockSetAnalyticsConsent,
-      hasAnalyticsConsent: false,
-    });
-
-    renderWithProviders(<CookieConsentBanner />);
+    const user = userEvent.setup();
+    const { useCookieConsent } = await import('../hooks/useCookieConsent');
+    const { rerender } = renderWithProviders(<CookieConsentBanner />);
 
     const acceptButton = screen.getByRole('button', { name: '同意する' });
-    fireEvent.click(acceptButton);
+    await user.click(acceptButton);
 
     await waitFor(() => {
-      expect(mockSetAnalyticsConsent).toHaveBeenCalledWith(true);
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(setConsentMock).toHaveBeenCalledWith(true);
     });
+
+    // consent が true になった状態をモックして再レンダーし、非表示を検証
+    vi.mocked(useCookieConsent).mockReturnValue({
+      consent: true,
+      setConsent: setConsentMock,
+      loading: false,
+    } satisfies UseCookieConsentReturn);
+    rerender(<CookieConsentBanner />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('拒否ボタンをクリックするとバナーが非表示になる', async () => {
-    const { useAnalytics } = await import('../hooks/useAnalytics');
-    const mockSetAnalyticsConsent = vi.fn();
-
-    vi.mocked(useAnalytics).mockReturnValue({
-      ga4: {
-        isEnabled: false,
-        hasConsent: false,
-        setConsent: vi.fn(),
-        trackEvent: vi.fn(),
-        trackPageView: vi.fn(),
-      },
-      clarity: {
-        isInitialized: false,
-        hasConsent: false,
-        setConsent: vi.fn(),
-      },
-      setAnalyticsConsent: mockSetAnalyticsConsent,
-      hasAnalyticsConsent: false,
-    });
-
-    renderWithProviders(<CookieConsentBanner />);
+    const user = userEvent.setup();
+    const { useCookieConsent } = await import('../hooks/useCookieConsent');
+    const { rerender } = renderWithProviders(<CookieConsentBanner />);
 
     const rejectButton = screen.getByRole('button', { name: '拒否する' });
-    fireEvent.click(rejectButton);
+    await user.click(rejectButton);
 
     await waitFor(() => {
-      expect(mockSetAnalyticsConsent).toHaveBeenCalledWith(false);
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(setConsentMock).toHaveBeenCalledWith(false);
     });
+
+    // consent が false になった状態をモックして再レンダーし、非表示を検証
+    vi.mocked(useCookieConsent).mockReturnValue({
+      consent: false,
+      setConsent: setConsentMock,
+      loading: false,
+    } satisfies UseCookieConsentReturn);
+    rerender(<CookieConsentBanner />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('同意済みの場合はバナーが表示されない', async () => {
-    const { useAnalytics } = await import('../hooks/useAnalytics');
+    const { useCookieConsent } = await import('../hooks/useCookieConsent');
 
-    vi.mocked(useAnalytics).mockReturnValue({
-      ga4: {
-        isEnabled: true,
-        hasConsent: true,
-        setConsent: vi.fn(),
-        trackEvent: vi.fn(),
-        trackPageView: vi.fn(),
-      },
-      clarity: {
-        isInitialized: true,
-        hasConsent: true,
-        setConsent: vi.fn(),
-      },
-      setAnalyticsConsent: vi.fn(),
-      hasAnalyticsConsent: true,
-    });
+    vi.mocked(useCookieConsent).mockReturnValue({
+      consent: true,
+      setConsent: setConsentMock,
+      loading: false,
+    } satisfies UseCookieConsentReturn);
 
     renderWithProviders(<CookieConsentBanner />);
 
@@ -126,13 +98,5 @@ describe('CookieConsentBanner', () => {
     });
     expect(privacyLink).toBeInTheDocument();
     expect(privacyLink).toHaveAttribute('href', '/privacy-policy');
-  });
-
-  it('設定変更へのリンクが存在する', () => {
-    renderWithProviders(<CookieConsentBanner />);
-
-    const settingsLink = screen.getByRole('link', { name: /設定を変更/i });
-    expect(settingsLink).toBeInTheDocument();
-    expect(settingsLink).toHaveAttribute('href', '/privacy-settings');
   });
 });
