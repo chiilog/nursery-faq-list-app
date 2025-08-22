@@ -65,11 +65,6 @@ export const AboutPage = () => {
               個人を特定する情報は一切収集しません。また、入力されたデータ（保育園名、質問、回答など）が分析ツールに送信されることはありません。
             </Text>
             <HStack gap={4} justify="center" wrap="wrap" pt={4}>
-              <Button colorScheme="blue" size="md" asChild>
-                <RouterLink to={ROUTES.PRIVACY_SETTINGS}>
-                  プライバシー設定を変更する
-                </RouterLink>
-              </Button>
               <Button variant="outline" colorScheme="blue" size="md" asChild>
                 <RouterLink to={ROUTES.PRIVACY_POLICY}>
                   プライバシーポリシーを見る
