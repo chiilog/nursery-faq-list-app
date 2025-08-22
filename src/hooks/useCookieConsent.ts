@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+import { ANALYTICS_CONSTANTS } from '../constants/analytics';
+
 export interface UseCookieConsentReturn {
   consent: boolean | null;
   setConsent: (consent: boolean) => void;
@@ -24,10 +26,17 @@ export const useCookieConsent = (): UseCookieConsentReturn => {
   useEffect(() => {
     const loadConsentFromStorage = () => {
       try {
-        const storedConsent = localStorage.getItem('cookie-consent');
-        if (storedConsent !== null) {
-          setConsentState(storedConsent === 'true');
+        const storedConsent = localStorage.getItem(
+          ANALYTICS_CONSTANTS.CONSENT_KEY
+        );
+        if (storedConsent === ANALYTICS_CONSTANTS.CONSENT_VALUES.ACCEPTED) {
+          setConsentState(true);
+        } else if (
+          storedConsent === ANALYTICS_CONSTANTS.CONSENT_VALUES.DECLINED
+        ) {
+          setConsentState(false);
         }
+        // それ以外(null含む)は初期値nullのまま
       } catch (error) {
         console.warn('Failed to load cookie consent from storage:', error);
       } finally {
@@ -40,7 +49,12 @@ export const useCookieConsent = (): UseCookieConsentReturn => {
 
   const setConsent = (newConsent: boolean) => {
     try {
-      localStorage.setItem('cookie-consent', String(newConsent));
+      localStorage.setItem(
+        ANALYTICS_CONSTANTS.CONSENT_KEY,
+        newConsent
+          ? ANALYTICS_CONSTANTS.CONSENT_VALUES.ACCEPTED
+          : ANALYTICS_CONSTANTS.CONSENT_VALUES.DECLINED
+      );
       setConsentState(newConsent);
     } catch (error) {
       console.warn('Failed to save cookie consent to storage:', error);
