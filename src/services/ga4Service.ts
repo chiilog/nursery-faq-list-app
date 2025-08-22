@@ -124,6 +124,7 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
     window.gtag('config', measurementId, {
       anonymize_ip: true,
       cookie_expires: 60 * 60 * 24 * 30, // 30日
+      send_page_view: false,
     });
   };
 
@@ -215,6 +216,31 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
   };
 };
 
+/**
+ * @description no-op GA4サービス実装（測定ID未設定時用）
+ * @param core - 分析コア
+ * @returns no-op GA4サービス関数群
+ */
+function createNoopGA4Service(core: ReturnType<typeof createAnalyticsCore>) {
+  return {
+    initialize() {
+      core.devWarn('GA4 is disabled (no-op instance)');
+      return Promise.resolve({
+        success: true as const,
+        data: undefined as void,
+      });
+    },
+    disable() {
+      core.devLog('GA4 disabled (no-op)');
+    },
+    trackEvent() {},
+    trackPageView() {},
+    get isInitialized() {
+      return false;
+    },
+  };
+}
+
 // シングルトンインスタンス用の関数
 let ga4ServiceInstance: ReturnType<typeof createGA4ServiceFunctions> | null =
   null;
@@ -234,17 +260,15 @@ const getGA4ServiceInstance = (): ReturnType<
       serviceId: '',
     });
 
-    let measurementId: MeasurementId;
-    try {
-      const serviceId = core.getServiceId(
-        ANALYTICS_CONSTANTS.ENV_VARS.GA4_MEASUREMENT_ID
-      );
-      measurementId = createMeasurementId(serviceId);
-    } catch {
-      measurementId = createMeasurementId('G-XXXXXXXXXX');
-      core.devWarn('GA4 measurement ID is not configured properly');
+    const serviceId = core.getServiceId(
+      ANALYTICS_CONSTANTS.ENV_VARS.GA4_MEASUREMENT_ID
+    );
+    if (!serviceId) {
+      core.devWarn('GA4 measurement ID is missing; GA4 will remain disabled');
+      ga4ServiceInstance = createNoopGA4Service(core);
+      return ga4ServiceInstance;
     }
-
+    const measurementId = createMeasurementId(serviceId);
     ga4ServiceInstance = createGA4ServiceFunctions(measurementId);
   }
   return ga4ServiceInstance;

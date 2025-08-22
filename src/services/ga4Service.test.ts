@@ -24,6 +24,7 @@ const setupGA4TestEnvironment = () => {
 
 const cleanupGA4TestEnvironment = () => {
   cleanupGlobalAnalytics();
+  delete (window as unknown as { dataLayer?: unknown }).dataLayer;
   vi.clearAllMocks();
 };
 
