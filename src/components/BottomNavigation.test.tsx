@@ -143,4 +143,84 @@ describe('BottomNavigation', () => {
     });
     expect(screen.queryByText('このアプリについて')).not.toBeInTheDocument();
   });
+
+  describe('エラーハンドリング', () => {
+    it('ナビゲーション失敗時にエラーを適切に処理する', async () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const mockNavigateError = vi
+        .fn()
+        .mockRejectedValue(new Error('Navigation failed'));
+
+      // 一時的にモックを変更
+      const originalMockNavigate = mockNavigate;
+      vi.mocked(mockNavigate).mockImplementation(mockNavigateError);
+
+      renderBottomNavigation();
+      const homeButton = screen.getByText('ホーム').closest('button');
+
+      await user.click(homeButton!);
+
+      // エラーが発生してもアプリがクラッシュしないことを確認
+      expect(screen.getByText('ホーム')).toBeInTheDocument();
+
+      // モックを元に戻す
+      vi.mocked(mockNavigate).mockImplementation(originalMockNavigate);
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('Drawer開閉中の連続操作を適切に処理する', async () => {
+      renderBottomNavigation();
+
+      const menuButton = screen.getByText('メニュー').closest('button');
+
+      // 高速連続クリックのテスト
+      await user.click(menuButton!);
+      await user.click(menuButton!);
+      await user.click(menuButton!);
+
+      // 最終的にDrawerが閉じていることを確認
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      });
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('キーボードアクセシビリティ', () => {
+    it('Escapeキーでメニューを閉じることができる', async () => {
+      renderBottomNavigation();
+
+      const menuButton = screen.getByText('メニュー').closest('button');
+      await user.click(menuButton!);
+
+      await screen.findByRole('dialog');
+      expect(screen.getByText('このアプリについて')).toBeInTheDocument();
+
+      // Escapeキーでの閉じる動作
+      await user.keyboard('{Escape}');
+
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('メニューアイテムをクリックで選択できる', async () => {
+      renderBottomNavigation();
+
+      const menuButton = screen.getByText('メニュー').closest('button');
+      await user.click(menuButton!);
+
+      await screen.findByRole('dialog');
+
+      const aboutMenuItem = screen.getByText('このアプリについて');
+      await user.click(aboutMenuItem);
+
+      expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ABOUT);
+    });
+  });
 });
