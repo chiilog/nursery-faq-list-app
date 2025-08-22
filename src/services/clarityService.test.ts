@@ -1,9 +1,19 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClarityService, createClarityProjectId } from './clarityService';
+import {
+  mockGlobalAnalytics,
+  cleanupGlobalAnalytics,
+} from '../test-utils/mockUtils';
 
 // グローバルmock
-vi.stubGlobal('window', { clarity: undefined });
+beforeEach(() => {
+  mockGlobalAnalytics();
+});
+
+afterEach(() => {
+  cleanupGlobalAnalytics();
+});
 
 // 環境変数のモック
 vi.mock('import.meta.env', () => ({

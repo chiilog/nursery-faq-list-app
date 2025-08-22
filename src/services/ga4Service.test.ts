@@ -1,20 +1,29 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGA4Service } from './ga4Service';
+import {
+  mockGlobalAnalytics,
+  cleanupGlobalAnalytics,
+} from '../test-utils/mockUtils';
 
 // グローバルmocks
 const mockGtag = vi.fn();
 
 const setupGA4TestEnvironment = () => {
-  vi.stubGlobal('window', {
-    gtag: mockGtag,
-    dataLayer: [],
+  mockGlobalAnalytics();
+  Object.defineProperty(window, 'gtag', {
+    value: mockGtag,
+    writable: true,
+  });
+  Object.defineProperty(window, 'dataLayer', {
+    value: [],
+    writable: true,
   });
   vi.clearAllMocks();
 };
 
 const cleanupGA4TestEnvironment = () => {
-  vi.unstubAllGlobals();
+  cleanupGlobalAnalytics();
   vi.clearAllMocks();
 };
 
