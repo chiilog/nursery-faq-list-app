@@ -738,8 +738,8 @@ interface AnalyticsProviderProps {
 
 // 既存のサービスを活用
 // - useGA4Service() - 既に実装済み
-// - useClarityService() - GA4と整合性を持たせたフック形式に変更予定
-// - usePrivacySettings() - 既に実装済み
+// - useClarityService() - GA4と整合性を持たせたフック形式で実装済み
+// - useCookieConsent() - Cookie同意管理フック
 
 // 既存のGA4Service（実装済み）を活用
 // src/services/ga4Service.ts にて実装済み
@@ -757,35 +757,62 @@ interface AnalyticsProviderProps {
 ```typescript
 // AnalyticsProvider.tsx - シンプルな統合コンポーネント
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
-  const { settings } = usePrivacySettings();
   const ga4 = useGA4Service();
-  const clarity = useClarityService(); // GA4と同様のフック形式
+  const clarity = useClarityService();
+  const { consent, setConsent } = useCookieConsent();
 
   // GA4とClarityの同意状態を同期
   useEffect(() => {
-    ga4.setConsent(settings.googleAnalytics);
-    clarity.setConsent(settings.microsoftClarity);
-  }, [settings.googleAnalytics, settings.microsoftClarity, ga4, clarity]);
+    if (consent !== null) {
+      const consentValue = consent === true;
+      ga4.setConsent(consentValue);
+      clarity.setConsent(consentValue);
+    }
+  }, [consent, ga4, clarity]);
 
-  return <>{children}</>;
+  // 統合された同意管理
+  const setAnalyticsConsent = useCallback(
+    (consentValue: boolean) => {
+      setConsent(consentValue);
+      ga4.setConsent(consentValue);
+      clarity.setConsent(consentValue);
+    },
+    [setConsent, ga4, clarity]
+  );
+
+  const contextValue: AnalyticsContextType = useMemo(
+    () => ({
+      ga4,
+      clarity,
+      setAnalyticsConsent,
+      hasAnalyticsConsent: consent === true,
+    }),
+    [ga4, clarity, setAnalyticsConsent, consent]
+  );
+
+  return (
+    <AnalyticsContext.Provider value={contextValue}>
+      {children}
+    </AnalyticsContext.Provider>
+  );
 }
 
-// 実装予定：useClarityService フック
-// useGA4Service と同様のインターフェース
-interface UseClarityServiceReturn {
-  isInitialized: boolean;
-  hasConsent: boolean;
-  setConsent: (consent: boolean) => void;
-  // 必要に応じて他のメソッドを追加
+// AnalyticsContextの公開インターフェース
+export interface AnalyticsContextType {
+  readonly ga4: UseGA4ServiceReturn;
+  readonly clarity: UseClarityServiceReturn;
+  readonly setAnalyticsConsent: (consent: boolean) => void;
+  readonly hasAnalyticsConsent: boolean;
 }
 
 ```
 
-**実装タスク：**
+**実装状況：**
 
-1. 既存の `clarityService.ts` に `useClarityService` フックを追加
-2. `useGA4Service` と同様のインターフェースで統一
-3. `AnalyticsProvider` で両方のフックを使用
+1. ✅ `clarityService.ts` に `useClarityService` フックを実装済み
+2. ✅ `useGA4Service` と同様のインターフェースで統一済み
+3. ✅ `AnalyticsProvider` で両サービスと`useCookieConsent`を統合済み
+4. ✅ ページ遷移の自動トラッキング機能を実装済み
 
 ````
 
