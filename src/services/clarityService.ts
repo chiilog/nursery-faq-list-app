@@ -108,13 +108,12 @@ const createClarityServiceFunctions = (projectId: ClarityProjectId) => {
 
   /**
    * @description Clarity設定を適用
+   * マスク制御はHTML属性(data-clarity-mask/data-clarity-unmask)または
+   * Clarityダッシュボードのマスクモード設定で行います
    */
   const applyClaritySettings = (): void => {
     if (window.clarity) {
-      // 入力フィールドの自動マスキング
-      window.clarity('set', 'maskInputs', true);
-      // テキスト内容のマスキング
-      window.clarity('set', 'maskText', true);
+      // 必要に応じて将来的にここで有効な設定を追加
     }
   };
 
@@ -165,9 +164,9 @@ const createClarityServiceFunctions = (projectId: ClarityProjectId) => {
   };
 
   /**
-   * @description イベントをトラッキング
+   * @description カスタムイベントをトラッキング
    * @param eventName - イベント名
-   * @param parameters - イベントパラメータ
+   * @param parameters - イベントパラメータ（オブジェクトを直接渡す）
    */
   const trackEvent = (
     eventName: string,
@@ -178,15 +177,15 @@ const createClarityServiceFunctions = (projectId: ClarityProjectId) => {
     }
 
     try {
-      // Clarityのカスタムタグとして送信
-      window.clarity('set', eventName, JSON.stringify(parameters || {}));
+      // Clarityのカスタムイベントとして送信
+      window.clarity('event', eventName, parameters ?? {});
     } catch (error) {
       core.devWarn('Track event failed:', error);
     }
   };
 
   /**
-   * @description ページビューをトラッキング
+   * @description ページビューイベントをトラッキング
    * @param pageTitle - ページタイトル
    * @param pagePath - ページパス
    */
@@ -196,16 +195,11 @@ const createClarityServiceFunctions = (projectId: ClarityProjectId) => {
     }
 
     try {
-      // ClarityはページビューをデフォルトでSPAトラッキングするため、明示的な処理は不要
-      // 必要に応じてカスタムタグでページ情報を送信
-      window.clarity(
-        'set',
-        'page_view',
-        JSON.stringify({
-          url: pagePath || window.location.pathname,
-          title: pageTitle,
-        })
-      );
+      // 必要に応じてページ情報をカスタムイベントで送信
+      window.clarity('event', 'page_view', {
+        url: pagePath ?? window.location.href,
+        title: pageTitle,
+      });
     } catch (error) {
       core.devWarn('Track page view failed:', error);
     }
@@ -218,6 +212,32 @@ const createClarityServiceFunctions = (projectId: ClarityProjectId) => {
     trackPageView,
     get isInitialized() {
       return isInitialized;
+    },
+  };
+};
+
+/**
+ * @description 無効化されたClarityサービス（no-op実装）
+ * 設定不備時の安全な代替実装
+ */
+const createNoopClarityService = (
+  core: ReturnType<typeof createAnalyticsCore>
+) => {
+  return {
+    initialize(): Promise<AnalyticsResult> {
+      core.devWarn('Clarity is disabled (no-op instance)');
+      return Promise.resolve({
+        success: true as const,
+        data: undefined as void,
+      });
+    },
+    disable(): void {
+      core.devLog('Clarity disabled (no-op)');
+    },
+    trackEvent(): void {},
+    trackPageView(): void {},
+    get isInitialized(): boolean {
+      return false;
     },
   };
 };
@@ -242,17 +262,18 @@ const getClarityServiceInstance = (): ReturnType<
       serviceId: '',
     });
 
-    let projectId: ClarityProjectId;
-    try {
-      const serviceId = core.getServiceId(
-        ANALYTICS_CONSTANTS.ENV_VARS.CLARITY_PROJECT_ID
+    const serviceId = core.getServiceId(
+      ANALYTICS_CONSTANTS.ENV_VARS.CLARITY_PROJECT_ID
+    );
+    if (!serviceId) {
+      core.devWarn(
+        'Clarity project ID is missing; Clarity will remain disabled'
       );
-      projectId = createClarityProjectId(serviceId);
-    } catch {
-      projectId = createClarityProjectId('test12345');
-      core.devWarn('Clarity project ID is not configured properly');
+      clarityServiceInstance = createNoopClarityService(core);
+      return clarityServiceInstance;
     }
 
+    const projectId = createClarityProjectId(serviceId);
     clarityServiceInstance = createClarityServiceFunctions(projectId);
   }
   return clarityServiceInstance;

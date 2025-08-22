@@ -15,13 +15,17 @@ afterEach(() => {
   cleanupGlobalAnalytics();
 });
 
-// 環境変数のモック
-vi.mock('import.meta.env', () => ({
-  VITE_CLARITY_PROJECT_ID: 'test12345',
-  VITE_ANALYTICS_ENABLED: 'true',
-  DEV: true,
-  MODE: 'test',
-}));
+// 環境変数のスタブ
+beforeEach(() => {
+  vi.stubEnv('VITE_CLARITY_PROJECT_ID', 'test12345');
+  vi.stubEnv('VITE_ANALYTICS_ENABLED', 'true');
+  vi.stubEnv('DEV', true);
+  vi.stubEnv('MODE', 'test');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('createClarityProjectId', () => {
   test('有効なプロジェクトIDを作成できる', () => {
@@ -31,19 +35,19 @@ describe('createClarityProjectId', () => {
 
   test('空文字列の場合エラーをthrowする', () => {
     expect(() => createClarityProjectId('')).toThrow(
-      'Invalid clarity project ID'
+      'Clarity project ID cannot be empty'
     );
   });
 
   test('undefinedの場合エラーをthrowする', () => {
-    expect(() => createClarityProjectId(undefined)).toThrow(
-      'Invalid clarity project ID'
+    expect(() => createClarityProjectId(undefined as any)).toThrow(
+      'Clarity project ID is required'
     );
   });
 
   test('特殊文字を含む場合エラーをthrowする', () => {
     expect(() => createClarityProjectId('test@123')).toThrow(
-      'Invalid clarity project ID'
+      'Clarity project ID contains invalid characters'
     );
   });
 });
@@ -111,15 +115,13 @@ describe('useClarityService', () => {
     expect(result.current.isInitialized).toBe(false);
   });
 
-  test('分析無効設定時は初期化されない', () => {
-    vi.doMock('import.meta.env', () => ({
-      VITE_CLARITY_PROJECT_ID: 'test12345',
-      VITE_ANALYTICS_ENABLED: 'false',
-      DEV: true,
-      MODE: 'test',
-    }));
-
-    const { result } = renderHook(() => useClarityService());
+  test('分析無効設定時は初期化されない', async () => {
+    vi.stubEnv('VITE_ANALYTICS_ENABLED', 'false');
+    vi.resetModules();
+    const { useClarityService: useClarityServiceDisabled } = await import(
+      './clarityService'
+    );
+    const { result } = renderHook(() => useClarityServiceDisabled());
 
     act(() => {
       result.current.setConsent(true);
