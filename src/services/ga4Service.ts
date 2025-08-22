@@ -7,6 +7,7 @@ import {
   type AnalyticsResult,
 } from './analyticsCore';
 import { ANALYTICS_CONSTANTS } from '../constants/analytics';
+import { isDevelopment, safeExecute } from '../utils/environment';
 
 /**
  * Branded type for measurement ID
@@ -135,27 +136,28 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
       return { success: true, data: undefined };
     }
 
-    if (core.isAnalyticsDisabled()) {
+    if (core.isAnalyticsDisabled() || isDevelopment()) {
       return { success: true, data: undefined };
     }
 
-    try {
+    return safeExecute(async () => {
       await loadGA4Script();
       initializeGtag();
       isInitialized = true;
       config.isInitialized = true;
       core.devLog('GA4 initialized successfully');
-      return { success: true, data: undefined };
-    } catch (error) {
-      const analyticsError = new AnalyticsError(
-        AnalyticsErrorType.INITIALIZATION_FAILED,
-        'GA4Service',
-        'Failed to initialize GA4 service',
-        error instanceof Error ? error : new Error(String(error))
-      );
-      core.devWarn('GA4 initialization failed:', analyticsError);
-      return { success: false, error: analyticsError };
-    }
+      return { success: true as const, data: undefined as void };
+    }, 'GA4 initialization').then((result) => {
+      if (result === null) {
+        const analyticsError = new AnalyticsError(
+          AnalyticsErrorType.INITIALIZATION_FAILED,
+          'GA4Service',
+          'Failed to initialize GA4 service'
+        );
+        return { success: false as const, error: analyticsError };
+      }
+      return result;
+    });
   };
 
   /**
@@ -259,7 +261,7 @@ declare global {
 /**
  * GA4サービスの返り値型定義
  */
-interface UseGA4ServiceReturn {
+export interface UseGA4ServiceReturn {
   readonly isEnabled: boolean;
   readonly hasConsent: boolean;
   readonly setConsent: (consent: boolean) => void;

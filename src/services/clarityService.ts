@@ -7,6 +7,7 @@ import {
   type AnalyticsResult,
 } from './analyticsCore';
 import { ANALYTICS_CONSTANTS } from '../constants/analytics';
+import { isDevelopment, safeExecute } from '../utils/environment';
 
 /**
  * Branded type for clarity project ID
@@ -121,32 +122,33 @@ const createClarityServiceFunctions = (projectId: ClarityProjectId) => {
    * @description Clarityサービスを初期化
    * @returns 初期化結果のPromise
    */
-  const initialize = (): Promise<AnalyticsResult> => {
+  const initialize = async (): Promise<AnalyticsResult> => {
     if (isInitialized || !projectId) {
-      return Promise.resolve({ success: true, data: undefined });
+      return { success: true, data: undefined };
     }
 
-    if (core.isAnalyticsDisabled()) {
-      return Promise.resolve({ success: true, data: undefined });
+    if (core.isAnalyticsDisabled() || isDevelopment()) {
+      return { success: true, data: undefined };
     }
 
-    try {
+    return safeExecute(() => {
       loadClarityScript();
       applyClaritySettings();
       isInitialized = true;
       config.isInitialized = true;
       core.devLog('Clarity initialized successfully');
-      return Promise.resolve({ success: true, data: undefined });
-    } catch (error) {
-      const analyticsError = new AnalyticsError(
-        AnalyticsErrorType.INITIALIZATION_FAILED,
-        'ClarityService',
-        'Failed to initialize Clarity service',
-        error instanceof Error ? error : new Error(String(error))
-      );
-      core.devWarn('Clarity initialization failed:', analyticsError);
-      return Promise.resolve({ success: false, error: analyticsError });
-    }
+      return { success: true as const, data: undefined as void };
+    }, 'Clarity initialization').then((result) => {
+      if (result === null) {
+        const analyticsError = new AnalyticsError(
+          AnalyticsErrorType.INITIALIZATION_FAILED,
+          'ClarityService',
+          'Failed to initialize Clarity service'
+        );
+        return { success: false as const, error: analyticsError };
+      }
+      return result;
+    });
   };
 
   /**
@@ -269,7 +271,7 @@ declare global {
 /**
  * ClarityServiceの返り値型定義
  */
-interface UseClarityServiceReturn {
+export interface UseClarityServiceReturn {
   readonly isInitialized: boolean;
   readonly hasConsent: boolean;
   readonly setConsent: (consent: boolean) => void;
