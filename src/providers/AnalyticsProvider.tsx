@@ -3,13 +3,7 @@
  * GA4とMicrosoft Clarityを統合管理
  */
 
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  type ReactNode,
-} from 'react';
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import {
   useGA4Service,
   type UseGA4ServiceReturn,
@@ -20,19 +14,10 @@ import {
 } from '../services/clarityService';
 import { useLocation } from 'react-router-dom';
 import { useCookieConsent } from '../hooks/useCookieConsent';
-
-/**
- * アナリティクスコンテキストの型定義
- */
-export interface AnalyticsContextType {
-  readonly ga4: UseGA4ServiceReturn;
-  readonly clarity: UseClarityServiceReturn;
-  // 統合された同意管理
-  readonly setAnalyticsConsent: (consent: boolean) => void;
-  readonly hasAnalyticsConsent: boolean;
-}
-
-const AnalyticsContext = createContext<AnalyticsContextType | null>(null);
+import {
+  AnalyticsContext,
+  type AnalyticsContextType,
+} from '../contexts/analyticsContext';
 
 interface AnalyticsProviderProps {
   children: ReactNode;
@@ -93,6 +78,3 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     </AnalyticsContext.Provider>
   );
 }
-
-// コンテキストをエクスポート（useAnalyticsフックで使用）
-export { AnalyticsContext };

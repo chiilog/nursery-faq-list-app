@@ -6,7 +6,7 @@ import { useContext } from 'react';
 import {
   AnalyticsContext,
   type AnalyticsContextType,
-} from '../providers/AnalyticsProvider';
+} from '../contexts/analyticsContext';
 
 /**
  * @description 分析サービス（GA4、Clarity）のContextを取得するReactフック
