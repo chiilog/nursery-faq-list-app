@@ -725,238 +725,69 @@ class CryptoService {
 
 ### 分析機能コンポーネント設計
 
-#### 1. 分析サービス層
+#### シンプルな統合アプローチ
+
+既存の実装済みサービス（GA4Service, ClarityService）とプライバシー管理機能を
+最小限のコンポーネントで統合します。
 
 ```typescript
-// 分析イベント管理
-interface AnalyticsEvent {
-  name: string;
-  parameters?: Record<string, any>;
-  timestamp: Date;
+// AnalyticsProvider - 唯一の統合コンポーネント
+interface AnalyticsProviderProps {
+  children: React.ReactNode;
 }
 
-interface AnalyticsService {
-  // 初期化
-  initialize(): Promise<void>;
-  // 同意管理
-  setConsent(consent: boolean): void;
-  getConsent(): boolean;
-  disable(): void;
-  // イベント送信
-  trackPageView(page: string): void;
-  trackEvent(event: AnalyticsEvent): void;
-  // 主要イベント
-  trackNurseryCreated(nurseryId: string): void;
-  trackQuestionAdded(nurseryId: string, questionCount: number): void;
-  trackInsightAdded(nurseryId: string, insightCount: number): void;
-  trackNurseryDeleted(nurseryId: string): void;
-  trackInsightsViewed(nurseryId: string): void;
-}
+// 既存のサービスを活用
+// - useGA4Service() - 既に実装済み
+// - useClarityService() - GA4と整合性を持たせたフック形式に変更予定
+// - usePrivacySettings() - 既に実装済み
 
-// Google Analytics 4 実装（GA4を直接利用、GTM経由ではない）
-class GA4Service implements AnalyticsService {
-  private isEnabled = false;
-  private consentGiven = false;
-  private measurementId: string = (import.meta as any).env
-    .VITE_GA4_MEASUREMENT_ID as string;
-  private gtag: any;
-
-  async initialize(): Promise<void> {
-    if (!this.consentGiven) return;
-    if ((import.meta as any).env.VITE_ANALYTICS_ENABLED === 'false') return;
-    if (navigator.doNotTrack === '1') return;
-
-    // GA4スクリプトの動的読み込み
-    await this.loadGA4Script();
-    this.isEnabled = true;
-  }
-
-  setConsent(consent: boolean): void {
-    this.consentGiven = consent;
-    if (!consent) this.disable();
-
-    // Consent Mode v2: 同意状態を更新
-    if (consent && (window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
-        ad_storage: 'granted',
-        analytics_storage: 'granted',
-      });
-    }
-  }
-
-  getConsent(): boolean {
-    return this.consentGiven;
-  }
-
-  disable(): void {
-    this.isEnabled = false;
-    // Consent Mode v2: 全て denied に更新
-    if ((window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
-        ad_storage: 'denied',
-        analytics_storage: 'denied',
-      });
-    }
-  }
-
-  private async loadGA4Script(): Promise<void> {
-    const script = document.createElement('script');
-    script.async = true;
-    // GA4の公式測定スクリプトを直接読み込み
-    // 注: URLは googletagmanager.com だが、これはGA4の正式なエンドポイント
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${this.measurementId}`;
-    document.head.appendChild(script);
-
-    // gtag関数の初期化
-    (window as any).dataLayer = (window as any).dataLayer || [];
-    (window as any).gtag = function () {
-      (window as any).dataLayer.push(arguments);
-    };
-    (window as any).gtag('js', new Date());
-
-    // Consent Mode v2: 初期は denied
-    (window as any).gtag('consent', 'default', {
-      ad_storage: 'denied',
-      analytics_storage: 'denied',
-    });
-
-    (window as any).gtag('config', this.measurementId, {
-      anonymize_ip: true,
-      allow_google_signals: false,
-      allow_ad_personalization_signals: false,
-      // debug_mode は開発時のみ
-      debug_mode: (import.meta as any).env.VITE_ANALYTICS_DEBUG === 'true',
-    });
-  }
-
-  trackPageView(page: string): void {
-    if (!this.isEnabled) return;
-
-    (window as any).gtag('config', this.measurementId, {
-      page_path: page,
-    });
-  }
-
-  trackEvent(event: AnalyticsEvent): void {
-    if (!this.isEnabled) return;
-
-    (window as any).gtag('event', event.name, event.parameters);
-  }
-
-  trackNurseryCreated(nurseryId: string): void {
-    this.trackEvent({
-      name: 'nursery_created',
-      parameters: { nursery_id: nurseryId },
-      timestamp: new Date(),
-    });
-  }
-
-  trackQuestionAdded(nurseryId: string, questionCount: number): void {
-    this.trackEvent({
-      name: 'question_added',
-      parameters: { nursery_id: nurseryId, question_count: questionCount },
-      timestamp: new Date(),
-    });
-  }
-
-  trackInsightAdded(nurseryId: string, insightCount: number): void {
-    this.trackEvent({
-      name: 'insight_added',
-      parameters: { nursery_id: nurseryId, insight_count: insightCount },
-      timestamp: new Date(),
-    });
-  }
-
-  trackNurseryDeleted(nurseryId: string): void {
-    this.trackEvent({
-      name: 'nursery_deleted',
-      parameters: { nursery_id: nurseryId },
-      timestamp: new Date(),
-    });
-  }
-
-  trackInsightsViewed(nurseryId: string): void {
-    this.trackEvent({
-      name: 'insights_viewed',
-      parameters: { nursery_id: nurseryId },
-      timestamp: new Date(),
-    });
-  }
-}
-
-// Microsoft Clarity 実装
-class ClarityService {
-  private clarityId: string = (import.meta as any).env
-    .VITE_CLARITY_PROJECT_ID as string;
-  private isEnabled = false;
-  private consentGiven = false;
-
-  async initialize(): Promise<void> {
-    if (!this.consentGiven) return;
-    if ((import.meta as any).env.VITE_ANALYTICS_ENABLED === 'false') return;
-    if (navigator.doNotTrack === '1') return;
-
-    await this.loadClarityScript();
-    this.setupDataMasking();
-    this.isEnabled = true;
-  }
-
-  setConsent(consent: boolean): void {
-    this.consentGiven = consent;
-    if (!consent) this.disable();
-  }
-
-  getConsent(): boolean {
-    return this.consentGiven;
-  }
-
-  disable(): void {
-    this.isEnabled = false;
-    if ((window as any).clarity) {
-      (window as any).clarity('consent', false);
-      (window as any).clarity('stop');
-    }
-  }
-
-  private async loadClarityScript(): Promise<void> {
-    const script = document.createElement('script');
-    script.innerHTML = `
-      (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "${this.clarityId}");
-    `;
-    document.head.appendChild(script);
-
-    // 可能なら consent を false で初期化
-    (window as any).clarity?.('consent', false);
-  }
-
-  private setupDataMasking(): void {
-    // 個人情報を含む可能性のある要素をマスク
-    const sensitiveSelectors = [
-      'input[type="text"]',
-      'input[type="email"]',
-      'input[type="tel"]',
-      'input[type="password"]',
-      'input[type="date"]',
-      'input[type="datetime-local"]',
-      'textarea',
-      '[data-sensitive]',
-    ];
-
-    sensitiveSelectors.forEach((selector) => {
-      document.querySelectorAll(selector).forEach((element) => {
-        element.setAttribute('data-clarity-mask', 'true');
-      });
-    });
-
-    // 追加でテキスト全体のマスクを有効化
-    (window as any).clarity?.('set', 'maskText', true);
-  }
-}
+// 既存のGA4Service（実装済み）を活用
+// src/services/ga4Service.ts にて実装済み
+// useGA4Service()フックとして利用可能
 ```
+
+#### 実装方針
+
+**必要最小限の実装：**
+
+1. `AnalyticsProvider`コンポーネント1つだけ作成
+2. 既存の実装済みサービスを統合
+3. プライバシー設定との連動
+
+```typescript
+// AnalyticsProvider.tsx - シンプルな統合コンポーネント
+export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+  const { settings } = usePrivacySettings();
+  const ga4 = useGA4Service();
+  const clarity = useClarityService(); // GA4と同様のフック形式
+
+  // GA4とClarityの同意状態を同期
+  useEffect(() => {
+    ga4.setConsent(settings.googleAnalytics);
+    clarity.setConsent(settings.microsoftClarity);
+  }, [settings.googleAnalytics, settings.microsoftClarity, ga4, clarity]);
+
+  return <>{children}</>;
+}
+
+// 実装予定：useClarityService フック
+// useGA4Service と同様のインターフェース
+interface UseClarityServiceReturn {
+  isInitialized: boolean;
+  hasConsent: boolean;
+  setConsent: (consent: boolean) => void;
+  // 必要に応じて他のメソッドを追加
+}
+
+```
+
+**実装タスク：**
+
+1. 既存の `clarityService.ts` に `useClarityService` フックを追加
+2. `useGA4Service` と同様のインターフェースで統一
+3. `AnalyticsProvider` で両方のフックを使用
+
+````
 
 #### 2. プライバシー管理コンポーネント
 
@@ -1369,7 +1200,7 @@ const PrivacyPolicyPage: React.FC = () => {
     </Container>
   );
 };
-```
+````
 
 #### 3. 分析イベント統合
 
