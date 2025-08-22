@@ -13,6 +13,7 @@ import {
 import { useGA4Service } from '../services/ga4Service';
 import { useClarityService } from '../services/clarityService';
 import { useLocation } from 'react-router-dom';
+import { ANALYTICS_CONSTANTS } from '../constants/analytics';
 
 /**
  * アナリティクスコンテキストの型定義
@@ -66,9 +67,12 @@ export function AnalyticsProvider({
 
       // ローカルストレージに同意状態を保存
       if (consent) {
-        localStorage.setItem('analytics-consent', 'granted');
+        localStorage.setItem(
+          ANALYTICS_CONSTANTS.CONSENT_KEY,
+          ANALYTICS_CONSTANTS.CONSENT_VALUES.ACCEPTED
+        );
       } else {
-        localStorage.removeItem('analytics-consent');
+        localStorage.removeItem(ANALYTICS_CONSTANTS.CONSENT_KEY);
       }
     },
     [ga4, clarity]
@@ -77,7 +81,8 @@ export function AnalyticsProvider({
   // 初期化時に保存された同意状態を復元
   useEffect(() => {
     const savedConsent =
-      localStorage.getItem('analytics-consent') === 'granted';
+      localStorage.getItem(ANALYTICS_CONSTANTS.CONSENT_KEY) ===
+      ANALYTICS_CONSTANTS.CONSENT_VALUES.ACCEPTED;
     if (savedConsent || initialConsent) {
       setAnalyticsConsent(true);
     }
@@ -90,7 +95,8 @@ export function AnalyticsProvider({
       const pageTitle = document.title || 'Untitled Page';
       ga4.trackPageView(pageTitle, location.pathname);
     }
-  }, [location, ga4]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, ga4.isEnabled, ga4.hasConsent, ga4.trackPageView]);
 
   const contextValue: AnalyticsContextType = useMemo(
     () => ({
@@ -99,7 +105,18 @@ export function AnalyticsProvider({
       setAnalyticsConsent,
       hasAnalyticsConsent: ga4.hasConsent && clarity.hasConsent,
     }),
-    [ga4, clarity, setAnalyticsConsent]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      ga4.isEnabled,
+      ga4.hasConsent,
+      ga4.setConsent,
+      ga4.trackEvent,
+      ga4.trackPageView,
+      clarity.isInitialized,
+      clarity.hasConsent,
+      clarity.setConsent,
+      setAnalyticsConsent,
+    ]
   );
 
   return (

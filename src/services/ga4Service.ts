@@ -1,4 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import {
+  createAnalyticsCore,
+  type AnalyticsConfig,
+  AnalyticsError,
+  AnalyticsErrorType,
+  type AnalyticsResult,
+} from './analyticsCore';
+import { ANALYTICS_CONSTANTS } from '../constants/analytics';
 
 /**
  * Branded type for measurement ID
@@ -6,11 +14,9 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 export type MeasurementId = string & { readonly brand: unique symbol };
 
 /**
- * Result type for async operations
+ * Result type for async operations (deprecated - use AnalyticsResult instead)
  */
-export type GA4LoadResult =
-  | { readonly success: true }
-  | { readonly success: false; readonly error: Error };
+export type GA4LoadResult = AnalyticsResult;
 
 /**
  * @description セキュリティ検証付きの測定IDを作成するファクトリー関数
@@ -24,20 +30,222 @@ export type GA4LoadResult =
  */
 export const createMeasurementId = (id: string | undefined): MeasurementId => {
   if (!id) {
-    throw new Error('Invalid measurement ID');
+    throw new AnalyticsError(
+      AnalyticsErrorType.CONFIGURATION_ERROR,
+      'GA4Service',
+      'Measurement ID is required'
+    );
   }
   const normalized = id.trim();
   if (normalized === '') {
-    throw new Error('Invalid measurement ID');
+    throw new AnalyticsError(
+      AnalyticsErrorType.CONFIGURATION_ERROR,
+      'GA4Service',
+      'Measurement ID cannot be empty'
+    );
   }
 
   // 基本的な文字チェック（英数・ハイフン・アンダースコアのみ）
   const allowedPattern = /^[A-Za-z0-9_-]+$/;
   if (!allowedPattern.test(normalized)) {
-    throw new Error('Invalid measurement ID');
+    throw new AnalyticsError(
+      AnalyticsErrorType.CONFIGURATION_ERROR,
+      'GA4Service',
+      'Measurement ID contains invalid characters'
+    );
   }
 
   return normalized as MeasurementId;
+};
+
+/**
+ * @description GA4サービスの関数型実装
+ * @param measurementId - 測定ID
+ * @returns GA4サービス関数群
+ */
+const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
+  let isInitialized = false;
+
+  const config: AnalyticsConfig = {
+    envVarName: ANALYTICS_CONSTANTS.ENV_VARS.GA4_MEASUREMENT_ID,
+    serviceName: 'GA4Service',
+    isInitialized: false,
+    serviceId: measurementId,
+  };
+
+  const core = createAnalyticsCore(config);
+
+  /**
+   * @description GA4スクリプトを動的に読み込む
+   * @returns 読み込み結果のPromise
+   */
+  const loadGA4Script = async (): Promise<void> => {
+    // 既にGA4スクリプトがDOMに追加済みかをチェック
+    if (document.querySelector('script[data-ga4="true"]')) {
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(
+        measurementId
+      )}`;
+      script.setAttribute('data-ga4', 'true');
+
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load GA4 script'));
+
+      document.head.appendChild(script);
+
+      // テスト環境での即座解決
+      if (import.meta.env.MODE === 'test') {
+        resolve();
+      }
+    });
+  };
+
+  /**
+   * @description gtag関数を初期化
+   */
+  const initializeGtag = (): void => {
+    // gtag関数とdataLayerを先に初期化
+    window.dataLayer = window.dataLayer || [];
+
+    if (!window.gtag) {
+      window.gtag = function (...args: unknown[]) {
+        window.dataLayer?.push(args);
+      };
+    }
+
+    // GA4初期化
+    window.gtag('js', new Date());
+    window.gtag('config', measurementId, {
+      anonymize_ip: true,
+      cookie_expires: 60 * 60 * 24 * 30, // 30日
+    });
+  };
+
+  /**
+   * @description GA4サービスを初期化
+   * @returns 初期化結果のPromise
+   */
+  const initialize = async (): Promise<AnalyticsResult> => {
+    if (isInitialized || !measurementId) {
+      return { success: true, data: undefined };
+    }
+
+    if (core.isAnalyticsDisabled()) {
+      return { success: true, data: undefined };
+    }
+
+    try {
+      await loadGA4Script();
+      initializeGtag();
+      isInitialized = true;
+      config.isInitialized = true;
+      core.devLog('GA4 initialized successfully');
+      return { success: true, data: undefined };
+    } catch (error) {
+      const analyticsError = new AnalyticsError(
+        AnalyticsErrorType.INITIALIZATION_FAILED,
+        'GA4Service',
+        'Failed to initialize GA4 service',
+        error instanceof Error ? error : new Error(String(error))
+      );
+      core.devWarn('GA4 initialization failed:', analyticsError);
+      return { success: false, error: analyticsError };
+    }
+  };
+
+  /**
+   * @description GA4サービスを無効化
+   */
+  const disable = (): void => {
+    isInitialized = false;
+    config.isInitialized = false;
+    core.devLog('GA4 disabled');
+  };
+
+  /**
+   * @description イベントをトラッキング
+   * @param eventName - イベント名
+   * @param parameters - イベントパラメータ
+   */
+  const trackEvent = (
+    eventName: string,
+    parameters?: Record<string, unknown>
+  ): void => {
+    if (!core.canExecute() || !window.gtag) {
+      return;
+    }
+
+    try {
+      window.gtag('event', eventName, parameters);
+    } catch (error) {
+      core.devWarn('Track event failed:', error);
+    }
+  };
+
+  /**
+   * @description ページビューをトラッキング
+   * @param pageTitle - ページタイトル
+   * @param pagePath - ページパス
+   */
+  const trackPageView = (pageTitle: string, pagePath?: string): void => {
+    const parameters: Record<string, unknown> = {
+      page_title: pageTitle,
+    };
+    if (pagePath) {
+      parameters.page_location = pagePath;
+    }
+    trackEvent('page_view', parameters);
+  };
+
+  return {
+    initialize,
+    disable,
+    trackEvent,
+    trackPageView,
+    get isInitialized() {
+      return isInitialized;
+    },
+  };
+};
+
+// シングルトンインスタンス用の関数
+let ga4ServiceInstance: ReturnType<typeof createGA4ServiceFunctions> | null =
+  null;
+
+/**
+ * @description GA4サービスインスタンスを取得または作成
+ * @returns GA4サービスインスタンス
+ */
+const getGA4ServiceInstance = (): ReturnType<
+  typeof createGA4ServiceFunctions
+> => {
+  if (!ga4ServiceInstance) {
+    const core = createAnalyticsCore({
+      envVarName: ANALYTICS_CONSTANTS.ENV_VARS.GA4_MEASUREMENT_ID,
+      serviceName: 'GA4Service',
+      isInitialized: false,
+      serviceId: '',
+    });
+
+    let measurementId: MeasurementId;
+    try {
+      const serviceId = core.getServiceId(
+        ANALYTICS_CONSTANTS.ENV_VARS.GA4_MEASUREMENT_ID
+      );
+      measurementId = createMeasurementId(serviceId);
+    } catch {
+      measurementId = createMeasurementId('G-XXXXXXXXXX');
+      core.devWarn('GA4 measurement ID is not configured properly');
+    }
+
+    ga4ServiceInstance = createGA4ServiceFunctions(measurementId);
+  }
+  return ga4ServiceInstance;
 };
 
 // グローバルオブジェクトの拡張定義
@@ -63,73 +271,6 @@ interface UseGA4ServiceReturn {
 }
 
 /**
- * @description GA4スクリプトを動的に読み込む
- * @param measurementId - 検証済みの測定ID
- * @returns 成功状態またはエラーを含む読み込み結果のPromise
- * @example
- * ```typescript
- * const result = await loadGA4Script(measurementId);
- * if (result.success) {
- *   console.log('GA4スクリプトの読み込みが成功しました');
- * }
- * ```
- */
-const loadGA4Script = async (
-  measurementId: MeasurementId
-): Promise<GA4LoadResult> => {
-  try {
-    // 既にGA4スクリプトがDOMに追加済みかをチェック（gtag存在は初期スタブの可能性がある）
-    if (document.querySelector('script[data-ga4="true"]')) {
-      return { success: true };
-    }
-
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(
-        measurementId
-      )}`;
-      script.setAttribute('data-ga4', 'true');
-
-      let resolved = false;
-
-      script.onload = () => {
-        if (!resolved) {
-          resolved = true;
-          resolve({ success: true });
-        }
-      };
-
-      script.onerror = () => {
-        if (!resolved) {
-          resolved = true;
-          resolve({
-            success: false,
-            error: new Error('Failed to load GA4 script'),
-          });
-        }
-      };
-
-      document.head.appendChild(script);
-
-      // テスト環境での即座解決
-      if (import.meta.env.MODE === 'test') {
-        if (!resolved) {
-          resolved = true;
-          resolve({ success: true });
-        }
-      }
-    });
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error : new Error('Unknown error occurred'),
-    };
-  }
-};
-
-/**
  * @description Google Analytics 4統合カスタムフック
  * プライバシーを考慮したGA4イベント送信とスクリプト管理を提供
  * @returns GA4サービス操作用の関数とステート
@@ -150,18 +291,6 @@ const loadGA4Script = async (
 export function useGA4Service(): UseGA4ServiceReturn {
   const [isServiceEnabled, setIsServiceEnabled] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
-  const [measurementId] = useState<MeasurementId>(() => {
-    const env = import.meta.env;
-    try {
-      return createMeasurementId(env.VITE_GA4_MEASUREMENT_ID);
-    } catch {
-      // 開発環境でのみエラーログを出力
-      if (env.DEV) {
-        console.warn('GA4 measurement ID is not configured properly');
-      }
-      return createMeasurementId('G-XXXXXXXXXX'); // フォールバック値
-    }
-  });
 
   // コンポーネントのマウント状態をトラック
   const isMountedRef = useRef(true);
@@ -173,42 +302,15 @@ export function useGA4Service(): UseGA4ServiceReturn {
     // 同意がない場合は初期化しない
     if (!consentGiven) return;
 
-    // 分析機能が無効化されている場合は初期化しない
-    if (import.meta.env.VITE_ANALYTICS_ENABLED === 'false') return;
-
-    // Do Not Track設定が有効な場合は初期化しない
-    if (navigator.doNotTrack === '1') return;
-
     try {
-      // gtag関数とdataLayerを先に初期化
-      window.dataLayer = window.dataLayer || [];
-
-      if (!window.gtag) {
-        window.gtag = function (...args: unknown[]) {
-          window.dataLayer?.push(args);
-        };
-      }
-
-      const loadResult = await loadGA4Script(measurementId);
-
-      if (isMountedRef.current && loadResult.success) {
-        // GA4初期化
-        if (window.gtag) {
-          window.gtag('js', new Date());
-          window.gtag('config', measurementId, {
-            anonymize_ip: true,
-            cookie_expires: 60 * 60 * 24 * 30, // 30日
-          });
-        }
-
+      await getGA4ServiceInstance().initialize();
+      if (isMountedRef.current) {
         setIsServiceEnabled(true);
       }
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.warn('GA4 initialization failed:', error);
-      }
+    } catch {
+      // エラーハンドリングはサービス内で実行済み
     }
-  }, [consentGiven, measurementId]);
+  }, [consentGiven]);
 
   /**
    * 同意状態を設定
@@ -218,13 +320,13 @@ export function useGA4Service(): UseGA4ServiceReturn {
       setConsentGiven(consent);
 
       if (consent) {
-        void initialize();
+        initialize().catch((error) => {
+          // 適切なエラーハンドリング
+          console.warn('GA4 initialization failed:', error);
+        });
       } else {
+        getGA4ServiceInstance().disable();
         setIsServiceEnabled(false);
-      }
-
-      if (import.meta.env.DEV) {
-        console.log('[GA4Service] Consent updated:', consent);
       }
     },
     [initialize]
@@ -235,17 +337,10 @@ export function useGA4Service(): UseGA4ServiceReturn {
    */
   const trackEvent = useCallback(
     (eventName: string, parameters?: Record<string, unknown>) => {
-      if (!isServiceEnabled || !consentGiven || !window.gtag) {
+      if (!isServiceEnabled || !consentGiven) {
         return;
       }
-
-      try {
-        window.gtag('event', eventName, parameters);
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.warn('[GA4Service] Track event failed:', error);
-        }
-      }
+      getGA4ServiceInstance().trackEvent(eventName, parameters);
     },
     [isServiceEnabled, consentGiven]
   );
@@ -255,21 +350,20 @@ export function useGA4Service(): UseGA4ServiceReturn {
    */
   const trackPageView = useCallback(
     (pageTitle: string, pagePath?: string) => {
-      const parameters: Record<string, unknown> = {
-        page_title: pageTitle,
-      };
-      if (pagePath) {
-        parameters.page_location = pagePath;
+      if (!isServiceEnabled || !consentGiven) {
+        return;
       }
-      trackEvent('page_view', parameters);
+      getGA4ServiceInstance().trackPageView(pageTitle, pagePath);
     },
-    [trackEvent]
+    [isServiceEnabled, consentGiven]
   );
 
   // 初期化処理
   useEffect(() => {
     if (consentGiven) {
-      void initialize();
+      initialize().catch((error) => {
+        console.warn('GA4 initialization failed:', error);
+      });
     }
   }, [consentGiven, initialize]);
 
