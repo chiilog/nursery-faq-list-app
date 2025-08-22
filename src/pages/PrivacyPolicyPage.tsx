@@ -11,12 +11,17 @@
  * - 他のページと統一されたデザイン
  */
 
-import { Box, Heading, Text, VStack, Button } from '@chakra-ui/react';
+import { Box, Heading, Text, VStack, HStack, Switch } from '@chakra-ui/react';
 import { Layout } from '../components/Layout';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
 import { APP_CONFIG } from '../constants/app';
-import { ROUTES } from '../constants/routes';
+import { useCookieConsent } from '../hooks/useCookieConsent';
+import { useEffect, useState } from 'react';
+
+interface ToggleDetails {
+  readonly checked: boolean;
+}
 
 /**
  * @description プライバシーポリシーページコンポーネント
@@ -33,9 +38,23 @@ import { ROUTES } from '../constants/routes';
  */
 export const PrivacyPolicyPage = () => {
   const navigate = useNavigate();
+  const { consent, setConsent } = useCookieConsent();
+  const [lastUpdated, setLastUpdated] = useState<Readonly<Date> | null>(null);
 
-  const handleBack = () => {
+  useEffect(() => {
+    // 初回の同意状態の設定時刻を取得（初期化時のみ実行）
+    if (consent !== null && lastUpdated === null) {
+      setLastUpdated(new Date());
+    }
+  }, [consent, lastUpdated]);
+
+  const handleBack = (): void => {
     void navigate(-1);
+  };
+
+  const handleAnalyticsToggle = (details: ToggleDetails): void => {
+    setConsent(details.checked);
+    setLastUpdated(new Date());
   };
 
   return (
@@ -82,12 +101,12 @@ export const PrivacyPolicyPage = () => {
             <Text lineHeight={1.7} mb={3}>
               <strong>収集される情報：</strong>
             </Text>
-            <Text as="ul" lineHeight={1.7} ml={4}>
-              <Text as="li">• 訪問したページと滞在時間</Text>
-              <Text as="li">• 使用されたブラウザとデバイスの種類</Text>
-              <Text as="li">• 地域情報（都道府県レベル）</Text>
-              <Text as="li">• ボタンクリックなどの操作イベント</Text>
-            </Text>
+            <Box as="ul" listStyleType="disc" lineHeight={1.7} ml={4}>
+              <li>訪問したページと滞在時間</li>
+              <li>使用されたブラウザとデバイスの種類</li>
+              <li>地域情報（都道府県レベル）</li>
+              <li>ボタンクリックなどの操作イベント</li>
+            </Box>
           </Box>
 
           <Box>
@@ -100,15 +119,101 @@ export const PrivacyPolicyPage = () => {
             <Text lineHeight={1.7} mb={3}>
               <strong>収集される情報：</strong>
             </Text>
-            <Text as="ul" lineHeight={1.7} ml={4}>
-              <Text as="li">• マウスの動きとクリック位置</Text>
-              <Text as="li">• スクロール位置と速度</Text>
-              <Text as="li">• ページ内での操作の流れ</Text>
-              <Text as="li">• エラーやフリーズの発生状況</Text>
-            </Text>
+            <Box as="ul" listStyleType="disc" lineHeight={1.7} ml={4}>
+              <li>マウスの動きとクリック位置</li>
+              <li>スクロール位置と速度</li>
+              <li>ページ内での操作の流れ</li>
+              <li>エラーやフリーズの発生状況</li>
+            </Box>
+
             <Text lineHeight={1.7} mt={3}>
               ※フォームに入力されたテキストやパスワードなどの機密情報は記録されません。
             </Text>
+          </Box>
+
+          <Box>
+            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+              分析ツールの利用設定
+            </Heading>
+            <Text lineHeight={1.7} mb={4}>
+              以下のスイッチで分析ツールの利用を制御できます。
+              設定変更は即座に反映され、いつでも変更可能です。
+            </Text>
+
+            {/* 設定スイッチ */}
+            <Box
+              p={4}
+              borderRadius="md"
+              bgColor="blue.50"
+              borderWidth={1}
+              borderColor="blue.200"
+              _dark={{
+                bgColor: 'blue.900',
+                borderColor: 'blue.700',
+              }}
+              mb={4}
+            >
+              <VStack gap={4} align="stretch">
+                <Box>
+                  <Text fontWeight="medium" mb={2}>
+                    分析ツールの利用設定
+                  </Text>
+                  <Text
+                    fontSize="sm"
+                    color="gray.600"
+                    _dark={{ color: 'gray.400' }}
+                    mb={3}
+                  >
+                    Google Analytics 4とMicrosoft
+                    Clarityによるデータ収集を許可します
+                  </Text>
+                  <HStack justify="space-between" align="center">
+                    <Switch.Root
+                      checked={consent === true}
+                      onCheckedChange={handleAnalyticsToggle}
+                      colorPalette="blue"
+                    >
+                      <Switch.HiddenInput />
+                      <Switch.Control />
+                      <Switch.Label fontWeight="medium">
+                        分析ツールの利用を許可する
+                      </Switch.Label>
+                    </Switch.Root>
+                  </HStack>
+                </Box>
+
+                <Box
+                  pt={3}
+                  borderTop="1px solid"
+                  borderColor="blue.200"
+                  _dark={{ borderColor: 'blue.700' }}
+                >
+                  <Text
+                    fontSize="sm"
+                    color="gray.600"
+                    _dark={{ color: 'gray.400' }}
+                  >
+                    <strong>現在の状態:</strong>{' '}
+                    {consent === true
+                      ? '有効'
+                      : consent === false
+                        ? '無効'
+                        : '未設定'}
+                  </Text>
+                  {lastUpdated && (
+                    <Text
+                      fontSize="sm"
+                      color="gray.600"
+                      _dark={{ color: 'gray.400' }}
+                      mt={1}
+                    >
+                      <strong>最終更新:</strong>{' '}
+                      {lastUpdated.toLocaleString('ja-JP')}
+                    </Text>
+                  )}
+                </Box>
+              </VStack>
+            </Box>
           </Box>
 
           <Box>
@@ -123,23 +228,6 @@ export const PrivacyPolicyPage = () => {
               これにより、Wi-Fiがない環境でもアプリをご利用いただけますが、
               ブラウザの履歴やキャッシュを削除すると、保存されたデータも削除されますのでご注意ください。
             </Text>
-          </Box>
-
-          <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
-              ユーザーの権利と選択
-            </Heading>
-            <Text lineHeight={1.7} mb={4}>
-              分析ツールの使用はプライバシー設定ページで個別に有効・無効を選択できます。
-              いつでも設定を変更することが可能で、変更は即座に反映されます。
-            </Text>
-            <Box textAlign="center">
-              <Button colorScheme="blue" size="md" asChild>
-                <RouterLink to={ROUTES.PRIVACY_SETTINGS}>
-                  プライバシー設定を変更する
-                </RouterLink>
-              </Button>
-            </Box>
           </Box>
 
           <Box>
@@ -162,7 +250,7 @@ export const PrivacyPolicyPage = () => {
             pt={4}
           >
             <Text fontSize="sm" color="gray.600">
-              最終更新日: 2024年12月18日
+              最終更新日: 2025年8月22日
             </Text>
           </Box>
         </VStack>
