@@ -814,8 +814,6 @@ export interface AnalyticsContextType {
 3. ✅ `AnalyticsProvider` で両サービスと`useCookieConsent`を統合済み
 4. ✅ ページ遷移の自動トラッキング機能を実装済み
 
-````
-
 #### 2. Cookie 同意管理（useCookieConsent + AnalyticsProvider 連携）
 
 ```typescript
@@ -1051,7 +1049,7 @@ const PrivacyPolicyPage: React.FC = () => {
     </Container>
   );
 };
-````
+```
 
 #### 3. 分析イベント統合
 
