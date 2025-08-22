@@ -52,10 +52,10 @@ declare global {
 /**
  * ClarityServiceの返り値型定義
  */
-export interface UseClarityServiceReturn {
-  isInitialized: boolean;
-  hasConsent: boolean;
-  setConsent: (consent: boolean) => void;
+interface UseClarityServiceReturn {
+  readonly isInitialized: boolean;
+  readonly hasConsent: boolean;
+  readonly setConsent: (consent: boolean) => void;
 }
 
 /**
@@ -150,13 +150,12 @@ export function useClarityService(): UseClarityServiceReturn {
   const [isServiceInitialized, setIsServiceInitialized] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
   const [projectId] = useState<ClarityProjectId>(() => {
-    const id = import.meta.env.VITE_CLARITY_PROJECT_ID as unknown;
-    const projectIdStr = typeof id === 'string' ? id : undefined;
+    const env = import.meta.env;
     try {
-      return createClarityProjectId(projectIdStr);
+      return createClarityProjectId(env.VITE_CLARITY_PROJECT_ID);
     } catch {
       // 開発環境でのみエラーログを出力
-      if (import.meta.env.DEV) {
+      if (env.DEV) {
         console.warn('Clarity project ID is not configured properly');
       }
       return createClarityProjectId('test12345'); // フォールバック値

@@ -12,24 +12,24 @@ import { useLocation } from 'react-router-dom';
  * アナリティクスコンテキストの型定義
  */
 export interface AnalyticsContextType {
-  ga4: {
-    isEnabled: boolean;
-    hasConsent: boolean;
-    setConsent: (consent: boolean) => void;
-    trackEvent: (
+  readonly ga4: {
+    readonly isEnabled: boolean;
+    readonly hasConsent: boolean;
+    readonly setConsent: (consent: boolean) => void;
+    readonly trackEvent: (
       eventName: string,
       parameters?: Record<string, unknown>
     ) => void;
-    trackPageView: (pageTitle: string, pagePath?: string) => void;
+    readonly trackPageView: (pageTitle: string, pagePath?: string) => void;
   };
-  clarity: {
-    isInitialized: boolean;
-    hasConsent: boolean;
-    setConsent: (consent: boolean) => void;
+  readonly clarity: {
+    readonly isInitialized: boolean;
+    readonly hasConsent: boolean;
+    readonly setConsent: (consent: boolean) => void;
   };
   // 統合された同意管理
-  setAnalyticsConsent: (consent: boolean) => void;
-  hasAnalyticsConsent: boolean;
+  readonly setAnalyticsConsent: (consent: boolean) => void;
+  readonly hasAnalyticsConsent: boolean;
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | null>(null);

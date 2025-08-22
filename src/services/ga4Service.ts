@@ -51,12 +51,15 @@ declare global {
 /**
  * GA4サービスの返り値型定義
  */
-export interface UseGA4ServiceReturn {
-  isEnabled: boolean;
-  hasConsent: boolean;
-  setConsent: (consent: boolean) => void;
-  trackEvent: (eventName: string, parameters?: Record<string, unknown>) => void;
-  trackPageView: (pageTitle: string, pagePath?: string) => void;
+interface UseGA4ServiceReturn {
+  readonly isEnabled: boolean;
+  readonly hasConsent: boolean;
+  readonly setConsent: (consent: boolean) => void;
+  readonly trackEvent: (
+    eventName: string,
+    parameters?: Record<string, unknown>
+  ) => void;
+  readonly trackPageView: (pageTitle: string, pagePath?: string) => void;
 }
 
 /**
@@ -148,13 +151,12 @@ export function useGA4Service(): UseGA4ServiceReturn {
   const [isServiceEnabled, setIsServiceEnabled] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
   const [measurementId] = useState<MeasurementId>(() => {
-    const id = import.meta.env.VITE_GA4_MEASUREMENT_ID as unknown;
-    const measurementIdStr = typeof id === 'string' ? id : undefined;
+    const env = import.meta.env;
     try {
-      return createMeasurementId(measurementIdStr);
+      return createMeasurementId(env.VITE_GA4_MEASUREMENT_ID);
     } catch {
       // 開発環境でのみエラーログを出力
-      if (import.meta.env.DEV) {
+      if (env.DEV) {
         console.warn('GA4 measurement ID is not configured properly');
       }
       return createMeasurementId('G-XXXXXXXXXX'); // フォールバック値
