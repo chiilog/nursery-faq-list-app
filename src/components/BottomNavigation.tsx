@@ -1,7 +1,7 @@
 import { Box, HStack, VStack, Text, Drawer, Portal } from '@chakra-ui/react';
 import { IoHomeOutline, IoHome, IoMenuOutline, IoMenu } from 'react-icons/io5';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ROUTES } from '../constants/routes';
 import { APP_CONFIG } from '../constants/app';
 
@@ -47,27 +47,54 @@ export const BottomNavigation = () => {
     },
   ];
 
+  // DRY: メニューアイテムの設定を配列化
+  const menuItems = [
+    { path: ROUTES.ABOUT, label: 'このアプリについて' },
+    { path: ROUTES.PRIVACY_SETTINGS, label: 'プライバシー設定' },
+    { path: ROUTES.PRIVACY_POLICY, label: 'プライバシーポリシー' },
+  ];
+
+  // DRY: 共通スタイルの定義
+  const menuItemStyle = {
+    cursor: 'pointer' as const,
+    p: 4,
+    borderBottom: '1px solid',
+    borderColor: 'gray.100',
+    transition: 'background 0.2s',
+    css: { '&:hover': { bg: 'gray.50' } },
+  };
+
+  // KISS: 色の取得をシンプル化
+  const getItemColor = (isSelected: boolean) =>
+    isSelected ? APP_CONFIG.COLORS.PRIMARY : 'gray.600';
+
   /**
    * @description ナビゲーション項目のクリックハンドラ
    * @param item - クリックされたナビゲーション項目
    */
-  const handleNavClick = (item: NavItem) => {
-    if (item.path === '#menu') {
-      setIsDrawerOpen(!isDrawerOpen);
-    } else {
-      void navigate(item.path);
-      setIsDrawerOpen(false);
-    }
-  };
+  const handleNavClick = useCallback(
+    (item: NavItem) => {
+      if (item.path === '#menu') {
+        setIsDrawerOpen((prev) => !prev);
+      } else {
+        void navigate(item.path);
+        setIsDrawerOpen(false);
+      }
+    },
+    [navigate]
+  );
 
   /**
    * @description メニュー項目のクリックハンドラ
    * @param path - 遷移先のパス
    */
-  const handleMenuItemClick = (path: string) => {
-    void navigate(path);
-    setIsDrawerOpen(false);
-  };
+  const handleMenuItemClick = useCallback(
+    (path: string) => {
+      void navigate(path);
+      setIsDrawerOpen(false);
+    },
+    [navigate]
+  );
 
   /**
    * @description 指定されたパスが現在のアクティブパスかどうかを判定
@@ -100,37 +127,18 @@ export const BottomNavigation = () => {
               </Drawer.Header>
               <Drawer.Body p={0}>
                 <VStack align="stretch" gap={0}>
-                  <Box
-                    onClick={() => handleMenuItemClick(ROUTES.ABOUT)}
-                    cursor="pointer"
-                    p={4}
-                    borderBottom="1px solid"
-                    borderColor="gray.100"
-                    transition="background 0.2s"
-                    css={{ '&:hover': { bg: 'gray.50' } }}
-                  >
-                    <Text fontSize="md">このアプリについて</Text>
-                  </Box>
-                  <Box
-                    onClick={() => handleMenuItemClick(ROUTES.PRIVACY_SETTINGS)}
-                    cursor="pointer"
-                    p={4}
-                    borderBottom="1px solid"
-                    borderColor="gray.100"
-                    transition="background 0.2s"
-                    css={{ '&:hover': { bg: 'gray.50' } }}
-                  >
-                    <Text fontSize="md">プライバシー設定</Text>
-                  </Box>
-                  <Box
-                    onClick={() => handleMenuItemClick(ROUTES.PRIVACY_POLICY)}
-                    cursor="pointer"
-                    p={4}
-                    transition="background 0.2s"
-                    css={{ '&:hover': { bg: 'gray.50' } }}
-                  >
-                    <Text fontSize="md">プライバシーポリシー</Text>
-                  </Box>
+                  {menuItems.map((menuItem, index) => (
+                    <Box
+                      key={menuItem.path}
+                      onClick={() => handleMenuItemClick(menuItem.path)}
+                      {...menuItemStyle}
+                      borderBottom={
+                        index < menuItems.length - 1 ? '1px solid' : 'none'
+                      }
+                    >
+                      <Text fontSize="md">{menuItem.label}</Text>
+                    </Box>
+                  ))}
                 </VStack>
               </Drawer.Body>
             </Drawer.Content>
@@ -177,15 +185,12 @@ export const BottomNavigation = () => {
                   borderColor="gray.200"
                   css={{ pointerEvents: 'auto' }}
                 >
-                  <Box
-                    color={selected ? APP_CONFIG.COLORS.PRIMARY : 'gray.600'}
-                    transition="color 0.2s"
-                  >
+                  <Box color={getItemColor(selected)} transition="color 0.2s">
                     {selected ? item.activeIcon : item.icon}
                   </Box>
                   <Text
                     fontSize="xs"
-                    color={selected ? APP_CONFIG.COLORS.PRIMARY : 'gray.600'}
+                    color={getItemColor(selected)}
                     fontWeight={selected ? 'semibold' : 'normal'}
                     transition="all 0.2s"
                   >

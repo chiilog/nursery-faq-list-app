@@ -23,23 +23,24 @@ export const Layout = ({
   rightButton,
   showDefaultTitle = true,
 }: LayoutProps) => {
-  const shouldShowHeader = headerTitle || showDefaultTitle;
-  const title = headerTitle || APP_CONFIG.APP_NAME;
+  const shouldShowHeader = Boolean(headerTitle) || showDefaultTitle;
+  const displayTitle =
+    headerTitle ?? (showDefaultTitle ? APP_CONFIG.APP_NAME : '');
 
   return (
     <Box minH="100vh" bg="gray.50">
-      <Box as="header" bg="white" shadow="sm">
-        <Container maxW="container.xl" py={2}>
-          {shouldShowHeader && (
+      {shouldShowHeader && (
+        <Box as="header" bg="white" shadow="sm">
+          <Container maxW="container.xl" py={2}>
             <NurseryHeader
-              title={title}
+              title={displayTitle}
               variant={headerVariant}
               leftButton={leftButton}
               rightButton={rightButton}
             />
-          )}
-        </Container>
-      </Box>
+          </Container>
+        </Box>
+      )}
 
       <Container as="main" maxW="container.xl" py={4} pb="80px">
         {children || <Outlet />}
