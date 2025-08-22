@@ -3,7 +3,13 @@
  * GA4とMicrosoft Clarityを統合管理
  */
 
-import { createContext, useCallback, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from 'react';
 import { useGA4Service } from '../services/ga4Service';
 import { useClarityService } from '../services/clarityService';
 import { useLocation } from 'react-router-dom';
@@ -86,12 +92,15 @@ export function AnalyticsProvider({
     }
   }, [location, ga4]);
 
-  const contextValue: AnalyticsContextType = {
-    ga4,
-    clarity,
-    setAnalyticsConsent,
-    hasAnalyticsConsent: ga4.hasConsent && clarity.hasConsent,
-  };
+  const contextValue: AnalyticsContextType = useMemo(
+    () => ({
+      ga4,
+      clarity,
+      setAnalyticsConsent,
+      hasAnalyticsConsent: ga4.hasConsent && clarity.hasConsent,
+    }),
+    [ga4, clarity, setAnalyticsConsent]
+  );
 
   return (
     <AnalyticsContext.Provider value={contextValue}>

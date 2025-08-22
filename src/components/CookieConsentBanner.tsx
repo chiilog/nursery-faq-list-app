@@ -8,7 +8,7 @@
  * ```
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Text,
@@ -95,18 +95,18 @@ export const CookieConsentBanner = () => {
   /**
    * @description 「同意する」ボタンクリック時の処理
    */
-  const handleAccept = (): void => {
+  const handleAccept = useCallback((): void => {
     setAnalyticsConsent(true);
     setIsVisible(false);
-  };
+  }, [setAnalyticsConsent]);
 
   /**
    * @description 「拒否する」ボタンクリック時の処理
    */
-  const handleReject = (): void => {
+  const handleReject = useCallback((): void => {
     setAnalyticsConsent(false);
     setIsVisible(false);
-  };
+  }, [setAnalyticsConsent]);
 
   // 非表示状態では要素を完全に削除
   if (!isVisible) {
