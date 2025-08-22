@@ -19,7 +19,8 @@ afterEach(() => {
 beforeEach(() => {
   vi.stubEnv('VITE_CLARITY_PROJECT_ID', 'test12345');
   vi.stubEnv('VITE_ANALYTICS_ENABLED', 'true');
-  vi.stubEnv('DEV', true);
+  // @ts-expect-error - vi.stubEnvは環境変数を文字列として設定するため
+  vi.stubEnv('DEV', 'true');
   vi.stubEnv('MODE', 'test');
 });
 
@@ -100,9 +101,15 @@ describe('useClarityService', () => {
   });
 
   test('Do Not Track有効時は初期化されない', () => {
+    const originalDoNotTrack = Object.getOwnPropertyDescriptor(
+      navigator,
+      'doNotTrack'
+    );
+
     Object.defineProperty(navigator, 'doNotTrack', {
       value: '1',
       writable: true,
+      configurable: true,
     });
 
     const { result } = renderHook(() => useClarityService());
@@ -113,6 +120,14 @@ describe('useClarityService', () => {
 
     // Do Not Track有効なので初期化されない
     expect(result.current.isInitialized).toBe(false);
+
+    // 復元
+    if (originalDoNotTrack) {
+      Object.defineProperty(navigator, 'doNotTrack', originalDoNotTrack);
+    } else {
+      // @ts-expect-error - 元々存在しなかったプロパティを削除
+      delete navigator.doNotTrack;
+    }
   });
 
   test('分析無効設定時は初期化されない', async () => {
