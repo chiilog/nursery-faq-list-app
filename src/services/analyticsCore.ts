@@ -197,10 +197,8 @@ export const createConsentManager = () => {
    * @returns 同意済みの場合true
    */
   const getStoredConsent = (): boolean => {
-    return (
-      localStorage.getItem(ANALYTICS_CONSTANTS.CONSENT_KEY) ===
-      ANALYTICS_CONSTANTS.CONSENT_VALUES.ACCEPTED
-    );
+    const v = localStorage.getItem(ANALYTICS_CONSTANTS.CONSENT_KEY);
+    return v === ANALYTICS_CONSTANTS.CONSENT_VALUES.ACCEPTED;
   };
 
   /**
@@ -208,14 +206,12 @@ export const createConsentManager = () => {
    * @param consent - 同意状態
    */
   const storeConsent = (consent: boolean): void => {
-    if (consent) {
-      localStorage.setItem(
-        ANALYTICS_CONSTANTS.CONSENT_KEY,
-        ANALYTICS_CONSTANTS.CONSENT_VALUES.ACCEPTED
-      );
-    } else {
-      localStorage.removeItem(ANALYTICS_CONSTANTS.CONSENT_KEY);
-    }
+    localStorage.setItem(
+      ANALYTICS_CONSTANTS.CONSENT_KEY,
+      consent
+        ? ANALYTICS_CONSTANTS.CONSENT_VALUES.ACCEPTED
+        : ANALYTICS_CONSTANTS.CONSENT_VALUES.DECLINED
+    );
   };
 
   return {
