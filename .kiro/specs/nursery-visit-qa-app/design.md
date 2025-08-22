@@ -816,124 +816,29 @@ export interface AnalyticsContextType {
 
 ````
 
-#### 2. プライバシー管理コンポーネント
+#### 2. Cookie 同意管理（useCookieConsent + AnalyticsProvider 連携）
 
 ```typescript
-// プライバシー設定管理
-interface PrivacySettings {
-  analyticsConsent: boolean;
-  clarityConsent: boolean;
-  consentTimestamp: Date;
-  consentVersion: string;
-}
+// Cookie 同意管理フック（現行実装）
+import { useCookieConsent } from '../../src/hooks/useCookieConsent';
+import { useAnalytics } from '../../src/hooks/useAnalytics';
 
-class PrivacyManager {
-  private settings: PrivacySettings;
-  private storageKey = 'privacy-settings';
-
-  constructor() {
-    this.loadSettings();
-  }
-
-  // 設定の読み込み
-  private loadSettings(): void {
-    const stored = localStorage.getItem(this.storageKey);
-    if (stored) {
-      this.settings = JSON.parse(stored);
-      // Date を復元
-      if (this.settings?.consentTimestamp) {
-        this.settings.consentTimestamp = new Date(this.settings.consentTimestamp as any);
-      }
-    } else {
-      this.settings = {
-        analyticsConsent: false,
-        clarityConsent: false,
-        consentTimestamp: new Date(),
-        consentVersion: '1.0'
-      };
-    }
-  }
-
-  // 設定の保存
-  private saveSettings(): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.settings));
-  }
-
-  // 設定の取得（読み取り専用）
-  getSettings(): Readonly<PrivacySettings> {
-    return this.settings;
-  }
-
-  getConsentTimestamp(): Date {
-    return this.settings.consentTimestamp;
-  }
-
-  // 同意状態の取得
-  getAnalyticsConsent(): boolean {
-    return this.settings.analyticsConsent;
-  }
-
-  getClarityConsent(): boolean {
-    return this.settings.clarityConsent;
-  }
-
-  // 同意状態の更新
-  setAnalyticsConsent(consent: boolean): void {
-    this.settings.analyticsConsent = consent;
-    this.settings.consentTimestamp = new Date();
-    this.saveSettings();
-  }
-
-  setClarityConsent(consent: boolean): void {
-    this.settings.clarityConsent = consent;
-    this.settings.consentTimestamp = new Date();
-    this.saveSettings();
-  }
-
-  // 全体同意の設定
-  setAllConsent(consent: boolean): void {
-    this.settings.analyticsConsent = consent;
-    this.settings.clarityConsent = consent;
-    this.settings.consentTimestamp = new Date();
-    this.saveSettings();
-  }
-
-  // 同意が必要かどうかの判定
-  needsConsent(): boolean {
-    return !this.settings.consentTimestamp ||
-           this.isConsentExpired();
-  }
-
-  private isConsentExpired(): boolean {
-    const expiryDays = 365; // 1年間有効
-    const expiryDate = new Date(this.settings.consentTimestamp);
-    expiryDate.setDate(expiryDate.getDate() + expiryDays);
-    return new Date() > expiryDate;
-  }
-}
-
-// React コンポーネント
+// Cookie 同意バナーコンポーネント
 const CookieConsentBanner: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const privacyManager = usePrivacyManager();
+  const { consent, setConsent } = useCookieConsent();
+  const { ga4, clarity, setAnalyticsConsent } = useAnalytics();
 
-  useEffect(() => {
-    setIsVisible(privacyManager.needsConsent());
-  }, []);
+  // 同意状態が null（未設定）の場合にバナーを表示
+  const isVisible = consent === null;
 
   const handleAccept = () => {
-    privacyManager.setAllConsent(true);
-    setIsVisible(false);
-    // 分析サービスを初期化・同意反映
-    analyticsService.setConsent(true);
-    clarityService.setConsent(true);
-    analyticsService.initialize();
-    clarityService.initialize();
+    // 統一された同意管理API を使用
+    setAnalyticsConsent(true);
   };
 
   const handleDecline = () => {
-    privacyManager.setAllConsent(false);
-    setIsVisible(false);
+    // 統一された同意管理API を使用
+    setAnalyticsConsent(false);
   };
 
   if (!isVisible) return null;
@@ -968,92 +873,11 @@ const CookieConsentBanner: React.FC = () => {
   );
 };
 
-const PrivacySettingsPage: React.FC = () => {
-  const privacyManager = usePrivacyManager();
-  const [analyticsConsent, setAnalyticsConsent] = useState(
-    privacyManager.getAnalyticsConsent()
-  );
-  const [clarityConsent, setClarityConsent] = useState(
-    privacyManager.getClarityConsent()
-  );
-
-  const handleAnalyticsChange = (consent: boolean) => {
-    setAnalyticsConsent(consent);
-    privacyManager.setAnalyticsConsent(consent);
-
-    if (consent) {
-      analyticsService.initialize();
-    } else {
-      analyticsService.disable();
-    }
-  };
-
-  const handleClarityChange = (consent: boolean) => {
-    setClarityConsent(consent);
-    privacyManager.setClarityConsent(consent);
-
-    if (consent) {
-      clarityService.initialize();
-    } else {
-      clarityService.disable();
-    }
-  };
-
-  return (
-    <VStack spacing={6} align="stretch">
-      <Heading size="md">プライバシー設定</Heading>
-
-      <Box>
-        <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="analytics-consent" mb="0">
-            Googleアナリティクス
-          </FormLabel>
-          <Switch
-            id="analytics-consent"
-            isChecked={analyticsConsent}
-            onChange={(e) => handleAnalyticsChange(e.target.checked)}
-          />
-        </FormControl>
-        <Text fontSize="sm" color="gray.600" mt={1}>
-          ページビューと機能使用状況を分析します
-        </Text>
-      </Box>
-
-      <Box>
-        <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="clarity-consent" mb="0">
-            Microsoft Clarity
-          </FormLabel>
-          <Switch
-            id="clarity-consent"
-            isChecked={clarityConsent}
-            onChange={(e) => handleClarityChange(e.target.checked)}
-          />
-        </FormControl>
-        <Text fontSize="sm" color="gray.600" mt={1}>
-          ユーザー操作の録画とヒートマップを収集します
-        </Text>
-      </Box>
-
-      <Divider />
-
-      <Box>
-        <Text fontSize="sm" color="gray.600">
-          最終更新: {privacyManager.getConsentTimestamp().toLocaleDateString()}
-        </Text>
-        <Text fontSize="sm" color="gray.600">
-          設定はいつでも変更できます
-        </Text>
-      </Box>
-
-      <Box mt={4}>
-        <Link to="/privacy-policy" color="blue.500">
-          プライバシーポリシーを確認する
-        </Link>
-      </Box>
-    </VStack>
-  );
-};
+// AnalyticsProvider による自動管理の特徴：
+// - 同意状態は useCookieConsent で統一管理
+// - GA4/Clarity の初期化・同意反映は Provider 側で自動実行
+// - ページ遷移の PV 送信も Provider 側で自動トラッキング（手動送信は不要）
+// - 同意取得後は両サービスが自動的に有効化される
 
 // プライバシーポリシーページ
 const PrivacyPolicyPage: React.FC = () => {
