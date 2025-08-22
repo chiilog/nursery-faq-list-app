@@ -8,7 +8,7 @@
  * ```
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   Box,
   Text,
@@ -20,7 +20,7 @@ import {
   Link,
 } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
-import { useAnalytics } from '../hooks/useAnalytics';
+import { useCookieConsent } from '../hooks/useCookieConsent';
 
 /**
  * @description レスポンシブ設定の型定義
@@ -75,8 +75,7 @@ const RESPONSIVE_PRESETS = {
  * <CookieConsentBanner />
  */
 export const CookieConsentBanner = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const { hasAnalyticsConsent, setAnalyticsConsent } = useAnalytics();
+  const { consent, setConsent, loading } = useCookieConsent();
 
   // レスポンシブデザインの設定
   const responsiveConfig: ResponsiveConfig =
@@ -86,30 +85,22 @@ export const CookieConsentBanner = () => {
       md: RESPONSIVE_PRESETS.desktop,
     }) ?? RESPONSIVE_PRESETS.mobile;
 
-  useEffect(() => {
-    // 初回マウント時に同意状態をチェック
-    // 同意がない場合にバナーを表示
-    setIsVisible(!hasAnalyticsConsent);
-  }, [hasAnalyticsConsent]);
-
   /**
    * @description 「同意する」ボタンクリック時の処理
    */
   const handleAccept = useCallback((): void => {
-    setAnalyticsConsent(true);
-    setIsVisible(false);
-  }, [setAnalyticsConsent]);
+    setConsent(true);
+  }, [setConsent]);
 
   /**
    * @description 「拒否する」ボタンクリック時の処理
    */
   const handleReject = useCallback((): void => {
-    setAnalyticsConsent(false);
-    setIsVisible(false);
-  }, [setAnalyticsConsent]);
+    setConsent(false);
+  }, [setConsent]);
 
-  // 非表示状態では要素を完全に削除
-  if (!isVisible) {
+  // ローディング中または同意状態が決定済みの場合は非表示
+  if (loading || consent !== null) {
     return null;
   }
 

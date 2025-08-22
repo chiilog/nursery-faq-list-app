@@ -7,23 +7,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderWithProviders } from '../test/test-utils';
 import { CookieConsentBanner } from './CookieConsentBanner';
 
-// useAnalyticsフックのモック
-vi.mock('../hooks/useAnalytics', () => ({
-  useAnalytics: vi.fn(() => ({
-    ga4: {
-      isEnabled: false,
-      hasConsent: false,
-      setConsent: vi.fn(),
-      trackEvent: vi.fn(),
-      trackPageView: vi.fn(),
-    },
-    clarity: {
-      isInitialized: false,
-      hasConsent: false,
-      setConsent: vi.fn(),
-    },
-    setAnalyticsConsent: vi.fn(),
-    hasAnalyticsConsent: false,
+// useCookieConsentフックのモック
+vi.mock('../hooks/useCookieConsent', () => ({
+  useCookieConsent: vi.fn(() => ({
+    consent: null,
+    setConsent: vi.fn(),
+    loading: false,
   })),
 }));
 
