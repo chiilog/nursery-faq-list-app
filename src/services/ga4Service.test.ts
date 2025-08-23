@@ -131,6 +131,9 @@ describe('useGA4Service', () => {
     });
 
     it('初期化完了後にカスタムイベント送信が正常に動作する', async () => {
+      // DNT の影響を排除して通常環境で検証
+      cleanupAnalyticsTest();
+      setupAnalyticsTest({ doNotTrack: '0' });
       const { result } = renderHook(() => useGA4Service());
 
       await act(async () => {
@@ -156,6 +159,8 @@ describe('useGA4Service', () => {
     });
 
     it('初期化完了後にページビューイベント送信が正常に動作する', async () => {
+      cleanupAnalyticsTest();
+      setupAnalyticsTest({ doNotTrack: '0' });
       const { result } = renderHook(() => useGA4Service());
 
       await act(async () => {
@@ -222,6 +227,8 @@ describe('useGA4Service', () => {
     });
 
     it('GA4初期化時にテストモードが正しく設定される', async () => {
+      cleanupAnalyticsTest();
+      setupAnalyticsTest({ doNotTrack: '0' });
       const { result } = renderHook(() => useGA4Service());
 
       await act(async () => {
