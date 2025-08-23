@@ -29,6 +29,9 @@ export const TEST_CONSTANTS = {
   },
 } as const;
 
+// import.meta.env の元の PropertyDescriptor を保存
+let originalImportMetaEnvDescriptor: PropertyDescriptor | null = null;
+
 /**
  * @description テストイベントデータを生成するファクトリー関数
  */
@@ -105,6 +108,12 @@ export const setupAnalyticsTest = (
     String(options.analyticsEnabled !== false)
   );
 
+  // 最初の呼び出し時に元の env PropertyDescriptor を保存
+  if (originalImportMetaEnvDescriptor === null) {
+    originalImportMetaEnvDescriptor =
+      Object.getOwnPropertyDescriptor(import.meta, 'env') || null;
+  }
+
   Object.defineProperty(import.meta, 'env', {
     value: {
       DEV: false,
@@ -145,6 +154,15 @@ export const cleanupAnalyticsTest = () => {
   cleanupGlobalAnalytics();
   vi.unstubAllEnvs();
   vi.clearAllMocks();
+
+  // import.meta.env を元の状態に復元
+  if (originalImportMetaEnvDescriptor) {
+    Object.defineProperty(import.meta, 'env', originalImportMetaEnvDescriptor);
+    originalImportMetaEnvDescriptor = null;
+  } else {
+    // 元の PropertyDescriptor がない場合は削除
+    delete (import.meta as unknown as Record<string, unknown>).env;
+  }
 };
 
 /**
