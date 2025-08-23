@@ -888,7 +888,7 @@ const CookieConsentBanner: React.FC = () => {
 // AnalyticsProvider による自動管理の特徴：
 // - 同意状態は useCookieConsent で統一管理
 // - GA4/Clarity の初期化・同意反映は Provider 側で自動実行
-// - ページ遷移の PV 送信も Provider 側で自動トラッキング（手動送信は不要）
+// - ページ遷移の PV 送信は Router レベル（AnalyticsRouter）で実装（Provider は送信しない）
 // - 同意取得後は両サービスが自動的に有効化される
 
 // プライバシーポリシーページ
