@@ -15,6 +15,8 @@ export interface AnalyticsContextType {
   // 統合された同意管理
   readonly setAnalyticsConsent: (consent: boolean) => void;
   readonly hasAnalyticsConsent: boolean;
+  // 統合されたイベントトラッキング
+  readonly trackEvent: (name: string, params?: Record<string, unknown>) => void;
 }
 
 export const AnalyticsContext = createContext<AnalyticsContextType | null>(

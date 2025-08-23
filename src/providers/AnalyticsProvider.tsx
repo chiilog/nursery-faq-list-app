@@ -12,7 +12,6 @@ import {
   useClarityService,
   type UseClarityServiceReturn,
 } from '../services/clarityService';
-import { useLocation } from 'react-router-dom';
 import { useCookieConsent } from '../hooks/useCookieConsent';
 import {
   AnalyticsContext,
@@ -30,7 +29,6 @@ interface AnalyticsProviderProps {
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const ga4: UseGA4ServiceReturn = useGA4Service();
   const clarity: UseClarityServiceReturn = useClarityService();
-  const location = useLocation();
   const { consent, setConsent } = useCookieConsent();
 
   // 統合された同意管理
@@ -43,6 +41,18 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     [setConsent, ga4, clarity]
   );
 
+  // 統合されたイベントトラッキング
+  // GA4のみがカスタムイベントをサポート（Clarityはセッションレコーディングのため不要）
+  const trackEvent = useCallback(
+    (name: string, params?: Record<string, unknown>) => {
+      // 同意がない場合は送信しない
+      if (consent !== true) return;
+      // GA4にイベントを送信
+      ga4.trackEvent(name, params);
+    },
+    [ga4, consent]
+  );
+
   // 同意状態の変更時にサービスに反映
   useEffect(() => {
     if (consent !== null) {
@@ -52,24 +62,15 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     }
   }, [consent, ga4, clarity]);
 
-  // ページ遷移を自動トラッキング
-  useEffect(() => {
-    if (ga4.isEnabled && ga4.hasConsent) {
-      // ページタイトルとパスを送信
-      const pageTitle = document.title || 'Untitled Page';
-      ga4.trackPageView(pageTitle, location.pathname);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, ga4.isEnabled, ga4.hasConsent, ga4.trackPageView]);
-
   const contextValue: AnalyticsContextType = useMemo(
     () => ({
       ga4,
       clarity,
       setAnalyticsConsent,
       hasAnalyticsConsent: consent === true,
+      trackEvent,
     }),
-    [ga4, clarity, setAnalyticsConsent, consent]
+    [ga4, clarity, setAnalyticsConsent, consent, trackEvent]
   );
 
   return (
