@@ -130,61 +130,6 @@ describe('useGA4Service', () => {
       expect(mockedReactGA.initialize).not.toHaveBeenCalled();
     });
 
-    it('初期化完了後にカスタムイベント送信が正常に動作する', async () => {
-      // DNT の影響を排除して通常環境で検証
-      cleanupAnalyticsTest();
-      setupAnalyticsTest({ doNotTrack: '0' });
-      const { result } = renderHook(() => useGA4Service());
-
-      await act(async () => {
-        result.current.setConsent(true);
-        // 非同期処理の完了を待機
-        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
-      });
-
-      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
-        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
-      });
-
-      // 初期化時のコールをクリア
-      mockedReactGA.event.mockClear();
-
-      const testEvent = createTestEventData();
-      await act(async () => {
-        result.current.trackEvent(testEvent.eventName, testEvent.parameters);
-        await waitForAsyncOperation(10);
-      });
-
-      expectReactGAEvent(testEvent.eventName, testEvent.parameters);
-    });
-
-    it('初期化完了後にページビューイベント送信が正常に動作する', async () => {
-      cleanupAnalyticsTest();
-      setupAnalyticsTest({ doNotTrack: '0' });
-      const { result } = renderHook(() => useGA4Service());
-
-      await act(async () => {
-        result.current.setConsent(true);
-        // 非同期処理の完了を待機
-        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
-      });
-
-      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
-        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
-      });
-
-      // 初期化時のコールをクリア
-      mockedReactGA.send.mockClear();
-
-      const testPageView = createTestPageViewData();
-      await act(async () => {
-        result.current.trackPageView(testPageView.title, testPageView.page);
-        await waitForAsyncOperation(10);
-      });
-
-      expectReactGASend(testPageView);
-    });
-
     it('ユーザー同意がない場合はイベント送信を行わない', async () => {
       const { result } = renderHook(() => useGA4Service());
 
@@ -225,10 +170,68 @@ describe('useGA4Service', () => {
       // アンマウント時にクリーンアップが実行される
       expect(() => unmount()).not.toThrow();
     });
+  });
+
+  describe('通常環境でのGA4動作テスト', () => {
+    beforeEach(() => {
+      setupAnalyticsTest();
+    });
+
+    afterEach(() => {
+      cleanupAnalyticsTest();
+    });
+
+    it('初期化完了後にカスタムイベント送信が正常に動作する', async () => {
+      const { result } = renderHook(() => useGA4Service());
+
+      await act(async () => {
+        result.current.setConsent(true);
+        // 非同期処理の完了を待機
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
+      });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
+        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
+      });
+
+      // 初期化時のコールをクリア
+      mockedReactGA.event.mockClear();
+
+      const testEvent = createTestEventData();
+      await act(async () => {
+        result.current.trackEvent(testEvent.eventName, testEvent.parameters);
+        await waitForAsyncOperation(10);
+      });
+
+      expectReactGAEvent(testEvent.eventName, testEvent.parameters);
+    });
+
+    it('初期化完了後にページビューイベント送信が正常に動作する', async () => {
+      const { result } = renderHook(() => useGA4Service());
+
+      await act(async () => {
+        result.current.setConsent(true);
+        // 非同期処理の完了を待機
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
+      });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
+        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
+      });
+
+      // 初期化時のコールをクリア
+      mockedReactGA.send.mockClear();
+
+      const testPageView = createTestPageViewData();
+      await act(async () => {
+        result.current.trackPageView(testPageView.title, testPageView.page);
+        await waitForAsyncOperation(10);
+      });
+
+      expectReactGASend(testPageView);
+    });
 
     it('GA4初期化時にテストモードが正しく設定される', async () => {
-      cleanupAnalyticsTest();
-      setupAnalyticsTest({ doNotTrack: '0' });
       const { result } = renderHook(() => useGA4Service());
 
       await act(async () => {
