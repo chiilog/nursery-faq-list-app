@@ -31,6 +31,8 @@ export const TEST_CONSTANTS = {
 
 // import.meta.env の元の PropertyDescriptor を保存
 let originalImportMetaEnvDescriptor: PropertyDescriptor | null = null;
+// navigator.doNotTrack の元の PropertyDescriptor を保存
+let originalDoNotTrackDescriptor: PropertyDescriptor | null = null;
 
 /**
  * @description テストイベントデータを生成するファクトリー関数
@@ -128,9 +130,13 @@ export const setupAnalyticsTest = (
     configurable: true,
   });
 
-  // Do Not Trackを設定
+  // Do Not Track を設定（元の記述子を保存してから上書き）
+  if (originalDoNotTrackDescriptor === null) {
+    originalDoNotTrackDescriptor =
+      Object.getOwnPropertyDescriptor(navigator, 'doNotTrack') ?? null;
+  }
   Object.defineProperty(navigator, 'doNotTrack', {
-    value: options.doNotTrack || '0',
+    value: options.doNotTrack ?? '0',
     writable: true,
     configurable: true,
   });
@@ -162,6 +168,18 @@ export const cleanupAnalyticsTest = () => {
   } else {
     // 元の PropertyDescriptor がない場合は削除
     delete (import.meta as unknown as Record<string, unknown>).env;
+  }
+
+  // navigator.doNotTrack を元の状態に復元
+  if (originalDoNotTrackDescriptor) {
+    Object.defineProperty(
+      navigator,
+      'doNotTrack',
+      originalDoNotTrackDescriptor
+    );
+    originalDoNotTrackDescriptor = null;
+  } else {
+    delete (navigator as unknown as Record<string, unknown>).doNotTrack;
   }
 };
 
