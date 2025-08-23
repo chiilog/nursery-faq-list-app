@@ -20,8 +20,10 @@ export function AnalyticsRouter({ children }: AnalyticsRouterProps) {
 
   useEffect(() => {
     // ページ遷移時にページビューイベントを送信
-    trackPageView(location.pathname);
-  }, [location.pathname, trackPageView]);
+    const { pathname, search, hash } = location;
+    const path = `${pathname}${search}${hash}`;
+    trackPageView(path);
+  }, [location.pathname, location.search, location.hash, trackPageView]);
 
   return <>{children}</>;
 }
