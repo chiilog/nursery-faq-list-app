@@ -985,7 +985,7 @@ const PrivacyPolicyPage: React.FC = () => {
             <UnorderedList spacing={2} ml={4}>
               <ListItem>初回アクセス時の同意バナーで分析機能の使用を選択</ListItem>
               <ListItem>プライバシー設定ページでいつでも設定を変更</ListItem>
-              <ListItem>個別に Google Analytics と Microsoft Clarity を制御</ListItem>
+              <ListItem>分析機能は一括で有効/無効を切り替え</ListItem>
               <ListItem>ブラウザの Do Not Track 設定の利用</ListItem>
             </UnorderedList>
           </VStack>
