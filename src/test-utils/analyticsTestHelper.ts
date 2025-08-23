@@ -107,6 +107,7 @@ export const setupAnalyticsTest = (
   mockedReactGA.initialize.mockClear();
   mockedReactGA.event.mockClear();
   mockedReactGA.send.mockClear();
+  mockedReactGA.gtag.mockClear();
 
   // シングルトンインスタンスをリセット
   resetGA4ServiceInstance();
