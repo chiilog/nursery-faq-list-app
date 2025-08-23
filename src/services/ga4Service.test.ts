@@ -22,6 +22,7 @@ vi.mock('react-ga4', () => ({
     initialize: vi.fn(),
     event: vi.fn(),
     send: vi.fn(),
+    gtag: vi.fn(),
   },
 }));
 
