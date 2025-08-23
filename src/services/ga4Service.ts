@@ -237,13 +237,29 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
   const updateConsent = (granted: boolean): void => {
     if (!core.canExecute()) return;
     try {
-      // react-ga4のgtagメソッドを使用してConsent Mode v2を更新
+      // ReactGA.gtagの存在確認
+      if (typeof ReactGA.gtag !== 'function') {
+        core.devWarn('Update consent skipped: ReactGA.gtag is not available');
+        return;
+      }
+
+      // Consent Mode v2の4つのパラメータで更新
       ReactGA.gtag(
         'consent',
         'update',
         granted
-          ? { analytics_storage: 'granted', ad_storage: 'granted' }
-          : { analytics_storage: 'denied', ad_storage: 'denied' }
+          ? {
+              analytics_storage: 'granted',
+              ad_storage: 'granted',
+              ad_user_data: 'granted',
+              ad_personalization: 'granted',
+            }
+          : {
+              analytics_storage: 'denied',
+              ad_storage: 'denied',
+              ad_user_data: 'denied',
+              ad_personalization: 'denied',
+            }
       );
     } catch (error) {
       core.devWarn('Update consent failed:', error);
