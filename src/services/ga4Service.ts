@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import ReactGA from 'react-ga4';
 import {
   createAnalyticsCore,
   type AnalyticsConfig,
@@ -60,7 +61,7 @@ export const createMeasurementId = (id: string | undefined): MeasurementId => {
 };
 
 /**
- * @description GA4サービスの関数型実装
+ * @description GA4サービスの関数型実装（react-ga4使用）
  * @param measurementId - 測定ID
  * @returns GA4サービス関数群
  */
@@ -77,59 +78,7 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
   const core = createAnalyticsCore(config);
 
   /**
-   * @description GA4スクリプトを動的に読み込む
-   * @returns 読み込み結果のPromise
-   */
-  const loadGA4Script = async (): Promise<void> => {
-    // 既にGA4スクリプトがDOMに追加済みかをチェック
-    if (document.querySelector('script[data-ga4="true"]')) {
-      return;
-    }
-
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(
-        measurementId
-      )}`;
-      script.setAttribute('data-ga4', 'true');
-
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load GA4 script'));
-
-      document.head.appendChild(script);
-
-      // テスト環境での即座解決
-      if (import.meta.env.MODE === 'test') {
-        resolve();
-      }
-    });
-  };
-
-  /**
-   * @description gtag関数を初期化
-   */
-  const initializeGtag = (): void => {
-    // gtag関数とdataLayerを先に初期化
-    window.dataLayer = window.dataLayer || [];
-
-    if (!window.gtag) {
-      window.gtag = function (...args: unknown[]) {
-        window.dataLayer?.push(args);
-      };
-    }
-
-    // GA4初期化
-    window.gtag('js', new Date());
-    window.gtag('config', measurementId, {
-      anonymize_ip: true,
-      cookie_expires: 60 * 60 * 24 * 30, // 30日
-      send_page_view: false,
-    });
-  };
-
-  /**
-   * @description GA4サービスを初期化
+   * @description GA4サービスを初期化（react-ga4使用）
    * @returns 初期化結果のPromise
    */
   const initialize = async (): Promise<AnalyticsResult> => {
@@ -141,19 +90,27 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
       return { success: true, data: undefined };
     }
 
-    return safeExecute(async () => {
-      await loadGA4Script();
-      initializeGtag();
+    return safeExecute(() => {
+      // react-ga4による初期化
+      ReactGA.initialize(measurementId, {
+        testMode: import.meta.env.MODE === 'test',
+        gaOptions: {
+          anonymize_ip: true,
+          cookie_expires: 60 * 60 * 24 * 30, // 30日
+          send_page_view: false, // 手動でページビューを送信
+        },
+      });
+
       isInitialized = true;
       config.isInitialized = true;
-      core.devLog('GA4 initialized successfully');
+      core.devLog('GA4 initialized successfully with react-ga4');
       return { success: true as const, data: undefined as void };
     }, 'GA4 initialization').then((result) => {
       if (result === null) {
         const analyticsError = new AnalyticsError(
           AnalyticsErrorType.INITIALIZATION_FAILED,
           'GA4Service',
-          'Failed to initialize GA4 service'
+          'Failed to initialize GA4 service with react-ga4'
         );
         return { success: false as const, error: analyticsError };
       }
@@ -171,7 +128,7 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
   };
 
   /**
-   * @description イベントをトラッキング
+   * @description イベントをトラッキング（react-ga4使用）
    * @param eventName - イベント名
    * @param parameters - イベントパラメータ
    */
@@ -179,30 +136,41 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
     eventName: string,
     parameters?: Record<string, unknown>
   ): void => {
-    if (!core.canExecute() || !window.gtag) {
+    if (!core.canExecute() || !isInitialized) {
       return;
     }
 
     try {
-      window.gtag('event', eventName, parameters);
+      ReactGA.event(eventName, parameters);
     } catch (error) {
       core.devWarn('Track event failed:', error);
     }
   };
 
   /**
-   * @description ページビューをトラッキング
+   * @description ページビューをトラッキング（react-ga4使用）
    * @param pageTitle - ページタイトル
    * @param pagePath - ページパス
    */
   const trackPageView = (pageTitle: string, pagePath?: string): void => {
-    const parameters: Record<string, unknown> = {
-      page_title: pageTitle,
-    };
-    if (pagePath) {
-      parameters.page_location = pagePath;
+    if (!core.canExecute() || !isInitialized) {
+      return;
     }
-    trackEvent('page_view', parameters);
+
+    try {
+      const hitData: Record<string, unknown> = {
+        hitType: 'pageview',
+        title: pageTitle,
+      };
+
+      if (pagePath) {
+        hitData.page = pagePath;
+      }
+
+      ReactGA.send(hitData);
+    } catch (error) {
+      core.devWarn('Track page view failed:', error);
+    }
   };
 
   return {
@@ -274,14 +242,6 @@ const getGA4ServiceInstance = (): ReturnType<
   return ga4ServiceInstance;
 };
 
-// グローバルオブジェクトの拡張定義
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (command: string, ...args: unknown[]) => void;
-  }
-}
-
 /**
  * GA4サービスの返り値型定義
  */
@@ -297,7 +257,7 @@ export interface UseGA4ServiceReturn {
 }
 
 /**
- * @description GA4サービスを管理するReactフック。Cookieの同意管理、サービスの初期化、イベント追跡を提供します。
+ * @description GA4サービスを管理するReactフック。react-ga4ライブラリを使用してCookieの同意管理、サービスの初期化、イベント追跡を提供します。
  * @returns GA4サービスの状態と操作関数を含むオブジェクト
  * @example
  * ```typescript
