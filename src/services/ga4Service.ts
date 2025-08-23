@@ -320,9 +320,13 @@ export function useGA4Service(): UseGA4ServiceReturn {
     if (!consentGiven) return;
 
     try {
-      await getGA4ServiceInstance().initialize();
-      if (isMountedRef.current) {
-        setIsServiceEnabled(true);
+      const serviceInstance = getGA4ServiceInstance();
+      const result = await serviceInstance.initialize();
+
+      if (isMountedRef.current && result.success) {
+        // no-opサービス（Analytics無効時）ではisEnabledをfalseのままに保持
+        const isRealService = serviceInstance.isInitialized;
+        setIsServiceEnabled(isRealService);
       }
     } catch {
       // エラーハンドリングはサービス内で実行済み
@@ -337,7 +341,8 @@ export function useGA4Service(): UseGA4ServiceReturn {
       setConsentGiven(consent);
 
       if (consent) {
-        initialize().catch((error) => {
+        // Promiseの適切な処理
+        void initialize().catch((error) => {
           // 適切なエラーハンドリング
           console.warn('GA4 initialization failed:', error);
         });
@@ -378,13 +383,13 @@ export function useGA4Service(): UseGA4ServiceReturn {
   // 初期化処理
   useEffect(() => {
     if (consentGiven) {
-      initialize().catch((error) => {
+      void initialize().catch((error) => {
         console.warn('GA4 initialization failed:', error);
       });
     }
   }, [consentGiven, initialize]);
 
-  // クリーンアップ
+  // マウント状態の管理
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
