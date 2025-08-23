@@ -142,28 +142,6 @@ describe('useGA4Service', () => {
       expect(mockedReactGA.event).not.toHaveBeenCalled();
     });
 
-    it('React hooksの再レンダリング時に状態が正しく保持される', async () => {
-      const { result, rerender } = renderHook(() => useGA4Service());
-
-      // 最初の同意設定
-      await act(async () => {
-        result.current.setConsent(true);
-        // 非同期処理の完了を待機
-        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
-      });
-
-      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
-        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
-      });
-
-      // フックの再レンダリング
-      rerender();
-
-      // 同じ状態が維持されることを確認
-      expect(result.current.isEnabled).toBe(true);
-      expect(result.current.hasConsent).toBe(true);
-    });
-
     it('コンポーネントアンマウント時にクリーンアップが正常に実行される', () => {
       const { unmount } = renderHook(() => useGA4Service());
 
@@ -276,6 +254,28 @@ describe('useGA4Service', () => {
           },
         })
       );
+    });
+
+    it('React hooksの再レンダリング時に状態が正しく保持される', async () => {
+      const { result, rerender } = renderHook(() => useGA4Service());
+
+      // 最初の同意設定
+      await act(async () => {
+        result.current.setConsent(true);
+        // 非同期処理の完了を待機
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
+      });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
+        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
+      });
+
+      // フックの再レンダリング
+      rerender();
+
+      // 同じ状態が維持されることを確認
+      expect(result.current.isEnabled).toBe(true);
+      expect(result.current.hasConsent).toBe(true);
     });
   });
 
