@@ -54,10 +54,31 @@ export const createTestPageViewData = (
 
 /**
  * @description 非同期処理の待機用ヘルパー関数
+ * フェイクタイマーが有効な場合は即座に解決し、そうでなければsetTimeoutを使用
  */
 export const waitForAsyncOperation = (
   duration: number = TEST_CONSTANTS.WAIT_TIME.MEDIUM
-) => new Promise((resolve) => setTimeout(resolve, duration));
+) => {
+  // フェイクタイマーが有効な場合は即座に解決
+  if (vi.isFakeTimers()) {
+    return Promise.resolve();
+  }
+  // 通常のタイマーを使用
+  return new Promise((resolve) => setTimeout(resolve, duration));
+};
+
+/**
+ * @description フェイクタイマー使用時の時間進行用ヘルパー関数
+ * フェイクタイマーが有効でない場合は何もしない
+ */
+export const advanceTimersForAsync = async (
+  duration: number = TEST_CONSTANTS.WAIT_TIME.MEDIUM
+) => {
+  if (vi.isFakeTimers()) {
+    vi.advanceTimersByTime(duration);
+    await vi.runAllTimersAsync();
+  }
+};
 
 /**
  * @description GA4テスト環境をセットアップする関数
@@ -84,8 +105,6 @@ export const setupAnalyticsTest = (
     String(options.analyticsEnabled !== false)
   );
 
-  // @ts-expect-error - vi.stubEnvは環境変数を文字列として設定するため
-  vi.stubEnv('DEV', 'false');
   Object.defineProperty(import.meta, 'env', {
     value: {
       DEV: false,
