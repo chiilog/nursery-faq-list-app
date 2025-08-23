@@ -1,9 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import {
-  mockGlobalAnalytics,
-  cleanupGlobalAnalytics,
-} from '../test-utils/mockUtils';
+  setupAnalyticsTest,
+  cleanupAnalyticsTest,
+  TEST_CONSTANTS,
+  createTestEventData,
+  createTestPageViewData,
+  waitForAsyncOperation,
+  expectReactGAEvent,
+  expectReactGASend,
+  mockedReactGA,
+} from '../test-utils/analyticsTestHelper';
+import { useGA4Service } from './ga4Service';
 
 // setup.tsのモックを無効化
 vi.unmock('../services/ga4Service');
@@ -23,155 +31,14 @@ vi.mock('../utils/environment', () => ({
   safeExecute: vi.fn((operation) => Promise.resolve(operation())),
 }));
 
-import ReactGA from 'react-ga4';
-import { useGA4Service, resetGA4ServiceInstance } from './ga4Service';
-
-// TypeScript用の型アサーション
-const mockedReactGA = vi.mocked(ReactGA);
-
-// テスト用定数
-const TEST_CONSTANTS = {
-  MEASUREMENT_ID: 'G-TEST123456789',
-  WAIT_TIME: {
-    SHORT: 50,
-    MEDIUM: 100,
-    LONG: 150,
-  },
-  TIMEOUT: {
-    DEFAULT: 3000,
-  },
-} as const;
-
-/**
- * @description テストイベントデータを生成するファクトリー関数
- * @param eventName - イベント名（デフォルト: 'test_event'）
- * @param parameters - イベントパラメータ（デフォルト: { test: 'parameter' }）
- * @returns テストイベントデータオブジェクト
- */
-const createTestEventData = (
-  eventName = 'test_event',
-  parameters = { test: 'parameter' }
-) => ({
-  eventName,
-  parameters,
-});
-
-/**
- * @description テストページビューデータを生成するファクトリー関数
- * @param title - ページタイトル（デフォルト: 'Test Page'）
- * @param page - ページパス（デフォルト: '/test'）
- * @returns テストページビューデータオブジェクト
- */
-const createTestPageViewData = (title = 'Test Page', page = '/test') => ({
-  hitType: 'pageview' as const,
-  title,
-  page,
-});
-
-/**
- * @description 非同期処理の待機用ヘルパー関数
- * @param duration - 待機時間（ミリ秒、デフォルト: TEST_CONSTANTS.WAIT_TIME.MEDIUM）
- * @returns 指定した時間後に解決されるPromise
- */
-const waitForAsyncOperation = (
-  duration: number = TEST_CONSTANTS.WAIT_TIME.MEDIUM
-) => new Promise((resolve) => setTimeout(resolve, duration));
-
-/**
- * @description GA4テスト環境をセットアップする関数
- * @param options - テスト環境のオプション設定
- * @param options.doNotTrack - Do Not Track設定値（デフォルト: '0'）
- * @param options.measurementId - GA4測定ID（デフォルト: TEST_CONSTANTS.MEASUREMENT_ID）
- * @param options.analyticsEnabled - Analytics有効フラグ（デフォルト: true）
- */
-const setupGA4TestEnvironment = (
-  options: {
-    doNotTrack?: string;
-    measurementId?: string;
-    analyticsEnabled?: boolean;
-  } = {}
-) => {
-  mockGlobalAnalytics();
-  vi.clearAllMocks();
-
-  // テスト用の環境変数を設定
-  vi.stubEnv(
-    'VITE_GA4_MEASUREMENT_ID',
-    options.measurementId || TEST_CONSTANTS.MEASUREMENT_ID
-  );
-  vi.stubEnv(
-    'VITE_ANALYTICS_ENABLED',
-    String(options.analyticsEnabled !== false)
-  );
-
-  // @ts-expect-error - vi.stubEnvは環境変数を文字列として設定するため
-  vi.stubEnv('DEV', 'false');
-  Object.defineProperty(import.meta, 'env', {
-    value: {
-      DEV: false,
-      MODE: 'test',
-      VITE_GA4_MEASUREMENT_ID:
-        options.measurementId || TEST_CONSTANTS.MEASUREMENT_ID,
-      VITE_ANALYTICS_ENABLED: String(options.analyticsEnabled !== false),
-    },
-    writable: true,
-    configurable: true,
-  });
-
-  // Do Not Trackを設定（既存のプロパティがある場合は削除）
-  delete (navigator as any).doNotTrack;
-  Object.defineProperty(navigator, 'doNotTrack', {
-    value: options.doNotTrack || '0',
-    writable: true,
-    configurable: true,
-  });
-
-  // react-ga4のモックをクリア
-  mockedReactGA.initialize.mockClear();
-  mockedReactGA.event.mockClear();
-  mockedReactGA.send.mockClear();
-
-  // シングルトンインスタンスをリセット
-  resetGA4ServiceInstance();
-};
-
-/**
- * @description GA4テスト環境をクリーンアップする関数
- */
-const cleanupGA4TestEnvironment = () => {
-  cleanupGlobalAnalytics();
-  vi.unstubAllEnvs();
-  vi.clearAllMocks();
-};
-
-/**
- * @description ReactGAのイベント送信をアサートするヘルパー関数
- * @param eventName - 期待するイベント名
- * @param parameters - 期待するイベントパラメータ（省略可能）
- */
-const expectReactGAEvent = (
-  eventName: string,
-  parameters?: Record<string, unknown>
-) => {
-  expect(mockedReactGA.event).toHaveBeenCalledWith(eventName, parameters);
-};
-
-/**
- * @description ReactGAのデータ送信をアサートするヘルパー関数
- * @param hitData - 期待する送信データ
- */
-const expectReactGASend = (hitData: Record<string, unknown>) => {
-  expect(mockedReactGA.send).toHaveBeenCalledWith(hitData);
-};
-
 describe('useGA4Service', () => {
   describe('基本機能テスト', () => {
     beforeEach(() => {
-      setupGA4TestEnvironment();
+      setupAnalyticsTest();
     });
 
     afterEach(() => {
-      cleanupGA4TestEnvironment();
+      cleanupAnalyticsTest();
     });
 
     it('初期状態では無効でかつ同意なしで初期化される', () => {
@@ -226,7 +93,7 @@ describe('useGA4Service', () => {
     });
 
     it('Do Not Track有効時は同意があっても初期化を回避する', async () => {
-      setupGA4TestEnvironment({ doNotTrack: '1' });
+      setupAnalyticsTest({ doNotTrack: '1' });
 
       const { result } = renderHook(() => useGA4Service());
 
@@ -389,16 +256,16 @@ describe('useGA4Service', () => {
 
   describe('エラーハンドリングテスト', () => {
     beforeEach(() => {
-      setupGA4TestEnvironment();
+      setupAnalyticsTest();
     });
 
     afterEach(() => {
-      cleanupGA4TestEnvironment();
+      cleanupAnalyticsTest();
     });
 
     it('環境変数が設定されていない場合でもサービスは動作する', async () => {
       // GA4測定IDが未設定の環境をセットアップ（react-ga4は空文字列でも初期化される）
-      setupGA4TestEnvironment({ measurementId: '' });
+      setupAnalyticsTest({ measurementId: '' });
 
       const { result } = renderHook(() => useGA4Service());
 
@@ -426,7 +293,7 @@ describe('useGA4Service', () => {
     });
 
     it('analytics無効設定時は同意があってもイベント送信を行わない', async () => {
-      setupGA4TestEnvironment({ analyticsEnabled: false });
+      setupAnalyticsTest({ analyticsEnabled: false });
 
       const { result } = renderHook(() => useGA4Service());
 
@@ -445,7 +312,7 @@ describe('useGA4Service', () => {
     });
 
     it('不正な測定IDが設定された場合のエラーハンドリング', async () => {
-      setupGA4TestEnvironment({ measurementId: 'INVALID-ID' });
+      setupAnalyticsTest({ measurementId: 'INVALID-ID' });
 
       const { result } = renderHook(() => useGA4Service());
 
