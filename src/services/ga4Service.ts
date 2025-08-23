@@ -119,7 +119,7 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
    * @returns 初期化結果のPromise
    */
   const initialize = async (): Promise<AnalyticsResult> => {
-    if (isInitialized || !measurementId) {
+    if (isInitialized) {
       return { success: true as const, data: undefined };
     }
 
@@ -183,6 +183,10 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
     }
 
     try {
+      if (typeof eventName !== 'string' || eventName.trim() === '') {
+        core.devWarn('Track event skipped: invalid eventName');
+        return;
+      }
       ReactGA.event(eventName, parameters);
     } catch (error) {
       core.devWarn('Track event failed:', error);
@@ -205,8 +209,13 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
         title: pageTitle,
       };
 
-      if (pagePath) {
-        hitData.page = pagePath;
+      const resolvedPage =
+        pagePath ??
+        (typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : undefined);
+      if (resolvedPage) {
+        hitData.page = resolvedPage;
       }
 
       ReactGA.send(hitData);
@@ -215,11 +224,32 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
     }
   };
 
+  /**
+   * @description Consent Mode v2 を更新（gtag レベルでの同意反映）
+   * @param granted - 同意状態
+   */
+  const updateConsent = (granted: boolean): void => {
+    if (!core.canExecute()) return;
+    try {
+      // react-ga4のgtagメソッドを使用してConsent Mode v2を更新
+      ReactGA.gtag(
+        'consent',
+        'update',
+        granted
+          ? { analytics_storage: 'granted', ad_storage: 'granted' }
+          : { analytics_storage: 'denied', ad_storage: 'denied' }
+      );
+    } catch (error) {
+      core.devWarn('Update consent failed:', error);
+    }
+  };
+
   return {
     initialize,
     disable,
     trackEvent,
     trackPageView,
+    updateConsent,
     get isInitialized() {
       return isInitialized;
     },
@@ -245,6 +275,7 @@ function createNoopGA4Service(core: ReturnType<typeof createAnalyticsCore>) {
     },
     trackEvent() {},
     trackPageView() {},
+    updateConsent() {},
     get isInitialized() {
       return false;
     },
@@ -348,23 +379,16 @@ export function useGA4Service(): UseGA4ServiceReturn {
   /**
    * 同意状態を設定
    */
-  const setConsent = useCallback(
-    (consent: boolean) => {
-      setConsentGiven(consent);
+  const setConsent = useCallback((consent: boolean) => {
+    setConsentGiven(consent);
 
-      if (consent) {
-        // Promiseの適切な処理
-        void initialize().catch((error) => {
-          // 適切なエラーハンドリング
-          console.warn('GA4 initialization failed:', error);
-        });
-      } else {
-        getGA4ServiceInstance().disable();
-        setIsServiceEnabled(false);
-      }
-    },
-    [initialize]
-  );
+    // Consent Mode v2 を即時更新し（gtag 側の同意反映）、初期化は useEffect に委譲
+    getGA4ServiceInstance().updateConsent(consent);
+    if (!consent) {
+      getGA4ServiceInstance().disable();
+      setIsServiceEnabled(false);
+    }
+  }, []);
 
   /**
    * カスタムイベントを送信
