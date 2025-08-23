@@ -1,3 +1,12 @@
+// react-ga4 を明示的にモック（hoisted）
+vi.mock('react-ga4', () => ({
+  default: {
+    initialize: vi.fn(),
+    event: vi.fn(),
+    send: vi.fn(),
+  },
+}));
+
 import { vi, expect } from 'vitest';
 import ReactGA from 'react-ga4';
 import { mockGlobalAnalytics, cleanupGlobalAnalytics } from './mockUtils';
