@@ -23,7 +23,13 @@ export function AnalyticsRouter({ children }: AnalyticsRouterProps) {
     const { pathname, search, hash } = location;
     const path = `${pathname}${search}${hash}`;
     trackPageView(path);
-  }, [location.pathname, location.search, location.hash, trackPageView]);
+  }, [
+    location.pathname,
+    location.search,
+    location.hash,
+    trackPageView,
+    location,
+  ]);
 
   return <>{children}</>;
 }
