@@ -17,8 +17,14 @@ vi.mock('react-ga4', () => ({
   },
 }));
 
+// environment関数をモック
+vi.mock('../utils/environment', () => ({
+  isDevelopment: vi.fn(() => false), // 本番環境をシミュレート
+  safeExecute: vi.fn((operation) => Promise.resolve(operation())),
+}));
+
 import ReactGA from 'react-ga4';
-import { useGA4Service } from './ga4Service';
+import { useGA4Service, resetGA4ServiceInstance } from './ga4Service';
 
 // TypeScript用の型アサーション
 const mockedReactGA = vi.mocked(ReactGA);
@@ -41,6 +47,9 @@ const setupGA4TestEnvironment = () => {
   mockedReactGA.initialize.mockClear();
   mockedReactGA.event.mockClear();
   mockedReactGA.send.mockClear();
+
+  // シングルトンインスタンスをリセット
+  resetGA4ServiceInstance();
 };
 
 const cleanupGA4TestEnvironment = () => {
@@ -221,17 +230,14 @@ describe('useGA4Service', () => {
       await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // react-ga4のinitializeが正しいオプションで呼ばれることを確認
-      expect(mockedReactGA.initialize).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          testMode: true, // テスト環境なのでtrueになる
-          gaOptions: expect.objectContaining({
-            anonymize_ip: true,
-            cookie_expires: 60 * 60 * 24 * 30,
-            send_page_view: false,
-          }),
-        })
-      );
+      expect(mockedReactGA.initialize).toHaveBeenCalledWith('G-TEST123456789', {
+        testMode: true, // import.meta.env.MODE === 'test'の結果
+        gaOptions: {
+          anonymize_ip: true,
+          cookie_expires: 60 * 60 * 24 * 30,
+          send_page_view: false,
+        },
+      });
     });
   });
 });

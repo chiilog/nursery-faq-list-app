@@ -16,6 +16,18 @@ import { isDevelopment, safeExecute } from '../utils/environment';
 export type MeasurementId = string & { readonly brand: unique symbol };
 
 /**
+ * GA4初期化オプションの型定義
+ */
+interface GA4InitOptions {
+  readonly testMode: boolean;
+  readonly gaOptions: {
+    readonly anonymize_ip: boolean;
+    readonly cookie_expires: number;
+    readonly send_page_view: boolean;
+  };
+}
+
+/**
  * Result type for async operations (deprecated - use AnalyticsResult instead)
  */
 export type GA4LoadResult = AnalyticsResult;
@@ -61,6 +73,19 @@ export const createMeasurementId = (id: string | undefined): MeasurementId => {
 };
 
 /**
+ * @description GA4初期化オプションを型安全に作成
+ * @returns 初期化オプション
+ */
+const createGA4Options = (): GA4InitOptions => ({
+  testMode: import.meta.env.MODE === 'test',
+  gaOptions: {
+    anonymize_ip: true,
+    cookie_expires: 60 * 60 * 24 * 30, // 30日
+    send_page_view: false, // 手動でページビューを送信
+  },
+});
+
+/**
  * @description GA4サービスの関数型実装（react-ga4使用）
  * @param measurementId - 測定ID
  * @returns GA4サービス関数群
@@ -83,29 +108,25 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
    */
   const initialize = async (): Promise<AnalyticsResult> => {
     if (isInitialized || !measurementId) {
-      return { success: true, data: undefined };
+      return { success: true as const, data: undefined };
     }
 
     if (core.isAnalyticsDisabled() || isDevelopment()) {
-      return { success: true, data: undefined };
+      return { success: true as const, data: undefined };
     }
 
-    return safeExecute(() => {
-      // react-ga4による初期化
-      ReactGA.initialize(measurementId, {
-        testMode: import.meta.env.MODE === 'test',
-        gaOptions: {
-          anonymize_ip: true,
-          cookie_expires: 60 * 60 * 24 * 30, // 30日
-          send_page_view: false, // 手動でページビューを送信
-        },
-      });
+    try {
+      const result = await safeExecute(() => {
+        // react-ga4による初期化
+        const options = createGA4Options();
+        ReactGA.initialize(measurementId, options);
 
-      isInitialized = true;
-      config.isInitialized = true;
-      core.devLog('GA4 initialized successfully with react-ga4');
-      return { success: true as const, data: undefined as void };
-    }, 'GA4 initialization').then((result) => {
+        isInitialized = true;
+        config.isInitialized = true;
+        core.devLog('GA4 initialized successfully with react-ga4');
+        return { success: true as const, data: undefined };
+      }, 'GA4 initialization');
+
       if (result === null) {
         const analyticsError = new AnalyticsError(
           AnalyticsErrorType.INITIALIZATION_FAILED,
@@ -114,8 +135,17 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
         );
         return { success: false as const, error: analyticsError };
       }
+
       return result;
-    });
+    } catch (error) {
+      const analyticsError = new AnalyticsError(
+        AnalyticsErrorType.INITIALIZATION_FAILED,
+        'GA4Service',
+        'Failed to initialize GA4 service with react-ga4',
+        error instanceof Error ? error : new Error(String(error))
+      );
+      return { success: false as const, error: analyticsError };
+    }
   };
 
   /**
@@ -195,7 +225,7 @@ function createNoopGA4Service(core: ReturnType<typeof createAnalyticsCore>) {
       core.devWarn('GA4 is disabled (no-op instance)');
       return Promise.resolve({
         success: true as const,
-        data: undefined as void,
+        data: undefined,
       });
     },
     disable() {
@@ -210,16 +240,18 @@ function createNoopGA4Service(core: ReturnType<typeof createAnalyticsCore>) {
 }
 
 // シングルトンインスタンス用の関数
-let ga4ServiceInstance: ReturnType<typeof createGA4ServiceFunctions> | null =
-  null;
+let ga4ServiceInstance:
+  | ReturnType<typeof createGA4ServiceFunctions>
+  | ReturnType<typeof createNoopGA4Service>
+  | null = null;
 
 /**
  * @description GA4サービスインスタンスを取得または作成
  * @returns GA4サービスインスタンス
  */
-const getGA4ServiceInstance = (): ReturnType<
-  typeof createGA4ServiceFunctions
-> => {
+const getGA4ServiceInstance = ():
+  | ReturnType<typeof createGA4ServiceFunctions>
+  | ReturnType<typeof createNoopGA4Service> => {
   if (!ga4ServiceInstance) {
     const core = createAnalyticsCore({
       envVarName: ANALYTICS_CONSTANTS.ENV_VARS.GA4_MEASUREMENT_ID,
@@ -240,6 +272,13 @@ const getGA4ServiceInstance = (): ReturnType<
     ga4ServiceInstance = createGA4ServiceFunctions(measurementId);
   }
   return ga4ServiceInstance;
+};
+
+/**
+ * @description テスト用：シングルトンインスタンスをリセット
+ */
+export const resetGA4ServiceInstance = (): void => {
+  ga4ServiceInstance = null;
 };
 
 /**
