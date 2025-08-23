@@ -75,7 +75,9 @@ export const setupAnalyticsTest = (
   // テスト用の環境変数を設定
   vi.stubEnv(
     'VITE_GA4_MEASUREMENT_ID',
-    options.measurementId || TEST_CONSTANTS.MEASUREMENT_ID
+    options.measurementId !== undefined
+      ? options.measurementId
+      : TEST_CONSTANTS.MEASUREMENT_ID
   );
   vi.stubEnv(
     'VITE_ANALYTICS_ENABLED',
@@ -89,7 +91,9 @@ export const setupAnalyticsTest = (
       DEV: false,
       MODE: 'test',
       VITE_GA4_MEASUREMENT_ID:
-        options.measurementId || TEST_CONSTANTS.MEASUREMENT_ID,
+        options.measurementId !== undefined
+          ? options.measurementId
+          : TEST_CONSTANTS.MEASUREMENT_ID,
       VITE_ANALYTICS_ENABLED: String(options.analyticsEnabled !== false),
     },
     writable: true,

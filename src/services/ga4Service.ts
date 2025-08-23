@@ -129,6 +129,12 @@ const createGA4ServiceFunctions = (measurementId: MeasurementId) => {
       return { success: true as const, data: undefined };
     }
 
+    // 測定IDが未設定の場合は初期化を回避
+    if (!measurementId || measurementId.trim() === '') {
+      core.devLog('GA4 measurement ID is missing; GA4 will remain disabled');
+      return { success: true as const, data: undefined };
+    }
+
     if (core.isAnalyticsDisabled() || isDevelopment()) {
       return { success: true as const, data: undefined };
     }
