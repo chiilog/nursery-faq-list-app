@@ -689,17 +689,18 @@ class CryptoService {
 
 #### GA4の実装アプローチ
 
-- **GA4を直接実装**（Google Tag Manager経由ではない）
+- **react-ga4ライブラリを使用**してGA4と直接通信
 - 測定IDはGA4の測定ID（`G-XXXXXXXXXX`形式）を使用
 - GTMコンテナIDは不要
-- `gtag.js`スクリプトを動的に読み込み、gtagコマンドを使用してイベントを送信
+- react-ga4が`gtag.js`スクリプトの読み込みとGA4初期化を自動処理
 
-#### 実装の利点
+#### react-ga4ライブラリ使用の利点
 
-1. **シンプルな構成**: GTMの追加レイヤーが不要で、直接GA4と通信
-2. **管理の簡素化**: GTMコンテナの設定・管理が不要
-3. **パフォーマンス**: GTMの追加スクリプトが不要で軽量
-4. **明確な実装**: コード内で何が送信されているか明確
+1. **シンプルな構成**: GTMの追加レイヤーが不要で、react-ga4経由でGA4と直接通信
+2. **管理の簡素化**: ライブラリがGA4 APIの変更に自動対応
+3. **コード品質**: 独自実装よりも型安全で保守しやすい
+4. **機能豊富**: react-ga4の豊富な機能をそのまま利用可能
+5. **テスト容易**: 成熟したライブラリでエッジケースが解決済み
 
 ### 分析機能アーキテクチャ
 
@@ -1095,6 +1096,17 @@ const useAnalytics = () => {
     trackInsightAdded
   };
 };
+
+// react-ga4ライブラリの基本的な使用例
+// 初期化
+import ReactGA from "react-ga4";
+ReactGA.initialize("G-XXXXXXXXXX");
+
+// イベント送信
+ReactGA.event("nursery_created", { nursery_id: "example-id" });
+
+// ページビュー送信
+ReactGA.send({ hitType: "pageview", page: "/nursery/123" });
 
 // Router レベルでのページビュー追跡
 const AnalyticsRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
