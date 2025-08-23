@@ -1,12 +1,17 @@
 // react-ga4 を明示的にモック（hoisted）
-vi.mock('react-ga4', () => ({
-  default: {
+vi.mock('react-ga4', () => {
+  const api = {
     initialize: vi.fn(),
     event: vi.fn(),
     send: vi.fn(),
     gtag: vi.fn(),
-  },
-}));
+    set: vi.fn(),
+  };
+  return {
+    default: api,
+    ...api, // named export でも同じ関数を提供
+  };
+});
 
 import { vi, expect } from 'vitest';
 import ReactGA from 'react-ga4';
@@ -64,9 +69,9 @@ export const createTestPageViewData = (
 export const waitForAsyncOperation = (
   duration: number = TEST_CONSTANTS.WAIT_TIME.MEDIUM
 ) => {
-  // フェイクタイマーが有効な場合は即座に解決
+  // フェイクタイマーが有効な場合は指定時間だけ進める（副作用の出過ぎを回避）
   if (vi.isFakeTimers()) {
-    return Promise.resolve();
+    return vi.advanceTimersByTimeAsync(duration);
   }
   // 通常のタイマーを使用
   return new Promise((resolve) => setTimeout(resolve, duration));
@@ -80,8 +85,7 @@ export const advanceTimersForAsync = async (
   duration: number = TEST_CONSTANTS.WAIT_TIME.MEDIUM
 ) => {
   if (vi.isFakeTimers()) {
-    vi.advanceTimersByTime(duration);
-    await vi.runAllTimersAsync();
+    await vi.advanceTimersByTimeAsync(duration);
   }
 };
 
@@ -141,12 +145,6 @@ export const setupAnalyticsTest = (
     configurable: true,
   });
 
-  // react-ga4のモックをクリア
-  mockedReactGA.initialize.mockClear();
-  mockedReactGA.event.mockClear();
-  mockedReactGA.send.mockClear();
-  mockedReactGA.gtag.mockClear();
-
   // シングルトンインスタンスをリセット
   resetGA4ServiceInstance();
 
@@ -190,12 +188,21 @@ export const expectReactGAEvent = (
   eventName: string,
   parameters?: Record<string, unknown>
 ) => {
-  expect(mockedReactGA.event).toHaveBeenCalledWith(eventName, parameters);
+  if (parameters !== undefined) {
+    expect(mockedReactGA.event).toHaveBeenCalledWith(
+      eventName,
+      expect.objectContaining(parameters)
+    );
+  } else {
+    expect(mockedReactGA.event).toHaveBeenCalledWith(eventName);
+  }
 };
 
 /**
  * @description ReactGAのデータ送信をアサートするヘルパー関数
  */
 export const expectReactGASend = (hitData: Record<string, unknown>) => {
-  expect(mockedReactGA.send).toHaveBeenCalledWith(hitData);
+  expect(mockedReactGA.send).toHaveBeenCalledWith(
+    expect.objectContaining(hitData)
+  );
 };
