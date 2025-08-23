@@ -11,7 +11,15 @@
  * - 他のページと統一されたデザイン
  */
 
-import { Box, Heading, Text, VStack, HStack, Switch } from '@chakra-ui/react';
+import {
+  Box,
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  Switch,
+  Link,
+} from '@chakra-ui/react';
 import { Layout } from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
@@ -74,6 +82,24 @@ export const PrivacyPolicyPage = () => {
             <Heading as="h1" color={APP_CONFIG.COLORS.PRIMARY}>
               プライバシーポリシー
             </Heading>
+          </Box>
+
+          <Box>
+            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+              法的根拠と準拠法
+            </Heading>
+            <Text lineHeight={1.7} mb={4}>
+              当アプリケーションは、日本国の個人情報保護法（個人情報の保護に関する法律）に準拠して運営されています。
+              <br />
+              収集するデータは匿名化されており、個人を特定できる情報は含まれませんが、以下の法的根拠に基づいて処理を行っています。
+            </Text>
+            <Box as="ul" listStyleType="disc" lineHeight={1.7} ml={4} mb={4}>
+              <li>正当な利益：サービスの改善と利用者体験の向上</li>
+              <li>同意：分析ツール利用に関するユーザーの明示的な同意</li>
+              <li>
+                契約の履行：安定したサービス提供のための必要最小限のデータ処理
+              </li>
+            </Box>
           </Box>
 
           <Box>
@@ -218,6 +244,51 @@ export const PrivacyPolicyPage = () => {
 
           <Box>
             <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+              国際データ転送について
+            </Heading>
+            <Text lineHeight={1.7} mb={4}>
+              Google Analytics 4およびMicrosoft
+              Clarityは米国に本社を置く企業が提供するサービスです。
+              <br />
+              これらのサービスを通じて収集された匿名化データは、以下の保護措置のもとで処理されます。
+            </Text>
+            <Box as="ul" listStyleType="disc" lineHeight={1.7} ml={4} mb={4}>
+              <li>データは暗号化された通信（HTTPS）で送信されます</li>
+              <li>
+                各サービスプロバイダーは独自のプライバシーポリシーに基づいてデータを管理します
+              </li>
+              <li>
+                収集されるデータは統計的な分析にのみ使用され、第三者への販売は行われません
+              </li>
+              <li>EU一般データ保護規則（GDPR）に準拠した処理が行われます</li>
+            </Box>
+            <Text lineHeight={1.7}>
+              詳細については、
+              <Link
+                variant="underline"
+                color="blue.500"
+                href="https://policies.google.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Googleのプライバシーポリシー
+              </Link>
+              および
+              <Link
+                variant="underline"
+                color="blue.500"
+                href="https://privacy.microsoft.com/privacystatement"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Microsoftのプライバシーステートメント
+              </Link>
+              をご確認ください。
+            </Text>
+          </Box>
+
+          <Box>
+            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
               データの保存について
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -232,11 +303,103 @@ export const PrivacyPolicyPage = () => {
 
           <Box>
             <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+              データ保持期間
+            </Heading>
+            <Text lineHeight={1.7} mb={4}>
+              当アプリケーションで収集・保存されるデータの保持期間は以下の通りです。
+            </Text>
+            <Box as="ul" listStyleType="disc" lineHeight={1.7} ml={4} mb={4}>
+              <li>
+                <strong>ローカルストレージデータ：</strong>
+                ユーザーが明示的に削除するまで、またはブラウザのキャッシュをクリアするまで保持されます
+              </li>
+              <li>
+                <strong>Google Analytics 4：</strong>
+                <Box as="ul" listStyleType="circle" lineHeight={1.7} ml={4}>
+                  <li>標準レポート：長期間のデータ表示が可能</li>
+                  <li>
+                    詳細分析レポート：デフォルト設定により2ヶ月間のデータのみ利用可能
+                  </li>
+                </Box>
+              </li>
+              <li>
+                <strong>Microsoft Clarity：</strong>
+                <Box as="ul" listStyleType="circle" lineHeight={1.7} ml={4}>
+                  <li>セッション記録：30日間保持</li>
+                  <li>ヒートマップデータ：13ヶ月間保持</li>
+                  <li>お気に入り登録されたセッション：13ヶ月間保持</li>
+                </Box>
+              </li>
+              <li>
+                <strong>Cookie（同意情報）：</strong>
+                1年間保持され、その後再度同意を求めます
+              </li>
+            </Box>
+          </Box>
+
+          <Box>
+            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+              ユーザーの権利
+            </Heading>
+            <Text lineHeight={1.7} mb={4}>
+              ユーザーは、ご自身のデータに関して以下の権利を有しています。
+            </Text>
+            <Box as="ul" listStyleType="disc" lineHeight={1.7} ml={4} mb={4}>
+              <li>
+                <strong>アクセス権：</strong>
+                収集されているデータの種類と利用目的について確認する権利
+              </li>
+              <li>
+                <strong>訂正・削除権：</strong>
+                ローカルストレージに保存されたデータを編集・削除する権利
+                （ブラウザの設定から実行可能）
+              </li>
+              <li>
+                <strong>処理の制限・異議申し立て権：</strong>
+                分析ツールの利用を拒否し、データ収集を停止する権利
+                （本ページの設定スイッチから変更可能）
+              </li>
+              <li>
+                <strong>データポータビリティ権：</strong>
+                ローカルストレージのデータをエクスポートする権利
+                （ブラウザの開発者ツールから実行可能）
+              </li>
+              <li>
+                <strong>同意の撤回権：</strong>
+                一度与えた分析ツール利用の同意をいつでも撤回する権利
+              </li>
+            </Box>
+            <Text lineHeight={1.7}>
+              これらの権利行使に関するご質問は、下記のお問い合わせ先までご連絡ください。
+            </Text>
+          </Box>
+
+          <Box>
+            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
               お問い合わせ
             </Heading>
             <Text lineHeight={1.7} mb={4}>
               プライバシーに関するご質問やご不明な点がございましたら、
-              GitHubのIssueページまたは開発者のSNSアカウントまでお気軽にお問い合わせください。
+              <Link
+                variant="underline"
+                color="blue.500"
+                href="https://github.com/chiilog/nursery-faq-list-app/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHubのIssueページ
+              </Link>
+              または
+              <Link
+                variant="underline"
+                color="blue.500"
+                href="https://x.com/chiilogweb"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                開発者のSNSアカウント
+              </Link>
+              までお気軽にお問い合わせください。
             </Text>
             <Text lineHeight={1.7}>
               ユーザーの皆様のプライバシーを尊重し、透明性のあるサービス運営を心がけています。
@@ -250,7 +413,7 @@ export const PrivacyPolicyPage = () => {
             pt={4}
           >
             <Text fontSize="sm" color="gray.600">
-              最終更新日: 2025年8月22日
+              最終更新日: 2025年8月23日
             </Text>
           </Box>
         </VStack>
