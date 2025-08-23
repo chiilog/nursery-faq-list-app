@@ -1,38 +1,63 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useGA4Service } from './ga4Service';
 import {
   mockGlobalAnalytics,
   cleanupGlobalAnalytics,
 } from '../test-utils/mockUtils';
 
-// グローバルmocks
-const mockGtag = vi.fn();
+// setup.tsのモックを無効化
+vi.unmock('../services/ga4Service');
+
+// react-ga4をモック
+vi.mock('react-ga4', () => ({
+  default: {
+    initialize: vi.fn(),
+    event: vi.fn(),
+    send: vi.fn(),
+  },
+}));
+
+import ReactGA from 'react-ga4';
+import { useGA4Service } from './ga4Service';
+
+// TypeScript用の型アサーション
+const mockedReactGA = vi.mocked(ReactGA);
 
 const setupGA4TestEnvironment = () => {
   mockGlobalAnalytics();
-  Object.defineProperty(window, 'gtag', {
-    value: mockGtag,
-    writable: true,
-  });
-  Object.defineProperty(window, 'dataLayer', {
-    value: [],
-    writable: true,
-  });
   vi.clearAllMocks();
+
+  // テスト用の環境変数を設定
+  vi.stubEnv('VITE_GA4_MEASUREMENT_ID', 'G-TEST123456789');
+  vi.stubEnv('VITE_ANALYTICS_ENABLED', 'true');
+
+  // Do Not Trackを無効化
+  Object.defineProperty(navigator, 'doNotTrack', {
+    writable: true,
+    value: '0',
+  });
+
+  // react-ga4のモックをクリア
+  mockedReactGA.initialize.mockClear();
+  mockedReactGA.event.mockClear();
+  mockedReactGA.send.mockClear();
 };
 
 const cleanupGA4TestEnvironment = () => {
   cleanupGlobalAnalytics();
-  delete (window as unknown as { dataLayer?: unknown }).dataLayer;
+  vi.unstubAllEnvs();
   vi.clearAllMocks();
 };
 
-const expectGA4EventCall = (
+const expectReactGAEvent = (
   eventName: string,
   parameters?: Record<string, unknown>
 ) => {
-  expect(mockGtag).toHaveBeenCalledWith('event', eventName, parameters);
+  expect(mockedReactGA.event).toHaveBeenCalledWith(eventName, parameters);
+};
+
+const expectReactGASend = (hitData: Record<string, unknown>) => {
+  expect(mockedReactGA.send).toHaveBeenCalledWith(hitData);
 };
 
 describe('useGA4Service', () => {
@@ -83,6 +108,9 @@ describe('useGA4Service', () => {
         expect(result.current.hasConsent).toBe(true);
         expect(result.current.isEnabled).toBe(true);
       });
+
+      // react-ga4のinitializeが呼ばれることを確認
+      expect(mockedReactGA.initialize).toHaveBeenCalled();
     });
 
     it('Do Not Track設定時は初期化されない', async () => {
@@ -101,6 +129,9 @@ describe('useGA4Service', () => {
         expect(result.current.hasConsent).toBe(true);
         expect(result.current.isEnabled).toBe(false);
       });
+
+      // react-ga4のinitializeが呼ばれないことを確認
+      expect(mockedReactGA.initialize).not.toHaveBeenCalled();
     });
 
     it('trackEventが正しく動作する', async () => {
@@ -112,14 +143,14 @@ describe('useGA4Service', () => {
 
       await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
-      // 初期化時に consent 'default' と config が実行されるため、モックをクリアしてから測定
-      mockGtag.mockClear();
+      // 初期化時のコールをクリア
+      mockedReactGA.event.mockClear();
 
       act(() => {
         result.current.trackEvent('test_event', { test: 'parameter' });
       });
 
-      expectGA4EventCall('test_event', { test: 'parameter' });
+      expectReactGAEvent('test_event', { test: 'parameter' });
     });
 
     it('trackPageViewが正しく動作する', async () => {
@@ -132,15 +163,16 @@ describe('useGA4Service', () => {
       await waitFor(() => expect(result.current.isEnabled).toBe(true));
 
       // 初期化時のコールをクリア
-      mockGtag.mockClear();
+      mockedReactGA.send.mockClear();
 
       act(() => {
         result.current.trackPageView('Test Page', '/test');
       });
 
-      expectGA4EventCall('page_view', {
-        page_title: 'Test Page',
-        page_location: '/test',
+      expectReactGASend({
+        hitType: 'pageview',
+        title: 'Test Page',
+        page: '/test',
       });
     });
 
@@ -151,7 +183,7 @@ describe('useGA4Service', () => {
         result.current.trackEvent('test_event', { test: 'parameter' });
       });
 
-      expect(mockGtag).not.toHaveBeenCalled();
+      expect(mockedReactGA.event).not.toHaveBeenCalled();
     });
 
     it('useEffect依存配列が正しく機能する', async () => {
@@ -177,6 +209,29 @@ describe('useGA4Service', () => {
 
       // アンマウント時にクリーンアップが実行される
       expect(() => unmount()).not.toThrow();
+    });
+
+    it('react-ga4の初期化オプションが正しく設定される', async () => {
+      const { result } = renderHook(() => useGA4Service());
+
+      act(() => {
+        result.current.setConsent(true);
+      });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true));
+
+      // react-ga4のinitializeが正しいオプションで呼ばれることを確認
+      expect(mockedReactGA.initialize).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          testMode: true, // テスト環境なのでtrueになる
+          gaOptions: expect.objectContaining({
+            anonymize_ip: true,
+            cookie_expires: 60 * 60 * 24 * 30,
+            send_page_view: false,
+          }),
+        })
+      );
     });
   });
 });
