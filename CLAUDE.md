@@ -14,3 +14,52 @@
 ## セキュリティ
 
 `.kiro/steering/security.md` の内容に従ってください。
+
+## コミット規約 (Conventional Commits)
+
+Conventional Commits に準拠すること。コミットメッセージは日本語で書くこと。
+
+- フォーマット: `<type>(<scope>): <subject>`
+- 許可する type: `feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert`
+- BREAKING CHANGE: `!` を type に付与、またはフッターに `BREAKING CHANGE:` を明記
+- scope 例: `ga4`, `analytics`, `provider`, `hooks`
+- subject: 簡潔な現在形/命令形で記述
+
+例:
+
+- `feat(ga4): migrate to react-ga4`
+- `fix(ga4): handle ReactGA.initialize failure on invalid id`
+- `refactor(analytics): extract GA4Provider from App`
+- `revert: "feat(ga4): migrate to react-ga4"`
+
+## 型安全性の厳守
+
+TypeScriptの型安全性を最優先に保つため、以下を徹底してください：
+
+例外(外部境界での取り扱い):
+
+- 外部入力(APIレスポンス/JSON.parse/third‑party SDK/postMessage等)は `unknown` として受け入れ、直後にスキーマ検証とナローイングを行うこと
+- スキーマ検証には Zod などのランタイムバリデーションの利用を推奨
+- アプリ内部へは検証済みの安全な型のみを通すこと
+
+### any型の禁止・unknownの限定使用
+
+- `any` および `as any` の型キャストは本番・テストを問わず禁止。
+  - `unknown` は「外部境界で受け入れて直後にスキーマ検証・ナローイングする」場合に限り一時的に許容。
+- アプリ内部へは検証済みの安全な型のみを通すこと。
+
+### テストコードでの型安全性
+
+- **関数シグネチャの確認**: テスト作成時は必ず実際の関数定義を確認し、引数の数・型・順序を正確に記述する
+- **型エラーの即座対応**: TypeScriptコンパイルエラーや型の不整合は放置せず、必ず修正する
+- **モックの型安全性**: vi.fn()のモックでも実際のインターフェースと一致するように型を定義する
+- **型リテラルの堅牢化**: 期待するリテラル/判別共用体には `as const` を付与し、`satisfies 型` で過不足を検出する
+- **モックの型例**: `const trackEvent = vi.fn<GA4Service['trackEvent']>();` のように実関数の型を参照して定義する
+
+### 型エラー防止のための手順
+
+1. 新しい関数を作成したら、その関数を使用する全てのテストで関数シグネチャを確認
+2. 関数シグネチャを変更した場合は、その関数を使用する全ての箇所を更新
+3. `npm run lint` で型エラーがないことを必ず確認
+
+**重要**: 型の不整合やTypeScriptエラーが存在するPRはマージ不可。CIで `typecheck` が失敗した場合は必ず修正して再実行してください。

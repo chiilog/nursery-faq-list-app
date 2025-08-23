@@ -2,14 +2,22 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Analytics関連のモック（トップレベルでホイストされる）
-vi.mock('../services/ga4Service', () => ({
-  ga4Service: {
-    trackEvent: vi.fn(),
-    trackPageView: vi.fn(),
-    initialize: vi.fn(),
-    setConsent: vi.fn(),
-  },
-}));
+vi.mock('../services/ga4Service', async () => {
+  const actual = await vi.importActual<typeof import('../services/ga4Service')>(
+    '../services/ga4Service'
+  );
+  return {
+    ...actual,
+    // useGA4Service だけ差し替え。他のエクスポート（resetGA4ServiceInstance など）は実体のまま。
+    useGA4Service: vi.fn(() => ({
+      isEnabled: false,
+      hasConsent: false,
+      setConsent: vi.fn(),
+      trackEvent: vi.fn(),
+      trackPageView: vi.fn(),
+    })),
+  };
+});
 
 vi.mock('../services/clarityService', () => ({
   clarityService: {

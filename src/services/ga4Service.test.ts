@@ -1,51 +1,41 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useGA4Service } from './ga4Service';
 import {
-  mockGlobalAnalytics,
-  cleanupGlobalAnalytics,
-} from '../test-utils/mockUtils';
+  setupAnalyticsTest,
+  cleanupAnalyticsTest,
+  TEST_CONSTANTS,
+  createTestEventData,
+  createTestPageViewData,
+  waitForAsyncOperation,
+  expectReactGAEvent,
+  expectReactGASend,
+  mockedReactGA,
+} from '../test-utils/analyticsTestHelper';
+import { useGA4Service } from './ga4Service';
 
-// グローバルmocks
-const mockGtag = vi.fn();
+// ga4Service の自動モックを解除
+vi.unmock('./ga4Service');
 
-const setupGA4TestEnvironment = () => {
-  mockGlobalAnalytics();
-  Object.defineProperty(window, 'gtag', {
-    value: mockGtag,
-    writable: true,
-  });
-  Object.defineProperty(window, 'dataLayer', {
-    value: [],
-    writable: true,
-  });
-  vi.clearAllMocks();
-};
-
-const cleanupGA4TestEnvironment = () => {
-  cleanupGlobalAnalytics();
-  delete (window as unknown as { dataLayer?: unknown }).dataLayer;
-  vi.clearAllMocks();
-};
-
-const expectGA4EventCall = (
-  eventName: string,
-  parameters?: Record<string, unknown>
-) => {
-  expect(mockGtag).toHaveBeenCalledWith('event', eventName, parameters);
-};
+// environment関数をモック
+vi.mock('../utils/environment', () => ({
+  isDevelopment: vi.fn(() => false), // 本番環境をシミュレート
+  // 元の (operation, context) に合わせて第2引数も受け取る
+  safeExecute: vi.fn(<T>(operation: () => Promise<T> | T, _context?: string) =>
+    Promise.resolve(operation())
+  ),
+}));
 
 describe('useGA4Service', () => {
-  describe('Hook Tests', () => {
+  describe('基本機能テスト', () => {
     beforeEach(() => {
-      setupGA4TestEnvironment();
+      setupAnalyticsTest();
     });
 
     afterEach(() => {
-      cleanupGA4TestEnvironment();
+      cleanupAnalyticsTest();
     });
 
-    it('useGA4Service が正しく初期化される', () => {
+    it('初期状態では無効でかつ同意なしで初期化される', () => {
       const { result } = renderHook(() => useGA4Service());
 
       expect(result.current.isEnabled).toBe(false);
@@ -55,114 +45,220 @@ describe('useGA4Service', () => {
       expect(typeof result.current.trackPageView).toBe('function');
     });
 
-    it('同意設定の変更が正しく動作する', () => {
+    it('同意状態を正しく設定・変更できる', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      act(() => {
+      await act(async () => {
         result.current.setConsent(true);
+        // 非同期処理の完了を待機
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.SHORT);
       });
 
       expect(result.current.hasConsent).toBe(true);
 
-      act(() => {
+      await act(async () => {
         result.current.setConsent(false);
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.SHORT);
       });
 
       expect(result.current.hasConsent).toBe(false);
       expect(result.current.isEnabled).toBe(false);
     });
 
-    it('同意後にサービスが初期化される', async () => {
+    it('ユーザー同意後にGA4サービスが正常に初期化される', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      act(() => {
+      await act(async () => {
         result.current.setConsent(true);
+        // 非同期処理の完了を待機
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
       });
 
-      await waitFor(() => {
-        expect(result.current.hasConsent).toBe(true);
-        expect(result.current.isEnabled).toBe(true);
-      });
+      await waitFor(
+        () => {
+          expect(result.current.hasConsent).toBe(true);
+          expect(result.current.isEnabled).toBe(true);
+        },
+        { timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT }
+      );
+
+      // react-ga4のinitializeが呼ばれることを確認
+      expect(mockedReactGA.initialize).toHaveBeenCalled();
+    });
+  });
+
+  describe('Do Not Track シナリオ', () => {
+    beforeEach(() => {
+      setupAnalyticsTest({ doNotTrack: '1' });
     });
 
-    it('Do Not Track設定時は初期化されない', async () => {
-      Object.defineProperty(navigator, 'doNotTrack', {
-        writable: true,
-        value: '1',
-      });
-
-      const { result } = renderHook(() => useGA4Service());
-
-      act(() => {
-        result.current.setConsent(true);
-      });
-
-      await waitFor(() => {
-        expect(result.current.hasConsent).toBe(true);
-        expect(result.current.isEnabled).toBe(false);
-      });
+    afterEach(() => {
+      cleanupAnalyticsTest();
     });
 
-    it('trackEventが正しく動作する', async () => {
+    it('Do Not Track有効時は同意があっても初期化を回避する', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      act(() => {
+      // 同意を設定した場合でもDo Not Trackのため初期化されないことを確認
+      await act(async () => {
         result.current.setConsent(true);
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
       });
 
-      await waitFor(() => expect(result.current.isEnabled).toBe(true));
+      // Do Not Track が有効な場合の期待される動作:
+      // 1. 同意状態は正しく記録される
+      expect(result.current.hasConsent).toBe(true);
 
-      // 初期化時に consent 'default' と config が実行されるため、モックをクリアしてから測定
-      mockGtag.mockClear();
+      // 2. Do Not Track設定により、サービス初期化は回避される
+      // (初期化処理は非同期で実行されるが、実際には何も起こらない)
+      await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.LONG);
 
-      act(() => {
-        result.current.trackEvent('test_event', { test: 'parameter' });
-      });
+      // 3. no-opサービスのためisEnabledはfalseのままとなる
+      expect(result.current.isEnabled).toBe(false);
 
-      expectGA4EventCall('test_event', { test: 'parameter' });
+      // 4. ReactGA.initialize は呼び出されない
+      expect(mockedReactGA.initialize).not.toHaveBeenCalled();
     });
 
-    it('trackPageViewが正しく動作する', async () => {
+    it('ユーザー同意がない場合はイベント送信を行わない', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      act(() => {
-        result.current.setConsent(true);
+      const testEvent = createTestEventData();
+      await act(async () => {
+        result.current.trackEvent(testEvent.eventName, testEvent.parameters);
+        await waitForAsyncOperation(10);
       });
 
-      await waitFor(() => expect(result.current.isEnabled).toBe(true));
+      expect(mockedReactGA.event).not.toHaveBeenCalled();
+    });
+
+    it('コンポーネントアンマウント時にクリーンアップが正常に実行される', () => {
+      const { unmount } = renderHook(() => useGA4Service());
+
+      // アンマウント時にクリーンアップが実行される
+      expect(() => unmount()).not.toThrow();
+    });
+  });
+
+  describe('通常環境でのGA4動作テスト', () => {
+    beforeEach(() => {
+      setupAnalyticsTest();
+    });
+
+    afterEach(() => {
+      cleanupAnalyticsTest();
+    });
+
+    it('初期化完了後にカスタムイベント送信が正常に動作する', async () => {
+      const { result } = renderHook(() => useGA4Service());
+
+      await act(async () => {
+        result.current.setConsent(true);
+        // 非同期処理の完了を待機
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
+      });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
+        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
+      });
 
       // 初期化時のコールをクリア
-      mockGtag.mockClear();
+      mockedReactGA.event.mockClear();
 
-      act(() => {
-        result.current.trackPageView('Test Page', '/test');
+      const testEvent = createTestEventData();
+      await act(async () => {
+        result.current.trackEvent(testEvent.eventName, testEvent.parameters);
+        await waitForAsyncOperation(10);
       });
 
-      expectGA4EventCall('page_view', {
-        page_title: 'Test Page',
-        page_location: '/test',
-      });
+      expectReactGAEvent(testEvent.eventName, testEvent.parameters);
     });
 
-    it('同意なしではイベント送信されない', () => {
+    it('初期化完了後にページビューイベント送信が正常に動作する', async () => {
       const { result } = renderHook(() => useGA4Service());
 
-      act(() => {
-        result.current.trackEvent('test_event', { test: 'parameter' });
+      await act(async () => {
+        result.current.setConsent(true);
+        // 非同期処理の完了を待機
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
       });
 
-      expect(mockGtag).not.toHaveBeenCalled();
+      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
+        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
+      });
+
+      // 初期化時のコールをクリア
+      mockedReactGA.send.mockClear();
+
+      const testPageView = createTestPageViewData();
+      await act(async () => {
+        result.current.trackPageView(testPageView.title, testPageView.page);
+        await waitForAsyncOperation(10);
+      });
+
+      expectReactGASend(testPageView);
     });
 
-    it('useEffect依存配列が正しく機能する', async () => {
+    it('GA4初期化時にテストモードが正しく設定される', async () => {
+      const { result } = renderHook(() => useGA4Service());
+
+      await act(async () => {
+        result.current.setConsent(true);
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
+      });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
+        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
+      });
+
+      expect(mockedReactGA.initialize).toHaveBeenCalledWith(
+        TEST_CONSTANTS.MEASUREMENT_ID,
+        expect.objectContaining({
+          testMode: true,
+        })
+      );
+    });
+
+    it('GA4初期化時にプライバシー配慮のオプションが適用される', async () => {
+      const { result } = renderHook(() => useGA4Service());
+
+      await act(async () => {
+        result.current.setConsent(true);
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
+      });
+
+      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
+        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
+      });
+
+      expect(mockedReactGA.initialize).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          gaOptions: {
+            anonymize_ip: true,
+            cookie_expires: 60 * 60 * 24 * 30,
+            send_page_view: false,
+            allow_google_signals: false,
+            allow_ad_personalization_signals: false,
+            storage: 'none',
+          },
+        })
+      );
+    });
+
+    it('React hooksの再レンダリング時に状態が正しく保持される', async () => {
       const { result, rerender } = renderHook(() => useGA4Service());
 
       // 最初の同意設定
-      act(() => {
+      await act(async () => {
         result.current.setConsent(true);
+        // 非同期処理の完了を待機
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
       });
 
-      await waitFor(() => expect(result.current.isEnabled).toBe(true));
+      await waitFor(() => expect(result.current.isEnabled).toBe(true), {
+        timeout: TEST_CONSTANTS.TIMEOUT.DEFAULT,
+      });
 
       // フックの再レンダリング
       rerender();
@@ -171,12 +267,74 @@ describe('useGA4Service', () => {
       expect(result.current.isEnabled).toBe(true);
       expect(result.current.hasConsent).toBe(true);
     });
+  });
 
-    it('クリーンアップ関数が適切に動作する', () => {
-      const { unmount } = renderHook(() => useGA4Service());
+  describe('エラーハンドリングテスト', () => {
+    beforeEach(() => {
+      setupAnalyticsTest();
+    });
 
-      // アンマウント時にクリーンアップが実行される
-      expect(() => unmount()).not.toThrow();
+    afterEach(() => {
+      cleanupAnalyticsTest();
+    });
+
+    it('測定ID未設定時はno-opとなりイベント送信を行わない', async () => {
+      // GA4測定IDが未設定の環境をセットアップ
+      setupAnalyticsTest({ measurementId: '' });
+
+      const { result } = renderHook(() => useGA4Service());
+
+      await act(async () => {
+        result.current.setConsent(true);
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
+      });
+
+      // 同意は記録されるが、測定ID未設定のためサービスは無効のまま
+      expect(result.current.hasConsent).toBe(true);
+      expect(result.current.isEnabled).toBe(false);
+
+      const testEvent = createTestEventData();
+      await act(async () => {
+        result.current.trackEvent(testEvent.eventName, testEvent.parameters);
+        await waitForAsyncOperation(10);
+      });
+
+      // 測定ID未設定の場合はno-opとなり、ReactGAの初期化・イベント送信は行われない
+      expect(mockedReactGA.initialize).not.toHaveBeenCalled();
+      expect(mockedReactGA.event).not.toHaveBeenCalled();
+    });
+
+    it('analytics無効設定時は同意があってもイベント送信を行わない', async () => {
+      setupAnalyticsTest({ analyticsEnabled: false });
+
+      const { result } = renderHook(() => useGA4Service());
+
+      await act(async () => {
+        result.current.setConsent(true);
+        await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
+      });
+
+      const testEvent = createTestEventData();
+      await act(async () => {
+        result.current.trackEvent(testEvent.eventName, testEvent.parameters);
+        await waitForAsyncOperation(10);
+      });
+
+      expect(mockedReactGA.event).not.toHaveBeenCalled();
+    });
+
+    it('不正な測定IDが設定された場合のエラーハンドリング', async () => {
+      setupAnalyticsTest({ measurementId: 'INVALID-ID' });
+
+      const { result } = renderHook(() => useGA4Service());
+
+      // エラーが発生してもアプリケーションがクラッシュしないことを確認
+      await expect(
+        act(async () => {
+          result.current.setConsent(true);
+          await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.SHORT);
+        })
+      ).resolves.not.toThrow();
     });
   });
 });
