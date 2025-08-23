@@ -1,29 +1,26 @@
 import { screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { renderWithProviders } from './test/test-utils';
-import { createMockScrollTo } from './test/test-helpers';
 import { AppRouter } from './components/Router';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 
-// window.scrollTo をモック
-createMockScrollTo();
-
 // react-router-dom をモック
+const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => mockNavigate,
   };
 });
 
-// PrivacyManager をモック
-vi.mock('./services/privacyManager', () => ({
-  PrivacyManager: vi.fn().mockImplementation(() => ({
-    isConsentValid: vi.fn().mockReturnValue(true), // デフォルトで同意済み（バナー非表示）
-    setAllConsent: vi.fn(),
-    addChangeListener: vi.fn(() => () => {}),
-  })),
+// useCookieConsent を再定義（カスタムの設定が必要なため）
+vi.mock('./hooks/useCookieConsent', () => ({
+  useCookieConsent: () => ({
+    consent: true, // デフォルトで同意済み（バナー非表示）
+    setConsent: vi.fn(),
+    loading: false,
+  }),
 }));
 
 describe('App', () => {
@@ -56,7 +53,7 @@ describe('App', () => {
       </>
     );
 
-    // PrivacyManagerのモックで同意済み(true)に設定しているため、バナーは表示されない
+    // useCookieConsentのモックで同意済み(true)に設定しているため、バナーは表示されない
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

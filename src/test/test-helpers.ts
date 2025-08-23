@@ -4,7 +4,6 @@
  */
 
 import { vi, type MockedFunction } from 'vitest';
-import type { PrivacySettings } from '../types/privacy';
 
 /**
  * MockedStorage型定義
@@ -75,22 +74,6 @@ export const createMockScrollTo = (): MockedFunction<
 };
 
 /**
- * プライバシー設定のモックデータ作成
- */
-export const createMockPrivacySettings = (
-  overrides: Partial<PrivacySettings> = {}
-): PrivacySettings => {
-  return {
-    googleAnalytics: false,
-    microsoftClarity: false,
-    consentTimestamp: new Date('2024-01-01T00:00:00Z'),
-    consentVersion: '1.0' as const,
-    hasExplicitConsent: false,
-    ...overrides,
-  };
-};
-
-/**
  * テスト用の待機ヘルパー
  */
 export const waitForAsync = (ms: number = 0): Promise<void> => {
@@ -99,21 +82,12 @@ export const waitForAsync = (ms: number = 0): Promise<void> => {
 
 /**
  * React RouterのuseNavigateモック作成
+ * 使用例: const mockNavigate = createMockNavigate();
  */
 export const createMockNavigate = (): MockedFunction<
   ReturnType<typeof import('react-router-dom').useNavigate>
 > => {
-  const mockNavigate = vi.fn();
-
-  vi.mock('react-router-dom', async () => {
-    const actual = await vi.importActual('react-router-dom');
-    return {
-      ...actual,
-      useNavigate: () => mockNavigate,
-    };
-  });
-
-  return mockNavigate;
+  return vi.fn<ReturnType<typeof import('react-router-dom').useNavigate>>();
 };
 
 /**
@@ -152,3 +126,16 @@ export const suppressConsole = (): ConsoleSuppress => {
       (console.warn as MockedFunction<typeof console.warn>).mock.calls,
   };
 };
+
+/**
+ * 全体的なテスト環境セットアップ
+ * 共通的に必要なモックを一括設定
+ * Analytics関連のモックはsetup.tsで自動適用済み
+ */
+export const setupTestEnvironment = (): void => {
+  createMockLocalStorage();
+  createMockScrollTo();
+};
+
+// setupFilesで自動実行
+setupTestEnvironment();

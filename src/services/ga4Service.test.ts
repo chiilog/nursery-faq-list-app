@@ -1,13 +1,39 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGA4Service } from './ga4Service';
 import {
-  setupGA4TestEnvironment,
-  cleanupGA4TestEnvironment,
-  expectGA4EventCall,
-  expectGA4ConsentCall,
-  mockGtag,
-} from '../test/ga4TestUtils';
+  mockGlobalAnalytics,
+  cleanupGlobalAnalytics,
+} from '../test-utils/mockUtils';
+
+// グローバルmocks
+const mockGtag = vi.fn();
+
+const setupGA4TestEnvironment = () => {
+  mockGlobalAnalytics();
+  Object.defineProperty(window, 'gtag', {
+    value: mockGtag,
+    writable: true,
+  });
+  Object.defineProperty(window, 'dataLayer', {
+    value: [],
+    writable: true,
+  });
+  vi.clearAllMocks();
+};
+
+const cleanupGA4TestEnvironment = () => {
+  cleanupGlobalAnalytics();
+  delete (window as unknown as { dataLayer?: unknown }).dataLayer;
+  vi.clearAllMocks();
+};
+
+const expectGA4EventCall = (
+  eventName: string,
+  parameters?: Record<string, unknown>
+) => {
+  expect(mockGtag).toHaveBeenCalledWith('event', eventName, parameters);
+};
 
 describe('useGA4Service', () => {
   describe('Hook Tests', () => {
@@ -27,7 +53,6 @@ describe('useGA4Service', () => {
       expect(typeof result.current.setConsent).toBe('function');
       expect(typeof result.current.trackEvent).toBe('function');
       expect(typeof result.current.trackPageView).toBe('function');
-      expect(typeof result.current.updateConsentMode).toBe('function');
     });
 
     it('同意設定の変更が正しく動作する', () => {
@@ -116,31 +141,6 @@ describe('useGA4Service', () => {
       expectGA4EventCall('page_view', {
         page_title: 'Test Page',
         page_location: '/test',
-      });
-    });
-
-    it('updateConsentModeが正しく動作する', async () => {
-      const { result } = renderHook(() => useGA4Service());
-
-      act(() => {
-        result.current.setConsent(true);
-      });
-
-      await waitFor(() => expect(result.current.isEnabled).toBe(true));
-
-      // 初期化時のコールをクリア
-      mockGtag.mockClear();
-
-      act(() => {
-        result.current.updateConsentMode({
-          analytics_storage: 'granted',
-          ad_storage: 'denied',
-        });
-      });
-
-      expectGA4ConsentCall('update', {
-        analytics_storage: 'granted',
-        ad_storage: 'denied',
       });
     });
 

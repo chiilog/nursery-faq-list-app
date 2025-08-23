@@ -725,357 +725,132 @@ class CryptoService {
 
 ### 分析機能コンポーネント設計
 
-#### 1. 分析サービス層
+#### シンプルな統合アプローチ
+
+既存の実装済みサービス（GA4Service, ClarityService）とプライバシー管理機能を
+最小限のコンポーネントで統合します。
 
 ```typescript
-// 分析イベント管理
-interface AnalyticsEvent {
-  name: string;
-  parameters?: Record<string, any>;
-  timestamp: Date;
+// AnalyticsProvider - 唯一の統合コンポーネント
+interface AnalyticsProviderProps {
+  children: React.ReactNode;
 }
 
-interface AnalyticsService {
-  // 初期化
-  initialize(): Promise<void>;
-  // 同意管理
-  setConsent(consent: boolean): void;
-  getConsent(): boolean;
-  disable(): void;
-  // イベント送信
-  trackPageView(page: string): void;
-  trackEvent(event: AnalyticsEvent): void;
-  // 主要イベント
-  trackNurseryCreated(nurseryId: string): void;
-  trackQuestionAdded(nurseryId: string, questionCount: number): void;
-  trackInsightAdded(nurseryId: string, insightCount: number): void;
-  trackNurseryDeleted(nurseryId: string): void;
-  trackInsightsViewed(nurseryId: string): void;
-}
+// 既存のサービスを活用
+// - useGA4Service() - 既に実装済み
+// - useClarityService() - GA4と整合性を持たせたフック形式で実装済み
+// - useCookieConsent() - Cookie同意管理フック
 
-// Google Analytics 4 実装（GA4を直接利用、GTM経由ではない）
-class GA4Service implements AnalyticsService {
-  private isEnabled = false;
-  private consentGiven = false;
-  private measurementId: string = (import.meta as any).env
-    .VITE_GA4_MEASUREMENT_ID as string;
-  private gtag: any;
-
-  async initialize(): Promise<void> {
-    if (!this.consentGiven) return;
-    if ((import.meta as any).env.VITE_ANALYTICS_ENABLED === 'false') return;
-    if (navigator.doNotTrack === '1') return;
-
-    // GA4スクリプトの動的読み込み
-    await this.loadGA4Script();
-    this.isEnabled = true;
-  }
-
-  setConsent(consent: boolean): void {
-    this.consentGiven = consent;
-    if (!consent) this.disable();
-
-    // Consent Mode v2: 同意状態を更新
-    if (consent && (window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
-        ad_storage: 'granted',
-        analytics_storage: 'granted',
-      });
-    }
-  }
-
-  getConsent(): boolean {
-    return this.consentGiven;
-  }
-
-  disable(): void {
-    this.isEnabled = false;
-    // Consent Mode v2: 全て denied に更新
-    if ((window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
-        ad_storage: 'denied',
-        analytics_storage: 'denied',
-      });
-    }
-  }
-
-  private async loadGA4Script(): Promise<void> {
-    const script = document.createElement('script');
-    script.async = true;
-    // GA4の公式測定スクリプトを直接読み込み
-    // 注: URLは googletagmanager.com だが、これはGA4の正式なエンドポイント
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${this.measurementId}`;
-    document.head.appendChild(script);
-
-    // gtag関数の初期化
-    (window as any).dataLayer = (window as any).dataLayer || [];
-    (window as any).gtag = function () {
-      (window as any).dataLayer.push(arguments);
-    };
-    (window as any).gtag('js', new Date());
-
-    // Consent Mode v2: 初期は denied
-    (window as any).gtag('consent', 'default', {
-      ad_storage: 'denied',
-      analytics_storage: 'denied',
-    });
-
-    (window as any).gtag('config', this.measurementId, {
-      anonymize_ip: true,
-      allow_google_signals: false,
-      allow_ad_personalization_signals: false,
-      // debug_mode は開発時のみ
-      debug_mode: (import.meta as any).env.VITE_ANALYTICS_DEBUG === 'true',
-    });
-  }
-
-  trackPageView(page: string): void {
-    if (!this.isEnabled) return;
-
-    (window as any).gtag('config', this.measurementId, {
-      page_path: page,
-    });
-  }
-
-  trackEvent(event: AnalyticsEvent): void {
-    if (!this.isEnabled) return;
-
-    (window as any).gtag('event', event.name, event.parameters);
-  }
-
-  trackNurseryCreated(nurseryId: string): void {
-    this.trackEvent({
-      name: 'nursery_created',
-      parameters: { nursery_id: nurseryId },
-      timestamp: new Date(),
-    });
-  }
-
-  trackQuestionAdded(nurseryId: string, questionCount: number): void {
-    this.trackEvent({
-      name: 'question_added',
-      parameters: { nursery_id: nurseryId, question_count: questionCount },
-      timestamp: new Date(),
-    });
-  }
-
-  trackInsightAdded(nurseryId: string, insightCount: number): void {
-    this.trackEvent({
-      name: 'insight_added',
-      parameters: { nursery_id: nurseryId, insight_count: insightCount },
-      timestamp: new Date(),
-    });
-  }
-
-  trackNurseryDeleted(nurseryId: string): void {
-    this.trackEvent({
-      name: 'nursery_deleted',
-      parameters: { nursery_id: nurseryId },
-      timestamp: new Date(),
-    });
-  }
-
-  trackInsightsViewed(nurseryId: string): void {
-    this.trackEvent({
-      name: 'insights_viewed',
-      parameters: { nursery_id: nurseryId },
-      timestamp: new Date(),
-    });
-  }
-}
-
-// Microsoft Clarity 実装
-class ClarityService {
-  private clarityId: string = (import.meta as any).env
-    .VITE_CLARITY_PROJECT_ID as string;
-  private isEnabled = false;
-  private consentGiven = false;
-
-  async initialize(): Promise<void> {
-    if (!this.consentGiven) return;
-    if ((import.meta as any).env.VITE_ANALYTICS_ENABLED === 'false') return;
-    if (navigator.doNotTrack === '1') return;
-
-    await this.loadClarityScript();
-    this.setupDataMasking();
-    this.isEnabled = true;
-  }
-
-  setConsent(consent: boolean): void {
-    this.consentGiven = consent;
-    if (!consent) this.disable();
-  }
-
-  getConsent(): boolean {
-    return this.consentGiven;
-  }
-
-  disable(): void {
-    this.isEnabled = false;
-    if ((window as any).clarity) {
-      (window as any).clarity('consent', false);
-      (window as any).clarity('stop');
-    }
-  }
-
-  private async loadClarityScript(): Promise<void> {
-    const script = document.createElement('script');
-    script.innerHTML = `
-      (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "${this.clarityId}");
-    `;
-    document.head.appendChild(script);
-
-    // 可能なら consent を false で初期化
-    (window as any).clarity?.('consent', false);
-  }
-
-  private setupDataMasking(): void {
-    // 個人情報を含む可能性のある要素をマスク
-    const sensitiveSelectors = [
-      'input[type="text"]',
-      'input[type="email"]',
-      'input[type="tel"]',
-      'input[type="password"]',
-      'input[type="date"]',
-      'input[type="datetime-local"]',
-      'textarea',
-      '[data-sensitive]',
-    ];
-
-    sensitiveSelectors.forEach((selector) => {
-      document.querySelectorAll(selector).forEach((element) => {
-        element.setAttribute('data-clarity-mask', 'true');
-      });
-    });
-
-    // 追加でテキスト全体のマスクを有効化
-    (window as any).clarity?.('set', 'maskText', true);
-  }
-}
+// 既存のGA4Service（実装済み）を活用
+// src/services/ga4Service.ts にて実装済み
+// useGA4Service()フックとして利用可能
 ```
 
-#### 2. プライバシー管理コンポーネント
+#### 実装方針
+
+**必要最小限の実装：**
+
+1. `AnalyticsProvider`コンポーネント1つだけ作成
+2. 既存の実装済みサービスを統合
+3. プライバシー設定との連動
 
 ```typescript
-// プライバシー設定管理
-interface PrivacySettings {
-  analyticsConsent: boolean;
-  clarityConsent: boolean;
-  consentTimestamp: Date;
-  consentVersion: string;
-}
+// AnalyticsProvider.tsx - シンプルな統合コンポーネント
+export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+  const ga4 = useGA4Service();
+  const clarity = useClarityService();
+  const { consent, setConsent } = useCookieConsent();
 
-class PrivacyManager {
-  private settings: PrivacySettings;
-  private storageKey = 'privacy-settings';
-
-  constructor() {
-    this.loadSettings();
-  }
-
-  // 設定の読み込み
-  private loadSettings(): void {
-    const stored = localStorage.getItem(this.storageKey);
-    if (stored) {
-      this.settings = JSON.parse(stored);
-      // Date を復元
-      if (this.settings?.consentTimestamp) {
-        this.settings.consentTimestamp = new Date(this.settings.consentTimestamp as any);
-      }
-    } else {
-      this.settings = {
-        analyticsConsent: false,
-        clarityConsent: false,
-        consentTimestamp: new Date(),
-        consentVersion: '1.0'
-      };
-    }
-  }
-
-  // 設定の保存
-  private saveSettings(): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.settings));
-  }
-
-  // 設定の取得（読み取り専用）
-  getSettings(): Readonly<PrivacySettings> {
-    return this.settings;
-  }
-
-  getConsentTimestamp(): Date {
-    return this.settings.consentTimestamp;
-  }
-
-  // 同意状態の取得
-  getAnalyticsConsent(): boolean {
-    return this.settings.analyticsConsent;
-  }
-
-  getClarityConsent(): boolean {
-    return this.settings.clarityConsent;
-  }
-
-  // 同意状態の更新
-  setAnalyticsConsent(consent: boolean): void {
-    this.settings.analyticsConsent = consent;
-    this.settings.consentTimestamp = new Date();
-    this.saveSettings();
-  }
-
-  setClarityConsent(consent: boolean): void {
-    this.settings.clarityConsent = consent;
-    this.settings.consentTimestamp = new Date();
-    this.saveSettings();
-  }
-
-  // 全体同意の設定
-  setAllConsent(consent: boolean): void {
-    this.settings.analyticsConsent = consent;
-    this.settings.clarityConsent = consent;
-    this.settings.consentTimestamp = new Date();
-    this.saveSettings();
-  }
-
-  // 同意が必要かどうかの判定
-  needsConsent(): boolean {
-    return !this.settings.consentTimestamp ||
-           this.isConsentExpired();
-  }
-
-  private isConsentExpired(): boolean {
-    const expiryDays = 365; // 1年間有効
-    const expiryDate = new Date(this.settings.consentTimestamp);
-    expiryDate.setDate(expiryDate.getDate() + expiryDays);
-    return new Date() > expiryDate;
-  }
-}
-
-// React コンポーネント
-const CookieConsentBanner: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const privacyManager = usePrivacyManager();
-
+  // GA4とClarityの同意状態を同期
   useEffect(() => {
-    setIsVisible(privacyManager.needsConsent());
-  }, []);
+    if (consent !== null) {
+      const consentValue = consent === true;
+      ga4.setConsent(consentValue);
+      clarity.setConsent(consentValue);
+    }
+  }, [consent, ga4, clarity]);
+
+  // 統合された同意管理
+  const setAnalyticsConsent = useCallback(
+    (consentValue: boolean) => {
+      setConsent(consentValue);
+      ga4.setConsent(consentValue);
+      clarity.setConsent(consentValue);
+    },
+    [setConsent, ga4, clarity]
+  );
+
+  // 統合されたイベントトラッキング
+  const trackEvent = useCallback(
+    (name: string, params?: Record<string, unknown>) => {
+      // 同意がない場合は送信しない
+      if (consent !== true) return;
+      // GA4にイベントを送信（Clarityはセッションレコーディングのため不要）
+      ga4.trackEvent(name, params);
+    },
+    [ga4, consent]
+  );
+
+  const contextValue: AnalyticsContextType = useMemo(
+    () => ({
+      ga4,
+      clarity,
+      setAnalyticsConsent,
+      hasAnalyticsConsent: consent === true,
+      trackEvent,
+    }),
+    [ga4, clarity, setAnalyticsConsent, consent, trackEvent]
+  );
+
+  return (
+    <AnalyticsContext.Provider value={contextValue}>
+      {children}
+    </AnalyticsContext.Provider>
+  );
+}
+
+// AnalyticsContextの公開インターフェース
+export interface AnalyticsContextType {
+  readonly ga4: UseGA4ServiceReturn;
+  readonly clarity: UseClarityServiceReturn;
+  readonly setAnalyticsConsent: (consent: boolean) => void;
+  readonly hasAnalyticsConsent: boolean;
+  readonly trackEvent: (name: string, params?: Record<string, unknown>) => void;
+}
+
+```
+
+**実装状況：**
+
+1. ✅ `clarityService.ts` に `useClarityService` フックを実装済み
+2. ✅ `useGA4Service` と同様のインターフェースで統一済み
+3. ✅ `AnalyticsProvider` で両サービスと`useCookieConsent`を統合済み
+4. ✅ 統合イベントトラッキングAPI（`trackEvent`）を実装済み
+5. ✅ ページ遷移トラッキングはRouterレベル（AnalyticsRouter）で実装
+
+#### 2. Cookie 同意管理（useCookieConsent + AnalyticsProvider 連携）
+
+```typescript
+// Cookie 同意管理フック（現行実装）
+import { useCookieConsent } from '../../src/hooks/useCookieConsent';
+import { useAnalytics } from '../../src/hooks/useAnalytics';
+
+// Cookie 同意バナーコンポーネント
+const CookieConsentBanner: React.FC = () => {
+  const { consent, setConsent } = useCookieConsent();
+  const { ga4, clarity, setAnalyticsConsent } = useAnalytics();
+
+  // 同意状態が null（未設定）の場合にバナーを表示
+  const isVisible = consent === null;
 
   const handleAccept = () => {
-    privacyManager.setAllConsent(true);
-    setIsVisible(false);
-    // 分析サービスを初期化・同意反映
-    analyticsService.setConsent(true);
-    clarityService.setConsent(true);
-    analyticsService.initialize();
-    clarityService.initialize();
+    // 統一された同意管理API を使用
+    setAnalyticsConsent(true);
   };
 
   const handleDecline = () => {
-    privacyManager.setAllConsent(false);
-    setIsVisible(false);
+    // 統一された同意管理API を使用
+    setAnalyticsConsent(false);
   };
 
   if (!isVisible) return null;
@@ -1110,92 +885,11 @@ const CookieConsentBanner: React.FC = () => {
   );
 };
 
-const PrivacySettingsPage: React.FC = () => {
-  const privacyManager = usePrivacyManager();
-  const [analyticsConsent, setAnalyticsConsent] = useState(
-    privacyManager.getAnalyticsConsent()
-  );
-  const [clarityConsent, setClarityConsent] = useState(
-    privacyManager.getClarityConsent()
-  );
-
-  const handleAnalyticsChange = (consent: boolean) => {
-    setAnalyticsConsent(consent);
-    privacyManager.setAnalyticsConsent(consent);
-
-    if (consent) {
-      analyticsService.initialize();
-    } else {
-      analyticsService.disable();
-    }
-  };
-
-  const handleClarityChange = (consent: boolean) => {
-    setClarityConsent(consent);
-    privacyManager.setClarityConsent(consent);
-
-    if (consent) {
-      clarityService.initialize();
-    } else {
-      clarityService.disable();
-    }
-  };
-
-  return (
-    <VStack spacing={6} align="stretch">
-      <Heading size="md">プライバシー設定</Heading>
-
-      <Box>
-        <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="analytics-consent" mb="0">
-            Googleアナリティクス
-          </FormLabel>
-          <Switch
-            id="analytics-consent"
-            isChecked={analyticsConsent}
-            onChange={(e) => handleAnalyticsChange(e.target.checked)}
-          />
-        </FormControl>
-        <Text fontSize="sm" color="gray.600" mt={1}>
-          ページビューと機能使用状況を分析します
-        </Text>
-      </Box>
-
-      <Box>
-        <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="clarity-consent" mb="0">
-            Microsoft Clarity
-          </FormLabel>
-          <Switch
-            id="clarity-consent"
-            isChecked={clarityConsent}
-            onChange={(e) => handleClarityChange(e.target.checked)}
-          />
-        </FormControl>
-        <Text fontSize="sm" color="gray.600" mt={1}>
-          ユーザー操作の録画とヒートマップを収集します
-        </Text>
-      </Box>
-
-      <Divider />
-
-      <Box>
-        <Text fontSize="sm" color="gray.600">
-          最終更新: {privacyManager.getConsentTimestamp().toLocaleDateString()}
-        </Text>
-        <Text fontSize="sm" color="gray.600">
-          設定はいつでも変更できます
-        </Text>
-      </Box>
-
-      <Box mt={4}>
-        <Link to="/privacy-policy" color="blue.500">
-          プライバシーポリシーを確認する
-        </Link>
-      </Box>
-    </VStack>
-  );
-};
+// AnalyticsProvider による自動管理の特徴：
+// - 同意状態は useCookieConsent で統一管理
+// - GA4/Clarity の初期化・同意反映は Provider 側で自動実行
+// - ページ遷移の PV 送信は Router レベル（AnalyticsRouter）で実装（Provider は送信しない）
+// - 同意取得後は両サービスが自動的に有効化される
 
 // プライバシーポリシーページ
 const PrivacyPolicyPage: React.FC = () => {
@@ -1291,7 +985,7 @@ const PrivacyPolicyPage: React.FC = () => {
             <UnorderedList spacing={2} ml={4}>
               <ListItem>初回アクセス時の同意バナーで分析機能の使用を選択</ListItem>
               <ListItem>プライバシー設定ページでいつでも設定を変更</ListItem>
-              <ListItem>個別に Google Analytics と Microsoft Clarity を制御</ListItem>
+              <ListItem>分析機能は一括で有効/無効を切り替え</ListItem>
               <ListItem>ブラウザの Do Not Track 設定の利用</ListItem>
             </UnorderedList>
           </VStack>
@@ -1376,23 +1070,23 @@ const PrivacyPolicyPage: React.FC = () => {
 ```typescript
 // React Hook for Analytics
 const useAnalytics = () => {
-  const analyticsService = useContext(AnalyticsContext);
+  const { trackEvent } = useContext(AnalyticsContext);
 
   const trackPageView = useCallback((page: string) => {
-    analyticsService.trackPageView(page);
-  }, [analyticsService]);
+    trackEvent('page_view', { page });
+  }, [trackEvent]);
 
   const trackNurseryCreated = useCallback((nurseryId: string) => {
-    analyticsService.trackNurseryCreated(nurseryId);
-  }, [analyticsService]);
+    trackEvent('nursery_created', { nurseryId });
+  }, [trackEvent]);
 
   const trackQuestionAdded = useCallback((nurseryId: string, questionCount: number) => {
-    analyticsService.trackQuestionAdded(nurseryId, questionCount);
-  }, [analyticsService]);
+    trackEvent('question_added', { nurseryId, questionCount });
+  }, [trackEvent]);
 
   const trackInsightAdded = useCallback((nurseryId: string, insightCount: number) => {
-    analyticsService.trackInsightAdded(nurseryId, insightCount);
-  }, [analyticsService]);
+    trackEvent('insight_added', { nurseryId, insightCount });
+  }, [trackEvent]);
 
   return {
     trackPageView,
