@@ -248,6 +248,9 @@ describe('useGA4Service', () => {
             anonymize_ip: true,
             cookie_expires: 60 * 60 * 24 * 30,
             send_page_view: false,
+            allow_google_signals: false,
+            allow_ad_personalization_signals: false,
+            storage: 'none',
           },
         })
       );
