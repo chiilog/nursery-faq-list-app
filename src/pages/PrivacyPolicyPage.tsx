@@ -269,6 +269,7 @@ export const PrivacyPolicyPage = () => {
                 color="blue.500"
                 href="https://policies.google.com/privacy"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 Googleのプライバシーポリシー
               </Link>
@@ -278,6 +279,7 @@ export const PrivacyPolicyPage = () => {
                 color="blue.500"
                 href="https://privacy.microsoft.com/privacystatement"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 Microsoftのプライバシーステートメント
               </Link>
@@ -382,6 +384,8 @@ export const PrivacyPolicyPage = () => {
                 variant="underline"
                 color="blue.500"
                 href="https://github.com/chiilog/nursery-faq-list-app/issues"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 GitHubのIssueページ
               </Link>
@@ -390,6 +394,8 @@ export const PrivacyPolicyPage = () => {
                 variant="underline"
                 color="blue.500"
                 href="https://x.com/chiilogweb"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 開発者のSNSアカウント
               </Link>
