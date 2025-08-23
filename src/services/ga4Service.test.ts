@@ -16,16 +16,6 @@ import { useGA4Service } from './ga4Service';
 // ga4Service の自動モックを解除
 vi.unmock('./ga4Service');
 
-// react-ga4をモック
-vi.mock('react-ga4', () => ({
-  default: {
-    initialize: vi.fn(),
-    event: vi.fn(),
-    send: vi.fn(),
-    gtag: vi.fn(),
-  },
-}));
-
 // environment関数をモック
 vi.mock('../utils/environment', () => ({
   isDevelopment: vi.fn(() => false), // 本番環境をシミュレート
