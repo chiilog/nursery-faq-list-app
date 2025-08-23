@@ -780,14 +780,26 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     [setConsent, ga4, clarity]
   );
 
+  // 統合されたイベントトラッキング
+  const trackEvent = useCallback(
+    (name: string, params?: Record<string, unknown>) => {
+      // 同意がない場合は送信しない
+      if (consent !== true) return;
+      // GA4にイベントを送信（Clarityはセッションレコーディングのため不要）
+      ga4.trackEvent(name, params);
+    },
+    [ga4, consent]
+  );
+
   const contextValue: AnalyticsContextType = useMemo(
     () => ({
       ga4,
       clarity,
       setAnalyticsConsent,
       hasAnalyticsConsent: consent === true,
+      trackEvent,
     }),
-    [ga4, clarity, setAnalyticsConsent, consent]
+    [ga4, clarity, setAnalyticsConsent, consent, trackEvent]
   );
 
   return (
@@ -803,6 +815,7 @@ export interface AnalyticsContextType {
   readonly clarity: UseClarityServiceReturn;
   readonly setAnalyticsConsent: (consent: boolean) => void;
   readonly hasAnalyticsConsent: boolean;
+  readonly trackEvent: (name: string, params?: Record<string, unknown>) => void;
 }
 
 ```
@@ -812,7 +825,8 @@ export interface AnalyticsContextType {
 1. ✅ `clarityService.ts` に `useClarityService` フックを実装済み
 2. ✅ `useGA4Service` と同様のインターフェースで統一済み
 3. ✅ `AnalyticsProvider` で両サービスと`useCookieConsent`を統合済み
-4. ✅ ページ遷移の自動トラッキング機能を実装済み
+4. ✅ 統合イベントトラッキングAPI（`trackEvent`）を実装済み
+5. ✅ ページ遷移トラッキングはRouterレベル（AnalyticsRouter）で実装
 
 #### 2. Cookie 同意管理（useCookieConsent + AnalyticsProvider 連携）
 
@@ -1056,23 +1070,23 @@ const PrivacyPolicyPage: React.FC = () => {
 ```typescript
 // React Hook for Analytics
 const useAnalytics = () => {
-  const analyticsService = useContext(AnalyticsContext);
+  const { trackEvent } = useContext(AnalyticsContext);
 
   const trackPageView = useCallback((page: string) => {
-    analyticsService.trackPageView(page);
-  }, [analyticsService]);
+    trackEvent('page_view', { page });
+  }, [trackEvent]);
 
   const trackNurseryCreated = useCallback((nurseryId: string) => {
-    analyticsService.trackNurseryCreated(nurseryId);
-  }, [analyticsService]);
+    trackEvent('nursery_created', { nurseryId });
+  }, [trackEvent]);
 
   const trackQuestionAdded = useCallback((nurseryId: string, questionCount: number) => {
-    analyticsService.trackQuestionAdded(nurseryId, questionCount);
-  }, [analyticsService]);
+    trackEvent('question_added', { nurseryId, questionCount });
+  }, [trackEvent]);
 
   const trackInsightAdded = useCallback((nurseryId: string, insightCount: number) => {
-    analyticsService.trackInsightAdded(nurseryId, insightCount);
-  }, [analyticsService]);
+    trackEvent('insight_added', { nurseryId, insightCount });
+  }, [trackEvent]);
 
   return {
     trackPageView,
