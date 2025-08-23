@@ -13,8 +13,8 @@ import {
 } from '../test-utils/analyticsTestHelper';
 import { useGA4Service } from './ga4Service';
 
-// setup.tsのモックを無効化
-vi.unmock('../services/ga4Service');
+// ga4Service の自動モックを解除
+vi.unmock('./ga4Service');
 
 // react-ga4をモック
 vi.mock('react-ga4', () => ({
@@ -28,7 +28,10 @@ vi.mock('react-ga4', () => ({
 // environment関数をモック
 vi.mock('../utils/environment', () => ({
   isDevelopment: vi.fn(() => false), // 本番環境をシミュレート
-  safeExecute: vi.fn((operation) => Promise.resolve(operation())),
+  // 元の (operation, context) に合わせて第2引数も受け取る
+  safeExecute: vi.fn(<T>(operation: () => Promise<T> | T, _context?: string) =>
+    Promise.resolve(operation())
+  ),
 }));
 
 describe('useGA4Service', () => {
@@ -91,10 +94,18 @@ describe('useGA4Service', () => {
       // react-ga4のinitializeが呼ばれることを確認
       expect(mockedReactGA.initialize).toHaveBeenCalled();
     });
+  });
+
+  describe('Do Not Track シナリオ', () => {
+    beforeEach(() => {
+      setupAnalyticsTest({ doNotTrack: '1' });
+    });
+
+    afterEach(() => {
+      cleanupAnalyticsTest();
+    });
 
     it('Do Not Track有効時は同意があっても初期化を回避する', async () => {
-      setupAnalyticsTest({ doNotTrack: '1' });
-
       const { result } = renderHook(() => useGA4Service());
 
       // 同意を設定した場合でもDo Not Trackのため初期化されないことを確認
@@ -266,8 +277,8 @@ describe('useGA4Service', () => {
       cleanupAnalyticsTest();
     });
 
-    it('環境変数が設定されていない場合でもサービスは動作する', async () => {
-      // GA4測定IDが未設定の環境をセットアップ（react-ga4は空文字列でも初期化される）
+    it('測定ID未設定時はno-opとなりイベント送信を行わない', async () => {
+      // GA4測定IDが未設定の環境をセットアップ
       setupAnalyticsTest({ measurementId: '' });
 
       const { result } = renderHook(() => useGA4Service());
@@ -277,9 +288,9 @@ describe('useGA4Service', () => {
         await waitForAsyncOperation(TEST_CONSTANTS.WAIT_TIME.MEDIUM);
       });
 
-      // 同意が正しく記録されることを確認
+      // 同意は記録されるが、測定ID未設定のためサービスは無効のまま
       expect(result.current.hasConsent).toBe(true);
-      expect(result.current.isEnabled).toBe(true);
+      expect(result.current.isEnabled).toBe(false);
 
       const testEvent = createTestEventData();
       await act(async () => {
@@ -287,12 +298,9 @@ describe('useGA4Service', () => {
         await waitForAsyncOperation(10);
       });
 
-      // react-ga4は初期化されるため、メソッド呼び出しは行われる
-      // （ただし無効な測定IDのため実際のデータ送信はされない）
-      expect(mockedReactGA.event).toHaveBeenCalledWith(
-        testEvent.eventName,
-        testEvent.parameters
-      );
+      // 測定ID未設定の場合はno-opとなり、ReactGAの初期化・イベント送信は行われない
+      expect(mockedReactGA.initialize).not.toHaveBeenCalled();
+      expect(mockedReactGA.event).not.toHaveBeenCalled();
     });
 
     it('analytics無効設定時は同意があってもイベント送信を行わない', async () => {
