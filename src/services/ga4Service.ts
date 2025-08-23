@@ -27,6 +27,8 @@ interface GA4InitOptions {
     readonly allow_google_signals?: boolean;
     readonly allow_ad_personalization_signals?: boolean;
     readonly storage?: string;
+  };
+  readonly gtagOptions?: {
     readonly debug_mode?: boolean;
   };
 }
@@ -90,11 +92,15 @@ const createGA4Options = (): GA4InitOptions => ({
     allow_google_signals: false, // Googleシグナルを無効化
     allow_ad_personalization_signals: false, // 広告パーソナライゼーションを無効化
     storage: 'none', // Cookieを使用しない
-    // デバッグモードは環境変数で制御
-    ...(import.meta.env.VITE_ANALYTICS_DEBUG === 'true'
-      ? { debug_mode: true }
-      : {}),
   },
+  // GA4用のgtagOptionsでデバッグモードを制御
+  ...(import.meta.env.VITE_ANALYTICS_DEBUG === 'true'
+    ? {
+        gtagOptions: {
+          debug_mode: true,
+        },
+      }
+    : {}),
 });
 
 /**
