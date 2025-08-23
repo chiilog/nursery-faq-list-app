@@ -16,7 +16,7 @@ import { isDevelopment, safeExecute } from '../utils/environment';
 export type MeasurementId = string & { readonly brand: unique symbol };
 
 /**
- * GA4初期化オプションの型定義
+ * @description GA4初期化オプションの型定義
  */
 interface GA4InitOptions {
   readonly testMode: boolean;
@@ -24,6 +24,10 @@ interface GA4InitOptions {
     readonly anonymize_ip: boolean;
     readonly cookie_expires: number;
     readonly send_page_view: boolean;
+    readonly allow_google_signals?: boolean;
+    readonly allow_ad_personalization_signals?: boolean;
+    readonly storage?: string;
+    readonly debug_mode?: boolean;
   };
 }
 
@@ -79,9 +83,17 @@ export const createMeasurementId = (id: string | undefined): MeasurementId => {
 const createGA4Options = (): GA4InitOptions => ({
   testMode: import.meta.env.MODE === 'test',
   gaOptions: {
-    anonymize_ip: true,
+    // プライバシー設定（設計書の方針に基づく）
+    anonymize_ip: true, // IPアドレスの匿名化
     cookie_expires: 60 * 60 * 24 * 30, // 30日
     send_page_view: false, // 手動でページビューを送信
+    allow_google_signals: false, // Googleシグナルを無効化
+    allow_ad_personalization_signals: false, // 広告パーソナライゼーションを無効化
+    storage: 'none', // Cookieを使用しない
+    // デバッグモードは環境変数で制御
+    ...(import.meta.env.VITE_ANALYTICS_DEBUG === 'true'
+      ? { debug_mode: true }
+      : {}),
   },
 });
 
@@ -282,7 +294,7 @@ export const resetGA4ServiceInstance = (): void => {
 };
 
 /**
- * GA4サービスの返り値型定義
+ * @description GA4サービスの返り値型定義
  */
 export interface UseGA4ServiceReturn {
   readonly isEnabled: boolean;
