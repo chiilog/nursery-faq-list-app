@@ -20,8 +20,8 @@ vi.mock('../services/ga4Service', async () => {
 });
 
 vi.mock('../services/clarityService', () => ({
-  createClarityProjectId: vi.fn((id: string | undefined) => {
-    if (!id) {
+  createClarityProjectId: vi.fn((id: string | null | undefined) => {
+    if (id === undefined || id === null) {
       throw new Error('Clarity project ID is required');
     }
     const normalized = id.trim();
