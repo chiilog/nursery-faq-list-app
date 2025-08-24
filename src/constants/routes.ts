@@ -51,6 +51,11 @@ export const generateRoute = {
 } as const;
 
 /**
+ * Branded Type for route paths - より型安全なルートパス
+ */
+export type RoutePath = string & { readonly __brand: unique symbol };
+
+/**
  * ルートパスの型定義
  */
 export type RouteKeys = keyof typeof ROUTES;
