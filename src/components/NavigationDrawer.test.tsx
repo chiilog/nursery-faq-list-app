@@ -11,6 +11,7 @@ import {
   getDrawerMenuItemByLabel,
   setupErrorHandlingTest,
 } from '../test-utils/navigation';
+import { DRAWER_MENU_ITEMS } from '../constants/navigation';
 
 const mockNavigate = vi.fn<NavigateFunction>();
 const mockOnClose = vi.fn<NavigationDrawerProps['onClose']>();
@@ -69,35 +70,22 @@ describe('NavigationDrawer', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('メニュー項目をクリックすると該当ページに遷移し、onCloseが呼ばれる', async () => {
-    renderNavigationDrawer();
+  it.each(
+    DRAWER_MENU_ITEMS.map((item) => ({ label: item.label, path: item.path }))
+  )(
+    'メニュー項目「$label」をクリックすると該当ページに遷移し、onCloseが呼ばれる',
+    async ({ label, path }) => {
+      renderNavigationDrawer();
 
-    await screen.findByRole('dialog');
+      await screen.findByRole('dialog');
 
-    const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
-    expect(aboutItem).toBeDefined();
+      const menuLink = screen.getByText(label);
+      await user.click(menuLink);
 
-    const aboutLink = screen.getByText(aboutItem!.label);
-    await user.click(aboutLink);
-
-    expect(mockNavigate).toHaveBeenCalledWith(aboutItem!.path);
-    expect(mockOnClose).toHaveBeenCalled();
-  });
-
-  it('プライバシーポリシーリンクをクリックすると正しいページに遷移し、onCloseが呼ばれる', async () => {
-    renderNavigationDrawer();
-
-    await screen.findByRole('dialog');
-
-    const privacyItem = getDrawerMenuItemByLabel('プライバシーポリシー');
-    expect(privacyItem).toBeDefined();
-
-    const privacyPolicyLink = screen.getByText(privacyItem!.label);
-    await user.click(privacyPolicyLink);
-
-    expect(mockNavigate).toHaveBeenCalledWith(privacyItem!.path);
-    expect(mockOnClose).toHaveBeenCalled();
-  });
+      expect(mockNavigate).toHaveBeenCalledWith(path);
+      expect(mockOnClose).toHaveBeenCalled();
+    }
+  );
 
   it('閉じるボタンでメニューを閉じることができる', async () => {
     const { user } = renderNavigationDrawer();
@@ -106,10 +94,6 @@ describe('NavigationDrawer', () => {
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAttribute('data-state', 'open');
-
-    const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
-    expect(aboutItem).toBeDefined();
-    expect(screen.getByText(aboutItem!.label)).toBeInTheDocument();
 
     // 閉じるボタンを見つけてクリック
     const closeButton = screen.getByRole('button', { name: /close/i });
