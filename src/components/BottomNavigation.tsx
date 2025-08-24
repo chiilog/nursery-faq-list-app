@@ -1,7 +1,7 @@
 import { Box, HStack, VStack, Text, Portal } from '@chakra-ui/react';
 import { IoHomeOutline, IoHome, IoMenuOutline, IoMenu } from 'react-icons/io5';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useId } from 'react';
 import { ROUTES, type RoutePath } from '../constants/routes';
 import { APP_CONFIG } from '../constants/app';
 import { NavigationDrawer } from './NavigationDrawer';
@@ -32,21 +32,26 @@ export const BottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const navId = useId();
 
-  const navItems = [
-    {
-      label: 'ホーム',
-      path: ROUTES.HOME as RoutePath,
-      icon: <IoHomeOutline size={24} />,
-      activeIcon: <IoHome size={24} />,
-    },
-    {
-      label: 'メニュー',
-      path: '#menu' as RoutePath,
-      icon: <IoMenuOutline size={24} />,
-      activeIcon: <IoMenu size={24} />,
-    },
-  ] as const satisfies readonly NavItem[];
+  const navItems = useMemo(
+    () =>
+      [
+        {
+          label: 'ホーム',
+          path: ROUTES.HOME as RoutePath,
+          icon: <IoHomeOutline size={24} aria-hidden="true" />,
+          activeIcon: <IoHome size={24} aria-hidden="true" />,
+        },
+        {
+          label: 'メニュー',
+          path: '#menu' as RoutePath,
+          icon: <IoMenuOutline size={24} aria-hidden="true" />,
+          activeIcon: <IoMenu size={24} aria-hidden="true" />,
+        },
+      ] as const satisfies readonly NavItem[],
+    []
+  );
 
   // KISS: 色の取得をシンプル化
   const getItemColor = (isSelected: boolean) =>
@@ -69,6 +74,21 @@ export const BottomNavigation = () => {
   );
 
   /**
+   * @description キーボードナビゲーション処理
+   * @param event - キーボードイベント
+   * @param item - 対象のナビゲーション項目
+   */
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent, item: NavItem) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleNavClick(item);
+      }
+    },
+    [handleNavClick]
+  );
+
+  /**
    * @description 指定されたパスが現在のアクティブパスかどうかを判定
    * @param path - 判定対象のパス
    * @returns アクティブな場合true、そうでない場合false
@@ -85,11 +105,14 @@ export const BottomNavigation = () => {
       <NavigationDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        aria-labelledby={`${navId}-menu`}
       />
 
       <Portal>
         <Box
           as="nav"
+          role="tablist"
+          aria-label="メインナビゲーション"
           position="fixed"
           bottom={0}
           left={0}
@@ -112,6 +135,11 @@ export const BottomNavigation = () => {
                   key={item.label}
                   as="button"
                   onClick={() => handleNavClick(item)}
+                  onKeyDown={(e) => handleKeyDown(e, item)}
+                  aria-label={`${item.label}${selected ? ' - 現在のページ' : ''}`}
+                  aria-current={selected ? 'page' : undefined}
+                  role="tab"
+                  tabIndex={0}
                   gap={1}
                   flex={1}
                   height="full"

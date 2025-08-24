@@ -7,7 +7,7 @@ import {
   CloseButton,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { useCallback } from 'react';
+import { useCallback, useId } from 'react';
 import { ROUTES, type RoutePath } from '../constants/routes';
 import { APP_CONFIG } from '../constants/app';
 
@@ -29,6 +29,8 @@ interface NavigationDrawerProps {
   isOpen: boolean;
   /** Drawerの開閉状態変更コールバック */
   onClose: () => void;
+  /** Drawer要素のaria-labelledby用ID（オプション） */
+  'aria-labelledby'?: string;
 }
 
 /**
@@ -43,8 +45,11 @@ interface NavigationDrawerProps {
 export const NavigationDrawer = ({
   isOpen,
   onClose,
+  'aria-labelledby': ariaLabelledBy,
 }: NavigationDrawerProps) => {
   const navigate = useNavigate();
+  const drawerId = useId();
+  const titleId = `${drawerId}-title`;
 
   // DRY: メニューアイテムの設定を配列化
   const menuItems = [
@@ -74,6 +79,21 @@ export const NavigationDrawer = ({
     [navigate, onClose]
   );
 
+  /**
+   * @description キーボードナビゲーション処理
+   * @param event - キーボードイベント
+   * @param path - 遷移先のパス
+   */
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent, path: string) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleMenuItemClick(path);
+      }
+    },
+    [handleMenuItemClick]
+  );
+
   return (
     <Drawer.Root
       open={isOpen}
@@ -83,9 +103,14 @@ export const NavigationDrawer = ({
       <Portal>
         <Drawer.Backdrop />
         <Drawer.Positioner>
-          <Drawer.Content maxW="280px">
+          <Drawer.Content
+            maxW="280px"
+            aria-labelledby={ariaLabelledBy || titleId}
+            role="dialog"
+          >
             <Drawer.Header borderBottom="1px solid" borderColor="gray.200">
               <Drawer.Title
+                id={titleId}
                 fontSize="lg"
                 fontWeight="semibold"
                 color={APP_CONFIG.COLORS.PRIMARY}
@@ -97,11 +122,21 @@ export const NavigationDrawer = ({
               </Drawer.CloseTrigger>
             </Drawer.Header>
             <Drawer.Body p={0}>
-              <VStack align="stretch" gap={0}>
+              <VStack
+                align="stretch"
+                gap={0}
+                role="menu"
+                aria-label="ナビゲーションメニュー"
+              >
                 {menuItems.map((menuItem, index) => (
                   <Box
                     key={menuItem.path}
+                    as="button"
                     onClick={() => handleMenuItemClick(menuItem.path)}
+                    onKeyDown={(e) => handleKeyDown(e, menuItem.path)}
+                    role="menuitem"
+                    tabIndex={0}
+                    aria-label={`${menuItem.label}へ移動`}
                     {...menuItemStyle}
                     borderBottom={
                       index < menuItems.length - 1 ? '1px solid' : 'none'

@@ -59,7 +59,7 @@ describe('BottomNavigation', () => {
   it('メニューボタンをクリックするとDrawer開閉状態が切り替わる', async () => {
     renderBottomNavigation();
 
-    const menuButton = screen.getByRole('button', { name: /メニュー/i });
+    const menuButton = screen.getByRole('tab', { name: /メニュー/i });
     expect(menuButton).toBeInTheDocument();
 
     // メニューボタンをクリックしてドロワーを開く
@@ -79,13 +79,12 @@ describe('BottomNavigation', () => {
       const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
-      const mockNavigateError = vi
-        .fn()
-        .mockRejectedValue(new Error('Navigation failed'));
+      const mockNavigateError = vi.fn<NavigateFunction>();
+      mockNavigateError.mockRejectedValue(new Error('Navigation failed'));
 
       // 一時的にモックを変更
-      const originalMockNavigate = mockNavigate;
-      vi.mocked(mockNavigate).mockImplementation(mockNavigateError);
+      const originalMockNavigate = mockNavigate.getMockImplementation();
+      mockNavigate.mockImplementation(mockNavigateError);
 
       renderBottomNavigation();
       const homeButton = screen.getByText('ホーム').closest('button');
@@ -99,7 +98,11 @@ describe('BottomNavigation', () => {
       expect(screen.getByText('ホーム')).toBeInTheDocument();
 
       // モックを元に戻す
-      vi.mocked(mockNavigate).mockImplementation(originalMockNavigate);
+      if (originalMockNavigate) {
+        mockNavigate.mockImplementation(originalMockNavigate);
+      } else {
+        mockNavigate.mockRestore();
+      }
       consoleErrorSpy.mockRestore();
     });
   });
