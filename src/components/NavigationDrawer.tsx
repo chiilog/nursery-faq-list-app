@@ -14,7 +14,7 @@ import { DRAWER_MENU_ITEMS } from '../constants/navigation';
 /**
  * @description NavigationDrawerコンポーネントのProps
  */
-interface NavigationDrawerProps {
+export interface NavigationDrawerProps {
   /** Drawerの開閉状態 */
   isOpen: boolean;
   /** Drawerの開閉状態変更コールバック */

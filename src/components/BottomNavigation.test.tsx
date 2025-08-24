@@ -33,7 +33,7 @@ describe('BottomNavigation', () => {
     mockNavigate.mockClear();
   });
 
-  it('ホームボタンとメニューボタンが表示される', () => {
+  it('初期表示時に、ホームボタンとメニューボタンが表示される', () => {
     renderBottomNavigation();
 
     // 共通設定から項目を取得してテスト
@@ -52,24 +52,20 @@ describe('BottomNavigation', () => {
     const homeItem = getBottomNavigationItemByLabel('ホーム');
     expect(homeItem).toBeDefined();
 
-    const homeButton = screen.getByText(homeItem!.label).closest('button');
-    if (!homeButton) {
-      throw new Error('Home button not found');
-    }
+    const homeButton = screen.getByRole('tab', { name: /ホーム/ });
     await user.click(homeButton);
 
     expect(mockNavigate).toHaveBeenCalledWith(homeItem!.path);
   });
 
-  it('ホームページにいる時、ホームボタンがアクティブ状態になる', () => {
+  it('ホームパス（/）にアクセスした時、ホームボタンがアクティブ状態になる', () => {
     renderBottomNavigation(TEST_NAVIGATION_CONSTANTS.HOME_PATH);
 
     const homeItem = getBottomNavigationItemByLabel('ホーム');
     expect(homeItem).toBeDefined();
 
-    const homeButton = screen.getByText(homeItem!.label);
-    const style = window.getComputedStyle(homeButton);
-    expect(style.fontWeight).toMatch(/600|semibold/);
+    const homeButton = screen.getByRole('tab', { name: /ホーム/ });
+    expect(homeButton).toHaveAttribute('aria-current', 'page');
   });
 
   it('メニューボタンをクリックするとDrawer開閉状態が切り替わる', async () => {
@@ -86,17 +82,19 @@ describe('BottomNavigation', () => {
     // メニューボタンをクリックしてドロワーを開く
     await user.click(menuButton);
 
-    // ドロワーが開いている状態でメニューボタンがアクティブになることを確認
-    const navMenuText = menuButton.querySelector('p');
-    if (!navMenuText) {
-      throw new Error('Menu text not found');
-    }
-    const style = window.getComputedStyle(navMenuText);
-    expect(style.fontWeight).toMatch(/600|semibold/);
+    // Drawerが実際に開いたかを確認（data-state属性で判定）
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute('data-state', 'open');
+    expect(menuButton).toHaveAttribute('aria-current', 'page');
+
+    // 再度クリックして閉じることを確認
+    await user.click(menuButton);
+    expect(dialog).toHaveAttribute('data-state', 'closed');
   });
 
   describe('エラーハンドリング', () => {
-    it('ナビゲーション失敗時にエラーを適切に処理する', async () => {
+    it('ナビゲーション失敗時でもUIは正常に動作し続ける', async () => {
       const { restoreMocks } = setupErrorHandlingTest(mockNavigate);
 
       renderBottomNavigation();
@@ -104,14 +102,13 @@ describe('BottomNavigation', () => {
       const homeItem = getBottomNavigationItemByLabel('ホーム');
       expect(homeItem).toBeDefined();
 
-      const homeButton = screen.getByText(homeItem!.label).closest('button');
-      if (!homeButton) {
-        throw new Error('Home button not found');
-      }
+      const homeButton = screen.getByRole('tab', { name: /ホーム/ });
 
       await user.click(homeButton);
 
-      // エラーが発生してもアプリがクラッシュしないことを確認
+      // UIが正常に動作し続けることを確認（エラーが発生してもクラッシュしない）
+      expect(homeButton).toBeInTheDocument();
+      expect(homeButton).toBeEnabled();
       expect(screen.getByText(homeItem!.label)).toBeInTheDocument();
 
       // モックを元に戻す

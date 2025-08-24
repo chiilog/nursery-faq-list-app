@@ -1,16 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, act } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { NavigateFunction } from 'react-router-dom';
 import { renderWithProviders } from '../test/test-utils';
-import { NavigationDrawer } from './NavigationDrawer';
+import {
+  NavigationDrawer,
+  type NavigationDrawerProps,
+} from './NavigationDrawer';
 import {
   getDrawerMenuItemByLabel,
   setupErrorHandlingTest,
 } from '../test-utils/navigation';
 
 const mockNavigate = vi.fn<NavigateFunction>();
-const mockOnClose = vi.fn<() => void>();
+const mockOnClose = vi.fn<NavigationDrawerProps['onClose']>();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -27,7 +30,13 @@ const renderNavigationDrawer = (props = {}) => {
     ...props,
   };
 
-  return renderWithProviders(<NavigationDrawer {...defaultProps} />);
+  const renderResult = renderWithProviders(
+    <NavigationDrawer {...defaultProps} />
+  );
+  return {
+    ...renderResult,
+    user: userEvent.setup(),
+  };
 };
 
 describe('NavigationDrawer', () => {
@@ -38,7 +47,7 @@ describe('NavigationDrawer', () => {
     vi.clearAllMocks();
   });
 
-  it('isOpenがtrueの時にメニューが表示される', async () => {
+  it('isOpen=trueが渡されると、ダイアログとメニュー項目が表示される', async () => {
     renderNavigationDrawer({ isOpen: true });
 
     await screen.findByRole('dialog');
@@ -54,7 +63,7 @@ describe('NavigationDrawer', () => {
     expect(screen.getByText(privacyItem!.label)).toBeInTheDocument();
   });
 
-  it('isOpenがfalseの時にメニューが表示されない', () => {
+  it('isOpen=falseが渡されると、ダイアログが表示されない', () => {
     renderNavigationDrawer({ isOpen: false });
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -90,51 +99,28 @@ describe('NavigationDrawer', () => {
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it.skip('Escapeキーでメニューを閉じることができる', async () => {
-    renderNavigationDrawer();
+  it('閉じるボタンでメニューを閉じることができる', async () => {
+    const { user } = renderNavigationDrawer();
 
+    // ドロワーが表示されていることを確認
     const dialog = await screen.findByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute('data-state', 'open');
 
     const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
     expect(aboutItem).toBeDefined();
     expect(screen.getByText(aboutItem!.label)).toBeInTheDocument();
 
-    // ChakraUIのDrawerコンポーネントで直接Escapeキーイベントをdispatch
-    dialog.dispatchEvent(
-      new KeyboardEvent('keydown', {
-        key: 'Escape',
-        code: 'Escape',
-        keyCode: 27,
-        charCode: 27,
-        bubbles: true,
-        cancelable: true,
-      })
-    );
+    // 閉じるボタンを見つけてクリック
+    const closeButton = screen.getByRole('button', { name: /close/i });
+    await user.click(closeButton);
 
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
-
-    expect(mockOnClose).toHaveBeenCalled();
-  });
-
-  it('メニューアイテムをクリックで選択できる', async () => {
-    renderNavigationDrawer();
-
-    await screen.findByRole('dialog');
-
-    const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
-    expect(aboutItem).toBeDefined();
-
-    const aboutMenuItem = screen.getByText(aboutItem!.label);
-    await user.click(aboutMenuItem);
-
-    expect(mockNavigate).toHaveBeenCalledWith(aboutItem!.path);
-    expect(mockOnClose).toHaveBeenCalled();
+    // onCloseコールバックが呼ばれることを確認
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
   describe('エラーハンドリング', () => {
-    it('ナビゲーション失敗時にエラーを適切に処理する', async () => {
+    it('ナビゲーション失敗時でもDrawerは閉じられ、UIは正常に動作し続ける', async () => {
       const { restoreMocks } = setupErrorHandlingTest(mockNavigate);
 
       renderNavigationDrawer();
@@ -147,9 +133,11 @@ describe('NavigationDrawer', () => {
 
       await user.click(aboutLink);
 
-      // エラーが発生してもアプリがクラッシュしないことを確認
-      expect(screen.getByText(aboutItem!.label)).toBeInTheDocument();
+      // onCloseが呼ばれることを確認（エラーが発生してもDrawerは閉じられる）
       expect(mockOnClose).toHaveBeenCalled();
+
+      // UIが正常に動作し続けることを確認
+      expect(screen.getByText(aboutItem!.label)).toBeInTheDocument();
 
       // モックを元に戻す
       restoreMocks();
