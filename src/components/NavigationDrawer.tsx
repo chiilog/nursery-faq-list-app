@@ -8,18 +8,8 @@ import {
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { useCallback, useId } from 'react';
-import { ROUTES, type RoutePath } from '../constants/routes';
 import { APP_CONFIG } from '../constants/app';
-
-/**
- * @description メニュー項目のインターフェース
- */
-interface MenuItem {
-  /** メニュー項目のパス - Branded Typeによる型安全性 */
-  readonly path: RoutePath;
-  /** メニュー項目のラベル */
-  readonly label: string;
-}
+import { DRAWER_MENU_ITEMS } from '../constants/navigation';
 
 /**
  * @description NavigationDrawerコンポーネントのProps
@@ -51,11 +41,8 @@ export const NavigationDrawer = ({
   const drawerId = useId();
   const titleId = `${drawerId}-title`;
 
-  // DRY: メニューアイテムの設定を配列化
-  const menuItems = [
-    { path: ROUTES.ABOUT as RoutePath, label: 'このアプリについて' },
-    { path: ROUTES.PRIVACY_POLICY as RoutePath, label: 'プライバシーポリシー' },
-  ] as const satisfies readonly MenuItem[];
+  // DRY: メニューアイテムの設定を共通定数から取得
+  const menuItems = DRAWER_MENU_ITEMS;
 
   // DRY: 共通スタイルの定義
   const menuItemStyle = {

@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event';
 import type { NavigateFunction } from 'react-router-dom';
 import { renderWithProviders } from '../test/test-utils';
 import { NavigationDrawer } from './NavigationDrawer';
-import { ROUTES } from '../constants/routes';
+import {
+  getDrawerMenuItemByLabel,
+  setupErrorHandlingTest,
+} from '../test-utils/navigation';
 
 const mockNavigate = vi.fn<NavigateFunction>();
 const mockOnClose = vi.fn<() => void>();
@@ -40,8 +43,15 @@ describe('NavigationDrawer', () => {
 
     await screen.findByRole('dialog');
     expect(screen.getByText('メニュー')).toBeInTheDocument();
-    expect(screen.getByText('このアプリについて')).toBeInTheDocument();
-    expect(screen.getByText('プライバシーポリシー')).toBeInTheDocument();
+
+    // 共通設定から項目を取得してテスト
+    const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
+    const privacyItem = getDrawerMenuItemByLabel('プライバシーポリシー');
+
+    expect(aboutItem).toBeDefined();
+    expect(privacyItem).toBeDefined();
+    expect(screen.getByText(aboutItem!.label)).toBeInTheDocument();
+    expect(screen.getByText(privacyItem!.label)).toBeInTheDocument();
   });
 
   it('isOpenがfalseの時にメニューが表示されない', () => {
@@ -54,10 +64,14 @@ describe('NavigationDrawer', () => {
     renderNavigationDrawer();
 
     await screen.findByRole('dialog');
-    const aboutLink = screen.getByText('このアプリについて');
+
+    const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
+    expect(aboutItem).toBeDefined();
+
+    const aboutLink = screen.getByText(aboutItem!.label);
     await user.click(aboutLink);
 
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ABOUT);
+    expect(mockNavigate).toHaveBeenCalledWith(aboutItem!.path);
     expect(mockOnClose).toHaveBeenCalled();
   });
 
@@ -65,10 +79,14 @@ describe('NavigationDrawer', () => {
     renderNavigationDrawer();
 
     await screen.findByRole('dialog');
-    const privacyPolicyLink = screen.getByText('プライバシーポリシー');
+
+    const privacyItem = getDrawerMenuItemByLabel('プライバシーポリシー');
+    expect(privacyItem).toBeDefined();
+
+    const privacyPolicyLink = screen.getByText(privacyItem!.label);
     await user.click(privacyPolicyLink);
 
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.PRIVACY_POLICY);
+    expect(mockNavigate).toHaveBeenCalledWith(privacyItem!.path);
     expect(mockOnClose).toHaveBeenCalled();
   });
 
@@ -76,7 +94,10 @@ describe('NavigationDrawer', () => {
     renderNavigationDrawer();
 
     const dialog = await screen.findByRole('dialog');
-    expect(screen.getByText('このアプリについて')).toBeInTheDocument();
+
+    const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
+    expect(aboutItem).toBeDefined();
+    expect(screen.getByText(aboutItem!.label)).toBeInTheDocument();
 
     // ChakraUIのDrawerコンポーネントで直接Escapeキーイベントをdispatch
     dialog.dispatchEvent(
@@ -102,42 +123,36 @@ describe('NavigationDrawer', () => {
 
     await screen.findByRole('dialog');
 
-    const aboutMenuItem = screen.getByText('このアプリについて');
+    const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
+    expect(aboutItem).toBeDefined();
+
+    const aboutMenuItem = screen.getByText(aboutItem!.label);
     await user.click(aboutMenuItem);
 
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.ABOUT);
+    expect(mockNavigate).toHaveBeenCalledWith(aboutItem!.path);
     expect(mockOnClose).toHaveBeenCalled();
   });
 
   describe('エラーハンドリング', () => {
     it('ナビゲーション失敗時にエラーを適切に処理する', async () => {
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
-      const mockNavigateError = vi.fn<NavigateFunction>();
-      mockNavigateError.mockRejectedValue(new Error('Navigation failed'));
-
-      // 一時的にモックを変更
-      const originalMockNavigate = mockNavigate.getMockImplementation();
-      mockNavigate.mockImplementation(mockNavigateError);
+      const { restoreMocks } = setupErrorHandlingTest(mockNavigate);
 
       renderNavigationDrawer();
       await screen.findByRole('dialog');
-      const aboutLink = screen.getByText('このアプリについて');
+
+      const aboutItem = getDrawerMenuItemByLabel('このアプリについて');
+      expect(aboutItem).toBeDefined();
+
+      const aboutLink = screen.getByText(aboutItem!.label);
 
       await user.click(aboutLink);
 
       // エラーが発生してもアプリがクラッシュしないことを確認
-      expect(screen.getByText('このアプリについて')).toBeInTheDocument();
+      expect(screen.getByText(aboutItem!.label)).toBeInTheDocument();
       expect(mockOnClose).toHaveBeenCalled();
 
       // モックを元に戻す
-      if (originalMockNavigate) {
-        mockNavigate.mockImplementation(originalMockNavigate);
-      } else {
-        mockNavigate.mockRestore();
-      }
-      consoleErrorSpy.mockRestore();
+      restoreMocks();
     });
   });
 });

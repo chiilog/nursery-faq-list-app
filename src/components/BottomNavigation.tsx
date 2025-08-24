@@ -1,24 +1,13 @@
 import { Box, HStack, VStack, Text, Portal } from '@chakra-ui/react';
-import { IoHomeOutline, IoHome, IoMenuOutline, IoMenu } from 'react-icons/io5';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState, useCallback, useMemo, useId } from 'react';
-import { ROUTES, type RoutePath } from '../constants/routes';
+import { useState, useCallback, useId } from 'react';
+import { ROUTES } from '../constants/routes';
 import { APP_CONFIG } from '../constants/app';
 import { NavigationDrawer } from './NavigationDrawer';
-
-/**
- * @description ナビゲーション項目のインターフェース
- */
-interface NavItem {
-  /** ナビゲーション項目のラベル */
-  readonly label: string;
-  /** ナビゲーション先のパス - Branded Typeによる型安全性 */
-  readonly path: RoutePath;
-  /** 通常状態のアイコン */
-  readonly icon: React.ReactNode;
-  /** アクティブ状態のアイコン */
-  readonly activeIcon: React.ReactNode;
-}
+import {
+  BOTTOM_NAVIGATION_ITEMS,
+  type NavigationItem,
+} from '../constants/navigation';
 
 /**
  * @description 底部ナビゲーションコンポーネント - 底部の固定ナビゲーションバーを提供
@@ -34,24 +23,7 @@ export const BottomNavigation = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const navId = useId();
 
-  const navItems = useMemo(
-    () =>
-      [
-        {
-          label: 'ホーム',
-          path: ROUTES.HOME as RoutePath,
-          icon: <IoHomeOutline size={24} aria-hidden="true" />,
-          activeIcon: <IoHome size={24} aria-hidden="true" />,
-        },
-        {
-          label: 'メニュー',
-          path: '#menu' as RoutePath,
-          icon: <IoMenuOutline size={24} aria-hidden="true" />,
-          activeIcon: <IoMenu size={24} aria-hidden="true" />,
-        },
-      ] as const satisfies readonly NavItem[],
-    []
-  );
+  const navItems = BOTTOM_NAVIGATION_ITEMS;
 
   // KISS: 色の取得をシンプル化
   const getItemColor = (isSelected: boolean) =>
@@ -62,7 +34,7 @@ export const BottomNavigation = () => {
    * @param item - クリックされたナビゲーション項目
    */
   const handleNavClick = useCallback(
-    (item: NavItem) => {
+    (item: NavigationItem) => {
       if (item.path === '#menu') {
         setIsDrawerOpen((prev) => !prev);
       } else {
@@ -79,7 +51,7 @@ export const BottomNavigation = () => {
    * @param item - 対象のナビゲーション項目
    */
   const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent, item: NavItem) => {
+    (event: React.KeyboardEvent, item: NavigationItem) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         handleNavClick(item);

@@ -4,7 +4,11 @@ import userEvent from '@testing-library/user-event';
 import type { NavigateFunction } from 'react-router-dom';
 import { renderWithProviders } from '../test/test-utils';
 import { BottomNavigation } from './BottomNavigation';
-import { ROUTES } from '../constants/routes';
+import {
+  getBottomNavigationItemByLabel,
+  TEST_NAVIGATION_CONSTANTS,
+  setupErrorHandlingTest,
+} from '../test-utils/navigation';
 
 const mockNavigate = vi.fn<NavigateFunction>();
 vi.mock('react-router-dom', async () => {
@@ -32,26 +36,38 @@ describe('BottomNavigation', () => {
   it('ホームボタンとメニューボタンが表示される', () => {
     renderBottomNavigation();
 
-    expect(screen.getByText('ホーム')).toBeInTheDocument();
-    expect(screen.getByText('メニュー')).toBeInTheDocument();
+    // 共通設定から項目を取得してテスト
+    const homeItem = getBottomNavigationItemByLabel('ホーム');
+    const menuItem = getBottomNavigationItemByLabel('メニュー');
+
+    expect(homeItem).toBeDefined();
+    expect(menuItem).toBeDefined();
+    expect(screen.getByText(homeItem!.label)).toBeInTheDocument();
+    expect(screen.getByText(menuItem!.label)).toBeInTheDocument();
   });
 
   it('ホームボタンをクリックするとホームページに遷移する', async () => {
     renderBottomNavigation('/about');
 
-    const homeButton = screen.getByText('ホーム').closest('button');
+    const homeItem = getBottomNavigationItemByLabel('ホーム');
+    expect(homeItem).toBeDefined();
+
+    const homeButton = screen.getByText(homeItem!.label).closest('button');
     if (!homeButton) {
       throw new Error('Home button not found');
     }
     await user.click(homeButton);
 
-    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.HOME);
+    expect(mockNavigate).toHaveBeenCalledWith(homeItem!.path);
   });
 
   it('ホームページにいる時、ホームボタンがアクティブ状態になる', () => {
-    renderBottomNavigation('/');
+    renderBottomNavigation(TEST_NAVIGATION_CONSTANTS.HOME_PATH);
 
-    const homeButton = screen.getByText('ホーム');
+    const homeItem = getBottomNavigationItemByLabel('ホーム');
+    expect(homeItem).toBeDefined();
+
+    const homeButton = screen.getByText(homeItem!.label);
     const style = window.getComputedStyle(homeButton);
     expect(style.fontWeight).toMatch(/600|semibold/);
   });
@@ -59,7 +75,12 @@ describe('BottomNavigation', () => {
   it('メニューボタンをクリックするとDrawer開閉状態が切り替わる', async () => {
     renderBottomNavigation();
 
-    const menuButton = screen.getByRole('tab', { name: /メニュー/i });
+    const menuItem = getBottomNavigationItemByLabel('メニュー');
+    expect(menuItem).toBeDefined();
+
+    const menuButton = screen.getByRole('tab', {
+      name: new RegExp(menuItem!.label, 'i'),
+    });
     expect(menuButton).toBeInTheDocument();
 
     // メニューボタンをクリックしてドロワーを開く
@@ -76,18 +97,14 @@ describe('BottomNavigation', () => {
 
   describe('エラーハンドリング', () => {
     it('ナビゲーション失敗時にエラーを適切に処理する', async () => {
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
-      const mockNavigateError = vi.fn<NavigateFunction>();
-      mockNavigateError.mockRejectedValue(new Error('Navigation failed'));
-
-      // 一時的にモックを変更
-      const originalMockNavigate = mockNavigate.getMockImplementation();
-      mockNavigate.mockImplementation(mockNavigateError);
+      const { restoreMocks } = setupErrorHandlingTest(mockNavigate);
 
       renderBottomNavigation();
-      const homeButton = screen.getByText('ホーム').closest('button');
+
+      const homeItem = getBottomNavigationItemByLabel('ホーム');
+      expect(homeItem).toBeDefined();
+
+      const homeButton = screen.getByText(homeItem!.label).closest('button');
       if (!homeButton) {
         throw new Error('Home button not found');
       }
@@ -95,15 +112,10 @@ describe('BottomNavigation', () => {
       await user.click(homeButton);
 
       // エラーが発生してもアプリがクラッシュしないことを確認
-      expect(screen.getByText('ホーム')).toBeInTheDocument();
+      expect(screen.getByText(homeItem!.label)).toBeInTheDocument();
 
       // モックを元に戻す
-      if (originalMockNavigate) {
-        mockNavigate.mockImplementation(originalMockNavigate);
-      } else {
-        mockNavigate.mockRestore();
-      }
-      consoleErrorSpy.mockRestore();
+      restoreMocks();
     });
   });
 });
