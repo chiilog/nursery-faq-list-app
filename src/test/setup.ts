@@ -20,6 +20,24 @@ vi.mock('../services/ga4Service', async () => {
 });
 
 vi.mock('../services/clarityService', () => ({
+  createClarityProjectId: vi.fn((id: string | undefined) => {
+    if (!id) {
+      throw new Error('Clarity project ID is required');
+    }
+    const normalized = id.trim();
+    if (normalized === '') {
+      throw new Error('Clarity project ID cannot be empty');
+    }
+    if (!/^[A-Za-z0-9]+$/.test(normalized)) {
+      throw new Error('Clarity project ID contains invalid characters');
+    }
+    return normalized;
+  }),
+  useClarityService: vi.fn(() => ({
+    isInitialized: false,
+    hasConsent: false,
+    setConsent: vi.fn(),
+  })),
   clarityService: {
     trackEvent: vi.fn(),
     initialize: vi.fn(),
