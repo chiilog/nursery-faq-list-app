@@ -1,26 +1,27 @@
-import { Box, HStack, VStack, Text, Drawer, Portal } from '@chakra-ui/react';
+import { Box, HStack, VStack, Text, Portal } from '@chakra-ui/react';
 import { IoHomeOutline, IoHome, IoMenuOutline, IoMenu } from 'react-icons/io5';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useCallback } from 'react';
-import { ROUTES } from '../constants/routes';
+import { ROUTES, type RoutePath } from '../constants/routes';
 import { APP_CONFIG } from '../constants/app';
+import { NavigationDrawer } from './NavigationDrawer';
 
 /**
  * @description ナビゲーション項目のインターフェース
  */
 interface NavItem {
   /** ナビゲーション項目のラベル */
-  label: string;
-  /** ナビゲーション先のパス */
-  path: string;
+  readonly label: string;
+  /** ナビゲーション先のパス - Branded Typeによる型安全性 */
+  readonly path: RoutePath;
   /** 通常状態のアイコン */
-  icon: React.ReactNode;
+  readonly icon: React.ReactNode;
   /** アクティブ状態のアイコン */
-  activeIcon: React.ReactNode;
+  readonly activeIcon: React.ReactNode;
 }
 
 /**
- * @description 底部ナビゲーションコンポーネント - ホームボタンとメニューDrawerを提供
+ * @description 底部ナビゲーションコンポーネント - 底部の固定ナビゲーションバーを提供
  * @returns 底部ナビゲーションのJSX要素
  * @example
  * ```tsx
@@ -32,37 +33,20 @@ export const BottomNavigation = () => {
   const navigate = useNavigate();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const navItems: NavItem[] = [
+  const navItems = [
     {
       label: 'ホーム',
-      path: ROUTES.HOME,
+      path: ROUTES.HOME as RoutePath,
       icon: <IoHomeOutline size={24} />,
       activeIcon: <IoHome size={24} />,
     },
     {
       label: 'メニュー',
-      path: '#menu',
+      path: '#menu' as RoutePath,
       icon: <IoMenuOutline size={24} />,
       activeIcon: <IoMenu size={24} />,
     },
-  ];
-
-  // DRY: メニューアイテムの設定を配列化
-  const menuItems = [
-    { path: ROUTES.ABOUT, label: 'このアプリについて' },
-    { path: ROUTES.PRIVACY_SETTINGS, label: 'プライバシー設定' },
-    { path: ROUTES.PRIVACY_POLICY, label: 'プライバシーポリシー' },
-  ];
-
-  // DRY: 共通スタイルの定義
-  const menuItemStyle = {
-    cursor: 'pointer' as const,
-    p: 4,
-    borderBottom: '1px solid',
-    borderColor: 'gray.100',
-    transition: 'background 0.2s',
-    css: { '&:hover': { bg: 'gray.50' } },
-  };
+  ] as const satisfies readonly NavItem[];
 
   // KISS: 色の取得をシンプル化
   const getItemColor = (isSelected: boolean) =>
@@ -85,18 +69,6 @@ export const BottomNavigation = () => {
   );
 
   /**
-   * @description メニュー項目のクリックハンドラ
-   * @param path - 遷移先のパス
-   */
-  const handleMenuItemClick = useCallback(
-    (path: string) => {
-      void navigate(path);
-      setIsDrawerOpen(false);
-    },
-    [navigate]
-  );
-
-  /**
    * @description 指定されたパスが現在のアクティブパスかどうかを判定
    * @param path - 判定対象のパス
    * @returns アクティブな場合true、そうでない場合false
@@ -110,41 +82,10 @@ export const BottomNavigation = () => {
 
   return (
     <>
-      <Drawer.Root
-        open={isDrawerOpen}
-        onOpenChange={(e) => setIsDrawerOpen(e.open)}
-        placement="bottom"
-      >
-        <Portal>
-          <Drawer.Backdrop />
-          <Drawer.Positioner>
-            <Drawer.Content maxH="50vh" borderTopRadius="xl" pb="80px">
-              <Drawer.Header borderBottom="1px solid" borderColor="gray.200">
-                <Drawer.Title fontSize="lg" fontWeight="semibold">
-                  メニュー
-                </Drawer.Title>
-                <Drawer.CloseTrigger />
-              </Drawer.Header>
-              <Drawer.Body p={0}>
-                <VStack align="stretch" gap={0}>
-                  {menuItems.map((menuItem, index) => (
-                    <Box
-                      key={menuItem.path}
-                      onClick={() => handleMenuItemClick(menuItem.path)}
-                      {...menuItemStyle}
-                      borderBottom={
-                        index < menuItems.length - 1 ? '1px solid' : 'none'
-                      }
-                    >
-                      <Text fontSize="md">{menuItem.label}</Text>
-                    </Box>
-                  ))}
-                </VStack>
-              </Drawer.Body>
-            </Drawer.Content>
-          </Drawer.Positioner>
-        </Portal>
-      </Drawer.Root>
+      <NavigationDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
 
       <Portal>
         <Box
@@ -156,7 +97,6 @@ export const BottomNavigation = () => {
           bg="white"
           borderTop="1px solid"
           borderColor="gray.200"
-          zIndex="2000"
           height="64px"
           css={{ pointerEvents: 'auto' }}
         >
