@@ -32,7 +32,7 @@ export type ClarityLoadResult = AnalyticsResult;
 export const createClarityProjectId = (
   id: string | undefined
 ): ClarityProjectId => {
-  if (!id) {
+  if (id === undefined || id === null) {
     throw new AnalyticsError(
       AnalyticsErrorType.CONFIGURATION_ERROR,
       'ClarityService',
