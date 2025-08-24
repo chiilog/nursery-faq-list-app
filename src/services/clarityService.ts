@@ -30,9 +30,9 @@ export type ClarityLoadResult = AnalyticsResult;
  * ```
  */
 export const createClarityProjectId = (
-  id: string | undefined
+  id: string | null | undefined
 ): ClarityProjectId => {
-  if (!id) {
+  if (id === undefined || id === null) {
     throw new AnalyticsError(
       AnalyticsErrorType.CONFIGURATION_ERROR,
       'ClarityService',
@@ -122,7 +122,7 @@ const createClarityServiceFunctions = (projectId: ClarityProjectId) => {
    * @returns 初期化結果のPromise
    */
   const initialize = async (): Promise<AnalyticsResult> => {
-    if (isInitialized || !projectId) {
+    if (isInitialized) {
       return { success: true, data: undefined };
     }
 
@@ -273,8 +273,13 @@ const getClarityServiceInstance = (): ReturnType<
       return clarityServiceInstance;
     }
 
-    const projectId = createClarityProjectId(serviceId);
-    clarityServiceInstance = createClarityServiceFunctions(projectId);
+    try {
+      const projectId = createClarityProjectId(serviceId);
+      clarityServiceInstance = createClarityServiceFunctions(projectId);
+    } catch {
+      core.devWarn('Invalid Clarity project ID; Clarity will remain disabled');
+      clarityServiceInstance = createNoopClarityService(core);
+    }
   }
   return clarityServiceInstance;
 };
@@ -334,22 +339,14 @@ export function useClarityService(): UseClarityServiceReturn {
   /**
    * 同意状態を設定
    */
-  const setConsent = useCallback(
-    (consent: boolean) => {
-      setConsentGiven(consent);
+  const setConsent = useCallback((consent: boolean) => {
+    setConsentGiven(consent);
 
-      if (consent) {
-        initialize().catch((error) => {
-          // 適切なエラーハンドリング
-          console.warn('Clarity initialization failed:', error);
-        });
-      } else {
-        getClarityServiceInstance().disable();
-        setIsServiceInitialized(false);
-      }
-    },
-    [initialize]
-  );
+    if (!consent) {
+      getClarityServiceInstance().disable();
+      setIsServiceInitialized(false);
+    }
+  }, []);
 
   // 初期化処理
   useEffect(() => {

@@ -1,10 +1,15 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useClarityService, createClarityProjectId } from './clarityService';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import {
   mockGlobalAnalytics,
   cleanupGlobalAnalytics,
 } from '../test-utils/mockUtils';
+
+// モックを先に解除して実際の実装をインポート
+vi.unmock('./clarityService');
+
+// テスト用の実装を直接インポート
+import * as clarityService from './clarityService';
 
 // グローバルmock
 beforeEach(() => {
@@ -30,24 +35,24 @@ afterEach(() => {
 
 describe('createClarityProjectId', () => {
   test('有効なプロジェクトIDを作成できる', () => {
-    const result = createClarityProjectId('test12345');
+    const result = clarityService.createClarityProjectId('test12345');
     expect(result).toBe('test12345');
   });
 
   test('空文字列の場合エラーをthrowする', () => {
-    expect(() => createClarityProjectId('')).toThrow(
+    expect(() => clarityService.createClarityProjectId('')).toThrow(
       'Clarity project ID cannot be empty'
     );
   });
 
   test('undefinedの場合エラーをthrowする', () => {
-    expect(() => createClarityProjectId(undefined as any)).toThrow(
-      'Clarity project ID is required'
-    );
+    expect(() =>
+      clarityService.createClarityProjectId(undefined as any)
+    ).toThrow('Clarity project ID is required');
   });
 
   test('特殊文字を含む場合エラーをthrowする', () => {
-    expect(() => createClarityProjectId('test@123')).toThrow(
+    expect(() => clarityService.createClarityProjectId('test@123')).toThrow(
       'Clarity project ID contains invalid characters'
     );
   });
@@ -66,41 +71,49 @@ describe('useClarityService', () => {
   });
 
   test('初期状態では未初期化で同意なし', () => {
-    const { result } = renderHook(() => useClarityService());
+    const { result } = renderHook(() => clarityService.useClarityService());
 
     expect(result.current.isInitialized).toBe(false);
     expect(result.current.hasConsent).toBe(false);
   });
 
-  test('同意設定により状態が更新される', () => {
-    const { result } = renderHook(() => useClarityService());
+  test('同意設定により状態が更新される', async () => {
+    const { result } = renderHook(() => clarityService.useClarityService());
 
     act(() => {
       result.current.setConsent(true);
     });
 
-    expect(result.current.hasConsent).toBe(true);
+    await waitFor(() => {
+      expect(result.current.hasConsent).toBe(true);
+    });
   });
 
-  test('同意取り消しでClarityが停止される', () => {
+  test('同意取り消しでClarityが停止される', async () => {
     const mockClarity = vi.fn();
     window.clarity = mockClarity;
 
-    const { result } = renderHook(() => useClarityService());
+    const { result } = renderHook(() => clarityService.useClarityService());
 
     act(() => {
       result.current.setConsent(true);
+    });
+
+    await waitFor(() => {
+      expect(result.current.hasConsent).toBe(true);
     });
 
     act(() => {
       result.current.setConsent(false);
     });
 
-    expect(result.current.hasConsent).toBe(false);
-    expect(result.current.isInitialized).toBe(false);
+    await waitFor(() => {
+      expect(result.current.hasConsent).toBe(false);
+      expect(result.current.isInitialized).toBe(false);
+    });
   });
 
-  test('Do Not Track有効時は初期化されない', () => {
+  test('Do Not Track有効時は初期化されない', async () => {
     const originalDoNotTrack = Object.getOwnPropertyDescriptor(
       navigator,
       'doNotTrack'
@@ -112,14 +125,16 @@ describe('useClarityService', () => {
       configurable: true,
     });
 
-    const { result } = renderHook(() => useClarityService());
+    const { result } = renderHook(() => clarityService.useClarityService());
 
     act(() => {
       result.current.setConsent(true);
     });
 
     // Do Not Track有効なので初期化されない
-    expect(result.current.isInitialized).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isInitialized).toBe(false);
+    });
 
     // 復元
     if (originalDoNotTrack) {
@@ -133,15 +148,17 @@ describe('useClarityService', () => {
   test('分析無効設定時は初期化されない', async () => {
     vi.stubEnv('VITE_ANALYTICS_ENABLED', 'false');
     vi.resetModules();
-    const { useClarityService: useClarityServiceDisabled } = await import(
-      './clarityService'
+    const clarityServiceDisabled = await import('./clarityService');
+    const { result } = renderHook(() =>
+      clarityServiceDisabled.useClarityService()
     );
-    const { result } = renderHook(() => useClarityServiceDisabled());
 
     act(() => {
       result.current.setConsent(true);
     });
 
-    expect(result.current.isInitialized).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isInitialized).toBe(false);
+    });
   });
 });
