@@ -58,7 +58,7 @@
   "lint-staged": {
     "**/*.{ts,tsx}": [
       "bash -c 'npm run typecheck'",
-      "bash -c 'vitest related --run'",
+      "vitest related --run",
       "eslint --fix",
       "prettier --write"
     ],
