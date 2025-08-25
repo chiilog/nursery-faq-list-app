@@ -147,11 +147,12 @@ interface QuestionTemplate {
   id: string;
   title: string;
   description?: string;
-  ageGroup?: string; // '0-1歳', '1-2歳', '2-3歳', '一般'
-  questions: Omit<
-    Question,
-    'id' | 'answer' | 'isAnswered' | 'answeredBy' | 'answeredAt'
-  >[];
+  isCustom: boolean; // true: ユーザー作成、false: システム提供
+  questions: Array<{
+    text: string;
+    order?: number;
+  }>;
+  createdBy?: string; // ユーザーID（カスタムテンプレートの場合のみ）
   createdAt: Date;
   updatedAt: Date;
 }
@@ -454,23 +455,18 @@ describe('Question', () => {
 **目的**: コンポーネント間の連携確認
 
 ```typescript
-// 例: 質問リスト作成フロー
-describe("質問リスト作成", () => {
-  test("テンプレートから質問リストを作成できる", async () => {
+// 例: テンプレート機能フロー
+describe("テンプレート機能", () => {
+  test("デフォルトテンプレートから質問を追加できる", async () => {
     // Red: 統合的な動作のテストを先に書く
-    render(<QuestionListCreator />);
+    render(<NurseryDetailPage nurseryId="test-nursery" />);
 
-    // テンプレート選択
-    await user.click(screen.getByText("0歳児テンプレート"));
-
-    // カスタマイズ
-    await user.type(screen.getByLabelText("園名"), "テスト保育園");
-
-    // 保存
-    await user.click(screen.getByText("保存"));
+    // デフォルトテンプレート適用
+    await user.click(screen.getByText("基本質問を追加"));
 
     // 結果確認
-    expect(screen.getByText("質問リストが作成されました")).toBeInTheDocument();
+    expect(screen.getByText("保育方針や教育理念について教えてください")).toBeInTheDocument();
+    expect(screen.getByText("給食やおやつはどのように提供されますか？")).toBeInTheDocument();
   });
 });
 ```
