@@ -7,6 +7,10 @@
 import type { QuestionTemplate } from '../types/entities';
 import systemQuestionsData from './systemQuestions.json';
 
+// バリデーション結果をキャッシュ
+let validatedData: SystemQuestionsSchema | null = null;
+let validationError: Error | null = null;
+
 /**
  * @description システム質問データのスキーマ
  */
@@ -72,17 +76,35 @@ function validateSystemQuestions(data: unknown): data is SystemQuestionsSchema {
 }
 
 /**
+ * @description 初期化時に一度だけバリデーションを実行
+ */
+function getValidatedData(): SystemQuestionsSchema {
+  if (validatedData) {
+    return validatedData;
+  }
+
+  if (validationError) {
+    throw validationError;
+  }
+
+  if (!validateSystemQuestions(systemQuestionsData)) {
+    validationError = new Error('Invalid system questions data format');
+    throw validationError;
+  }
+
+  validatedData = systemQuestionsData;
+  return validatedData;
+}
+
+/**
  * @description デフォルトテンプレートを取得する
  * JSONファイルからデータを読み込み、QuestionTemplate形式で返す
  * @returns {Readonly<QuestionTemplate>} システム提供のデフォルトテンプレート
  * @throws {Error} JSONデータが不正な形式の場合
  */
 export function getDefaultTemplate(): Readonly<QuestionTemplate> {
-  if (!validateSystemQuestions(systemQuestionsData)) {
-    throw new Error('Invalid system questions data format');
-  }
-
-  const templateData = systemQuestionsData.defaultNurseryTemplate;
+  const data = getValidatedData();
+  const templateData = data.defaultNurseryTemplate;
 
   // JSONデータからQuestionTemplateオブジェクトを構築
   return {
@@ -96,11 +118,19 @@ export function getDefaultTemplate(): Readonly<QuestionTemplate> {
   } as const;
 }
 
+// テンプレートをキャッシュ
+let cachedTemplates: readonly QuestionTemplate[] | null = null;
+
 /**
  * @description すべてのシステムテンプレートを取得する（将来の拡張用）
  * @returns {readonly QuestionTemplate[]} システムが提供するテンプレートの配列
  */
 export function getAllSystemTemplates(): readonly QuestionTemplate[] {
+  if (cachedTemplates) {
+    return cachedTemplates;
+  }
+
   // 現在は1つのテンプレートのみ、将来的に複数のテンプレートを提供予定
-  return [getDefaultTemplate()] as const;
+  cachedTemplates = [getDefaultTemplate()] as const;
+  return cachedTemplates;
 }

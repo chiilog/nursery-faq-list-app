@@ -3,7 +3,7 @@
  * システム提供およびユーザー作成のテンプレートを統一的に管理
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { getAllSystemTemplates } from '../services/systemTemplates';
 import { applyTemplateToNursery } from '../services/templateService';
@@ -23,6 +23,8 @@ function isValidNursery(
     typeof nursery === 'object' &&
     nursery !== null &&
     'id' in nursery &&
+    'visitSessions' in nursery &&
+    Array.isArray((nursery as Nursery).visitSessions) &&
     (nursery as { id: unknown }).id === expectedId
   );
 }
@@ -50,7 +52,7 @@ export function useTemplate() {
     // 将来的にはここでユーザー作成のテンプレートも統合して返す
     // 例: [...systemTemplates, ...userTemplates]
     return systemTemplates;
-  }, []);
+  }, []); // システムテンプレートは変化しないため依存配列は空
 
   /**
    * @description 指定された種別のテンプレートを取得する
@@ -133,7 +135,7 @@ export function useTemplate() {
 
         if (templateId) {
           // 将来的にはIDでテンプレートを検索
-          template = getAllTemplates().find((t) => t.id === templateId);
+          template = getAllSystemTemplates().find((t) => t.id === templateId);
           if (!template) {
             console.error(`テンプレート（ID: ${templateId}）が見つかりません`);
             return false;
@@ -167,21 +169,20 @@ export function useTemplate() {
         setIsApplying(false);
       }
     },
-    [currentNursery, updateNursery, getAllTemplates]
+    [currentNursery, updateNursery] // getAllTemplatesは依存配列から除外
   );
 
   // 統計情報を提供（将来のUI表示用）
-  const templateStats = useMemo(() => {
-    const all = getAllTemplates();
-    const system = getTemplates(false);
-    const custom = getTemplates(true);
+  // 軽い計算なのでuseMemoは不要
+  const all = getAllTemplates();
+  const system = getTemplates(false);
+  const custom = getTemplates(true);
 
-    return {
-      total: all.length,
-      system: system.length,
-      custom: custom.length,
-    };
-  }, [getAllTemplates, getTemplates]);
+  const templateStats = {
+    total: all.length,
+    system: system.length,
+    custom: custom.length,
+  };
 
   return {
     isApplying,

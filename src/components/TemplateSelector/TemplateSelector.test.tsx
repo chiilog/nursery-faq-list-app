@@ -75,7 +75,9 @@ describe('TemplateSelector', () => {
       screen.getByText(/汎用的に使えそうなテンプレートを用意しています/i)
     ).toBeInTheDocument();
     expect(
-      within(dialog).getByRole('button', { name: /追加する/i })
+      within(dialog).getByRole('button', {
+        name: /テンプレートの質問を保育園に追加/i,
+      })
     ).toBeInTheDocument();
     expect(
       within(dialog).getByRole('button', { name: /キャンセル/i })
@@ -95,7 +97,7 @@ describe('TemplateSelector', () => {
     // 確認ダイアログで「追加する」をクリック
     const dialog = screen.getByRole('dialog');
     const confirmButton = within(dialog).getByRole('button', {
-      name: /追加する/i,
+      name: /テンプレートの質問を保育園に追加/i,
     });
     await user.click(confirmButton);
 
@@ -184,7 +186,7 @@ describe('TemplateSelector', () => {
     // 確認ダイアログで「追加する」をクリック
     const dialog = screen.getByRole('dialog');
     const confirmButton = within(dialog).getByRole('button', {
-      name: /追加する/i,
+      name: /テンプレートの質問を保育園に追加/i,
     });
     await user.click(confirmButton);
 
