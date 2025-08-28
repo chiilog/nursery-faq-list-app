@@ -3,7 +3,7 @@
  * デフォルトテンプレートの適用機能を提供
  */
 
-import React from 'react';
+import type React from 'react';
 import {
   Button,
   Text,
@@ -30,15 +30,15 @@ export interface TemplateSelectorProps {
  * デフォルトテンプレートの適用機能を提供するUIコンポーネント
  * @param props - コンポーネントのプロパティ
  * @param props.nurseryId - 対象の保育園ID
- * @returns {JSX.Element} テンプレート選択UIの要素
+ * @returns テンプレート選択UIの要素またはnull
  * @example
  * ```tsx
  * <TemplateSelector nurseryId="nursery-123" />
  * ```
  */
-export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
+export const TemplateSelector = ({
   nurseryId,
-}) => {
+}: TemplateSelectorProps): React.JSX.Element | null => {
   const { open: isOpen, onOpen, onClose } = useDisclosure();
   const { isApplying, applyTemplate, hasTemplates } = useTemplate();
 
@@ -73,7 +73,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
       <Dialog.Root
         open={isOpen}
-        onOpenChange={(details) => {
+        onOpenChange={(details: { open: boolean }) => {
           if (!details.open) handleClose();
         }}
         size="md"

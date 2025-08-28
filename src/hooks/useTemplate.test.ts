@@ -211,7 +211,7 @@ describe('useTemplate', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'テンプレート適用中にエラーが発生しました:',
-        expect.any(Error)
+        'テンプレート適用エラー'
       );
 
       consoleErrorSpy.mockRestore();

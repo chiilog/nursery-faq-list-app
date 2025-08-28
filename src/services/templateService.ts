@@ -7,26 +7,40 @@ import type { Nursery, Question, QuestionTemplate } from '../types/entities';
 import { generateId } from '../utils/id';
 
 /**
+ * @description テンプレート質問から新しいQuestionを作成する
+ * @param templateQuestion - テンプレートの質問
+ * @param now - 作成日時
+ * @returns 新しいQuestion
+ */
+function createQuestionFromTemplate(
+  templateQuestion: QuestionTemplate['questions'][0],
+  now: Date
+): Question {
+  return {
+    id: generateId(),
+    text: templateQuestion.text,
+    isAnswered: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+/**
  * @description テンプレートの質問を既存の質問リストに適用する
  * @param template - 適用するテンプレート
  * @param existingQuestions - 既存の質問リスト
  * @returns 既存の質問とテンプレートの質問を結合した新しい質問リスト
  */
 export function applyTemplateQuestions(
-  template: QuestionTemplate,
-  existingQuestions: Question[]
+  template: Readonly<QuestionTemplate>,
+  existingQuestions: readonly Question[]
 ): Question[] {
+  const now = new Date();
+
   // テンプレートの質問を新しい質問として作成
-  const newQuestions = template.questions.map((templateQuestion) => {
-    const now = new Date();
-    return {
-      id: generateId(),
-      text: templateQuestion.text,
-      isAnswered: false,
-      createdAt: now,
-      updatedAt: now,
-    } as Question;
-  });
+  const newQuestions = template.questions.map((templateQuestion) =>
+    createQuestionFromTemplate(templateQuestion, now)
+  );
 
   // 既存の質問の後に新しい質問を追加
   return [...existingQuestions, ...newQuestions];
@@ -40,29 +54,27 @@ export function applyTemplateQuestions(
  * @throws {Error} 見学セッションが存在しない場合
  */
 export function applyTemplateToNursery(
-  template: QuestionTemplate,
-  nursery: Nursery
+  template: Readonly<QuestionTemplate>,
+  nursery: Readonly<Nursery>
 ): Nursery {
   if (nursery.visitSessions.length === 0) {
     throw new Error('見学セッションが存在しません');
   }
 
   const now = new Date();
+  const [firstSession, ...restSessions] = nursery.visitSessions;
 
   // 最初の見学セッションを更新
   const updatedSession = {
-    ...nursery.visitSessions[0],
-    questions: applyTemplateQuestions(
-      template,
-      nursery.visitSessions[0].questions
-    ),
+    ...firstSession,
+    questions: applyTemplateQuestions(template, firstSession.questions),
     updatedAt: now,
   };
 
   // 新しい保育園オブジェクトを作成
   return {
     ...nursery,
-    visitSessions: [updatedSession, ...nursery.visitSessions.slice(1)],
+    visitSessions: [updatedSession, ...restSessions],
     updatedAt: now,
   };
 }
@@ -77,8 +89,8 @@ export function applyTemplateToNursery(
  */
 export function applyTemplateById(
   templateId: string,
-  nursery: Nursery,
-  templates: QuestionTemplate[]
+  nursery: Readonly<Nursery>,
+  templates: readonly QuestionTemplate[]
 ): Nursery {
   const template = templates.find((t) => t.id === templateId);
 

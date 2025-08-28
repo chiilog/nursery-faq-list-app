@@ -8,11 +8,80 @@ import type { QuestionTemplate } from '../types/entities';
 import systemQuestionsData from './systemQuestions.json';
 
 /**
+ * @description システム質問データのスキーマ
+ */
+interface SystemQuestionsSchema {
+  defaultNurseryTemplate: {
+    id: string;
+    title: string;
+    description: string;
+    questions: Array<{
+      text: string;
+      order: number;
+    }>;
+  };
+}
+
+/**
+ * @description システム質問データの妥当性を検証する
+ * @param data - 検証対象のデータ
+ * @returns 妥当な場合true
+ */
+function validateSystemQuestions(data: unknown): data is SystemQuestionsSchema {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  if (!('defaultNurseryTemplate' in data)) {
+    return false;
+  }
+
+  const template = (data as Record<string, unknown>).defaultNurseryTemplate;
+
+  if (typeof template !== 'object' || template === null) {
+    return false;
+  }
+
+  const templateObj = template as Record<string, unknown>;
+
+  // 必須プロパティの検証
+  if (
+    typeof templateObj.id !== 'string' ||
+    typeof templateObj.title !== 'string' ||
+    typeof templateObj.description !== 'string'
+  ) {
+    return false;
+  }
+
+  // questions配列の検証
+  if (!Array.isArray(templateObj.questions)) {
+    return false;
+  }
+
+  return templateObj.questions.every((question: unknown) => {
+    if (typeof question !== 'object' || question === null) {
+      return false;
+    }
+
+    const questionObj = question as Record<string, unknown>;
+    return (
+      typeof questionObj.text === 'string' &&
+      typeof questionObj.order === 'number'
+    );
+  });
+}
+
+/**
  * @description デフォルトテンプレートを取得する
  * JSONファイルからデータを読み込み、QuestionTemplate形式で返す
- * @returns {QuestionTemplate} システム提供のデフォルトテンプレート
+ * @returns {Readonly<QuestionTemplate>} システム提供のデフォルトテンプレート
+ * @throws {Error} JSONデータが不正な形式の場合
  */
-export function getDefaultTemplate(): QuestionTemplate {
+export function getDefaultTemplate(): Readonly<QuestionTemplate> {
+  if (!validateSystemQuestions(systemQuestionsData)) {
+    throw new Error('Invalid system questions data format');
+  }
+
   const templateData = systemQuestionsData.defaultNurseryTemplate;
 
   // JSONデータからQuestionTemplateオブジェクトを構築
@@ -21,17 +90,17 @@ export function getDefaultTemplate(): QuestionTemplate {
     title: templateData.title,
     description: templateData.description,
     isCustom: false,
-    questions: [...templateData.questions], // 配列をコピーして外部変更を防ぐ
+    questions: templateData.questions.map((q) => ({ ...q })), // deep copy
     createdAt: new Date('2025-01-01T00:00:00Z'),
     updatedAt: new Date('2025-01-01T00:00:00Z'),
-  };
+  } as const;
 }
 
 /**
  * @description すべてのシステムテンプレートを取得する（将来の拡張用）
- * @returns {QuestionTemplate[]} システムが提供するテンプレートの配列
+ * @returns {readonly QuestionTemplate[]} システムが提供するテンプレートの配列
  */
-export function getAllSystemTemplates(): QuestionTemplate[] {
+export function getAllSystemTemplates(): readonly QuestionTemplate[] {
   // 現在は1つのテンプレートのみ、将来的に複数のテンプレートを提供予定
-  return [getDefaultTemplate()];
+  return [getDefaultTemplate()] as const;
 }
