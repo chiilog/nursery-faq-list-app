@@ -44,11 +44,12 @@ export interface QuestionTemplate {
   id: string;
   title: string;
   description?: string;
-  ageGroup?: string; // '0-1歳', '1-2歳', '2-3歳', '一般' など
-  questions: Omit<
-    Question,
-    'id' | 'answer' | 'isAnswered' | 'answeredBy' | 'answeredAt'
-  >[];
+  isCustom: boolean; // true: ユーザー作成、false: システム提供
+  questions: Array<{
+    text: string;
+    order?: number;
+  }>;
+  createdBy?: string; // ユーザーID（カスタムテンプレートの場合のみ）
   createdAt: Date;
   updatedAt: Date;
 }
