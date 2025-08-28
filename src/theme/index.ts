@@ -6,16 +6,17 @@ const customConfig = defineConfig({
     tokens: {
       colors: {
         brand: {
-          50: { value: '#e8f5e8' },
-          100: { value: '#c3e6c3' },
-          200: { value: '#9dd69d' },
-          300: { value: '#77c677' },
-          400: { value: '#51b651' },
-          500: { value: '#2ba62b' }, // メインカラー（やさしい緑）
-          600: { value: '#228522' },
-          700: { value: '#1a641a' },
-          800: { value: '#114311' },
-          900: { value: '#082208' },
+          50: { value: '#fff1f1' },
+          100: { value: '#ffd6d6' },
+          200: { value: '#ffb3b3' },
+          300: { value: '#ff9999' },
+          400: { value: '#ff8080' },
+          500: { value: '#ff8080' }, // メインカラー（コーラル系）
+          600: { value: '#cc6666' },
+          700: { value: '#b35a5a' },
+          800: { value: '#994d4d' },
+          900: { value: '#802020' },
+          950: { value: '#4d1a1a' },
         },
         accent: {
           50: { value: '#fff5e6' },
@@ -59,6 +60,19 @@ const customConfig = defineConfig({
         '2xl': { value: '24px' },
         '3xl': { value: '30px' },
         '4xl': { value: '36px' },
+      },
+    },
+    semanticTokens: {
+      colors: {
+        brand: {
+          solid: { value: '{colors.brand.500}' },
+          contrast: { value: '{colors.white}' },
+          fg: { value: '{colors.brand.700}' },
+          muted: { value: '{colors.brand.100}' },
+          subtle: { value: '{colors.brand.50}' },
+          emphasized: { value: '{colors.brand.200}' },
+          focusRing: { value: '{colors.brand.500}' },
+        },
       },
     },
     breakpoints: {
