@@ -27,6 +27,7 @@ import { showToast } from '../utils/toaster';
 import { useNurseryEdit } from '../hooks/useNurseryEdit';
 import { useQuestionEditor } from '../hooks/useQuestionEditor';
 import { useQuestionForm } from '../hooks/useQuestionForm';
+import { TemplateSelector } from '../components/TemplateSelector/TemplateSelector';
 
 /**
  * 保育園詳細画面コンポーネント
@@ -301,6 +302,11 @@ export const NurseryDetailPage = () => {
               }
               onAddQuestion={() => void handleAddQuestion()}
             />
+          </Box>
+
+          {/* テンプレート機能 */}
+          <Box py={2}>
+            <TemplateSelector nurseryId={currentNursery.id} />
           </Box>
 
           {/* 質問リスト */}
