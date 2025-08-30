@@ -53,3 +53,13 @@ export interface QuestionTemplate {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// 新しいテンプレート型定義（DRY/KISS原則に基づく統合版）
+export interface Template {
+  id: string;
+  name: string;
+  questions: string[]; // 質問文字列の配列にシンプル化
+  isSystem: boolean; // true: システム提供、false: カスタム
+  createdAt: string;
+  updatedAt: string;
+}

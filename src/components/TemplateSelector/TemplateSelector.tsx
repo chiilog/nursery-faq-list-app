@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   Button,
   Text,
@@ -14,7 +14,9 @@ import {
   useDisclosure,
   Link,
 } from '@chakra-ui/react';
-import { useTemplate } from '../../hooks/useTemplate';
+import { useSystemTemplates } from '../../hooks/template/useSystemTemplates';
+import { handleError } from '../../utils/errorHandler';
+import type { Template } from '../../types/entities';
 
 /**
  * @description TemplateSelectorコンポーネントのプロパティ
@@ -41,35 +43,53 @@ export const TemplateSelector = ({
   nurseryId,
 }: TemplateSelectorProps): React.JSX.Element | null => {
   const { open: isOpen, onOpen, onClose } = useDisclosure();
-  const { isApplying, applyTemplate, hasTemplates } = useTemplate();
+  const { templates, loading, loadTemplates } = useSystemTemplates();
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
+    null
+  );
+  const [isApplying, setIsApplying] = useState(false);
+
+  useEffect(() => {
+    void loadTemplates();
+  }, [loadTemplates]);
 
   /**
    * @description テンプレート適用を実行し、ダイアログを閉じる
    * @returns {Promise<void>} 非同期処理の完了を表すPromise
    */
-  const handleApplyTemplate = useCallback(async (): Promise<void> => {
+  const handleApplyTemplate = useCallback((): void => {
+    if (!selectedTemplate) return;
+
+    setIsApplying(true);
     try {
-      const success = await applyTemplate(nurseryId);
-      if (success) {
-        onClose();
-      } else {
-        console.error('テンプレートの適用に失敗しました');
-      }
+      // TODO: TemplateServiceを使って実際のテンプレート適用処理を実装
+      console.log('テンプレート適用:', selectedTemplate, nurseryId);
+      onClose();
     } catch (error) {
-      console.error('テンプレート適用中にエラーが発生:', error);
+      handleError('テンプレートの適用に失敗しました', error);
+    } finally {
+      setIsApplying(false);
     }
-  }, [applyTemplate, nurseryId, onClose]);
+  }, [selectedTemplate, nurseryId, onClose]);
 
   /**
    * @description ダイアログを閉じる
    * @returns {void}
    */
   const handleClose = useCallback((): void => {
+    setSelectedTemplate(null);
     onClose();
   }, [onClose]);
 
+  // 初回はデフォルトで最初のテンプレートを選択
+  useEffect(() => {
+    if (templates.length > 0 && !selectedTemplate) {
+      setSelectedTemplate(templates[0]);
+    }
+  }, [templates, selectedTemplate]);
+
   // システム提供テンプレートが存在しない場合は何も表示しない
-  if (!hasTemplates(false)) {
+  if (templates.length === 0 && !loading) {
     return null;
   }
 
@@ -121,11 +141,10 @@ export const TemplateSelector = ({
                 </Button>
                 <Button
                   colorPalette="brand"
-                  onClick={() => {
-                    void handleApplyTemplate();
-                  }}
-                  loading={isApplying}
-                  loadingText="追加中..."
+                  onClick={handleApplyTemplate}
+                  loading={isApplying || loading}
+                  loadingText={loading ? '読み込み中...' : '追加中...'}
+                  disabled={!selectedTemplate}
                   aria-label="テンプレートの質問を保育園に追加"
                 >
                   追加する

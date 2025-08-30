@@ -3,21 +3,16 @@ import {
   applyTemplateToNursery,
   applyTemplateQuestions,
 } from './templateService';
-import type { Nursery, Question, QuestionTemplate } from '../types/entities';
+import type { Nursery, Question, Template } from '../../types/entities';
 
 describe('templateService', () => {
-  const mockTemplate: QuestionTemplate = {
+  const mockTemplate: Template = {
     id: 'test-template',
-    title: 'テストテンプレート',
-    description: 'テスト用のテンプレート',
-    isCustom: false,
-    questions: [
-      { text: '質問1', order: 0 },
-      { text: '質問2', order: 1 },
-      { text: '質問3', order: 2 },
-    ],
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    name: 'テストテンプレート',
+    questions: ['質問1', '質問2', '質問3'],
+    isSystem: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 
   const mockNursery: Nursery = {

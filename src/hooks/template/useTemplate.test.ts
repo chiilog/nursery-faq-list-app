@@ -1,15 +1,17 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTemplate } from './useTemplate';
-import { useNurseryStore } from '../stores/nurseryStore';
-import { getAllSystemTemplates } from '../services/systemTemplates';
-import * as templateService from '../services/templateService';
-import type { Nursery } from '../types/entities';
+import { useNurseryStore } from '../../stores/nurseryStore';
+import { useSystemTemplates } from './useSystemTemplates';
+import { useCustomTemplates } from './useCustomTemplates';
+import * as templateService from '../../services/template/templateService';
+import type { Nursery } from '../../types/entities';
 
 // モックの設定
-vi.mock('../stores/nurseryStore');
-vi.mock('../services/systemTemplates');
-vi.mock('../services/templateService');
+vi.mock('../../stores/nurseryStore');
+vi.mock('./useSystemTemplates');
+vi.mock('./useCustomTemplates');
+vi.mock('../../services/template/templateService');
 
 describe('useTemplate', () => {
   const mockNursery: Nursery = {
@@ -32,15 +34,11 @@ describe('useTemplate', () => {
 
   const mockSystemTemplate = {
     id: 'default-nursery-visit',
-    title: '保育園見学 基本質問セット',
-    description: 'システム提供テンプレート',
-    isCustom: false,
-    questions: [
-      { text: '質問1', order: 0 },
-      { text: '質問2', order: 1 },
-    ],
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    name: '保育園見学 基本質問セット',
+    questions: ['質問1', '質問2'],
+    isSystem: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 
   // 将来のユーザー作成テンプレート機能用（現在は未使用）
@@ -76,7 +74,18 @@ describe('useTemplate', () => {
       setCurrentNursery: vi.fn(),
     });
 
-    vi.mocked(getAllSystemTemplates).mockReturnValue([mockSystemTemplate]);
+    vi.mocked(useSystemTemplates).mockReturnValue({
+      templates: [mockSystemTemplate],
+      loading: false,
+      error: null,
+      loadTemplates: vi.fn(),
+    });
+
+    vi.mocked(useCustomTemplates).mockReturnValue({
+      customTemplates: [],
+      saveTemplate: vi.fn(),
+      loadCustomTemplates: vi.fn(),
+    });
   });
 
   describe('applyTemplate', () => {
@@ -210,8 +219,8 @@ describe('useTemplate', () => {
       });
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'テンプレート適用中にエラーが発生しました:',
-        'テンプレート適用エラー'
+        'テンプレート適用中にエラーが発生しました',
+        expect.any(Error)
       );
 
       consoleErrorSpy.mockRestore();
@@ -275,7 +284,7 @@ describe('useTemplate', () => {
 
       expect(templates).toHaveLength(1);
       expect(templates[0]).toEqual(mockSystemTemplate);
-      expect(templates[0].isCustom).toBe(false);
+      expect(templates[0].isSystem).toBe(true);
     });
 
     test('ユーザー作成テンプレートのみ取得できる', () => {
@@ -308,7 +317,12 @@ describe('useTemplate', () => {
         questions: [],
       };
 
-      vi.mocked(getAllSystemTemplates).mockReturnValue([emptyTemplate]);
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates: [emptyTemplate],
+        loading: false,
+        error: null,
+        loadTemplates: vi.fn(),
+      });
 
       const { result } = renderHook(() => useTemplate());
 
