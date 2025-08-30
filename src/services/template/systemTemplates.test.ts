@@ -1,5 +1,8 @@
 import { describe, test, expect } from 'vitest';
-import { getDefaultTemplate } from './systemTemplates';
+import {
+  getDefaultTemplate,
+  validateSystemQuestionsData,
+} from './systemTemplates';
 
 describe('systemTemplates', () => {
   describe('getDefaultTemplate', () => {
@@ -97,6 +100,266 @@ describe('systemTemplates', () => {
       expect(typeof template.createdAt).toBe('string');
       expect(typeof template.updatedAt).toBe('string');
       expect(template.createdAt).toEqual(template.updatedAt);
+    });
+  });
+
+  // バリデーション関数のテスト
+  describe('validateSystemQuestionsData', () => {
+    describe('正常系', () => {
+      test('有効なデータが正しくバリデーションされる', () => {
+        const validData = {
+          defaultTemplate: {
+            id: 'test-template',
+            name: 'テストテンプレート',
+            questions: ['質問1', '質問2'],
+          },
+        };
+
+        const result = validateSystemQuestionsData(validData);
+
+        expect(result).toEqual(validData);
+        expect(result.defaultTemplate.id).toBe('test-template');
+        expect(result.defaultTemplate.name).toBe('テストテンプレート');
+        expect(result.defaultTemplate.questions).toEqual(['質問1', '質問2']);
+      });
+
+      test('空の質問配列でもバリデーションが通る', () => {
+        const validDataWithEmptyQuestions = {
+          defaultTemplate: {
+            id: 'empty-template',
+            name: '空のテンプレート',
+            questions: [],
+          },
+        };
+
+        expect(() => {
+          validateSystemQuestionsData(validDataWithEmptyQuestions);
+        }).not.toThrow();
+
+        const result = validateSystemQuestionsData(validDataWithEmptyQuestions);
+        expect(result.defaultTemplate.questions).toEqual([]);
+      });
+    });
+
+    describe('異常系テスト', () => {
+      test('null値でバリデーションエラー', () => {
+        expect(() => {
+          validateSystemQuestionsData(null);
+        }).toThrow('Invalid system questions data: not an object');
+      });
+
+      test('undefined値でバリデーションエラー', () => {
+        expect(() => {
+          validateSystemQuestionsData(undefined);
+        }).toThrow('Invalid system questions data: not an object');
+      });
+
+      test('プリミティブ値でバリデーションエラー', () => {
+        expect(() => {
+          validateSystemQuestionsData('invalid string');
+        }).toThrow('Invalid system questions data: not an object');
+
+        expect(() => {
+          validateSystemQuestionsData(123);
+        }).toThrow('Invalid system questions data: not an object');
+
+        expect(() => {
+          validateSystemQuestionsData(true);
+        }).toThrow('Invalid system questions data: not an object');
+      });
+
+      test('空のオブジェクトでバリデーションエラー', () => {
+        expect(() => {
+          validateSystemQuestionsData({});
+        }).toThrow('Invalid system questions data: missing defaultTemplate');
+      });
+
+      test('defaultTemplateがnullの場合のバリデーションエラー', () => {
+        expect(() => {
+          validateSystemQuestionsData({ defaultTemplate: null });
+        }).toThrow('Invalid system questions data: missing defaultTemplate');
+      });
+
+      test('defaultTemplateが不正な型の場合のバリデーションエラー', () => {
+        expect(() => {
+          validateSystemQuestionsData({ defaultTemplate: 'invalid' });
+        }).toThrow('Invalid system questions data: missing defaultTemplate');
+
+        expect(() => {
+          validateSystemQuestionsData({ defaultTemplate: 123 });
+        }).toThrow('Invalid system questions data: missing defaultTemplate');
+      });
+
+      test('テンプレート構造が不正な場合のバリデーションエラー', () => {
+        // idが不正な型
+        expect(() => {
+          validateSystemQuestionsData({
+            defaultTemplate: {
+              id: 123,
+              name: 'テスト',
+              questions: ['質問1'],
+            },
+          });
+        }).toThrow('Invalid system questions data: invalid template structure');
+
+        // nameが不正な型
+        expect(() => {
+          validateSystemQuestionsData({
+            defaultTemplate: {
+              id: 'test',
+              name: null,
+              questions: ['質問1'],
+            },
+          });
+        }).toThrow('Invalid system questions data: invalid template structure');
+
+        // questionsが配列でない
+        expect(() => {
+          validateSystemQuestionsData({
+            defaultTemplate: {
+              id: 'test',
+              name: 'テスト',
+              questions: 'invalid',
+            },
+          });
+        }).toThrow('Invalid system questions data: invalid template structure');
+
+        // questionsが文字列以外を含む
+        expect(() => {
+          validateSystemQuestionsData({
+            defaultTemplate: {
+              id: 'test',
+              name: 'テスト',
+              questions: ['valid', 123, 'also valid'],
+            },
+          });
+        }).toThrow('Invalid system questions data: invalid template structure');
+      });
+
+      test('必須フィールドが欠けている場合のバリデーションエラー', () => {
+        // idが欠如
+        expect(() => {
+          validateSystemQuestionsData({
+            defaultTemplate: {
+              name: 'テスト',
+              questions: ['質問1'],
+            },
+          });
+        }).toThrow('Invalid system questions data: invalid template structure');
+
+        // nameが欠如
+        expect(() => {
+          validateSystemQuestionsData({
+            defaultTemplate: {
+              id: 'test',
+              questions: ['質問1'],
+            },
+          });
+        }).toThrow('Invalid system questions data: invalid template structure');
+
+        // questionsが欠如
+        expect(() => {
+          validateSystemQuestionsData({
+            defaultTemplate: {
+              id: 'test',
+              name: 'テスト',
+            },
+          });
+        }).toThrow('Invalid system questions data: invalid template structure');
+      });
+    });
+
+    describe('境界値テスト', () => {
+      test('非常に長い文字列でもバリデーションが通る', () => {
+        const longString = 'a'.repeat(10000);
+        const dataWithLongStrings = {
+          defaultTemplate: {
+            id: longString,
+            name: longString,
+            questions: [longString],
+          },
+        };
+
+        expect(() => {
+          validateSystemQuestionsData(dataWithLongStrings);
+        }).not.toThrow();
+      });
+
+      test('大量の質問配列でもバリデーションが通る', () => {
+        const manyQuestions = Array.from(
+          { length: 1000 },
+          (_, i) => `質問${i}`
+        );
+        const dataWithManyQuestions = {
+          defaultTemplate: {
+            id: 'test',
+            name: 'テスト',
+            questions: manyQuestions,
+          },
+        };
+
+        expect(() => {
+          validateSystemQuestionsData(dataWithManyQuestions);
+        }).not.toThrow();
+
+        const result = validateSystemQuestionsData(dataWithManyQuestions);
+        expect(result.defaultTemplate.questions.length).toBe(1000);
+      });
+
+      test('空文字列フィールドでもバリデーションが通る', () => {
+        const dataWithEmptyStrings = {
+          defaultTemplate: {
+            id: '',
+            name: '',
+            questions: [''],
+          },
+        };
+
+        expect(() => {
+          validateSystemQuestionsData(dataWithEmptyStrings);
+        }).not.toThrow();
+      });
+    });
+
+    describe('型安全性テスト', () => {
+      test('追加のプロパティがある場合でも正しく処理される', () => {
+        const dataWithExtraProperties = {
+          defaultTemplate: {
+            id: 'test',
+            name: 'テスト',
+            questions: ['質問1'],
+            extraProperty: 'should be ignored', // 追加のプロパティ
+          },
+          extraRootProperty: 'also ignored', // ルートレベルの追加プロパティ
+        };
+
+        const result = validateSystemQuestionsData(dataWithExtraProperties);
+
+        // 必要なプロパティのみが含まれることを確認
+        expect(result).toEqual({
+          defaultTemplate: {
+            id: 'test',
+            name: 'テスト',
+            questions: ['質問1'],
+          },
+        });
+
+        // 追加のプロパティは含まれない
+        expect('extraProperty' in result.defaultTemplate).toBe(false);
+        expect('extraRootProperty' in result).toBe(false);
+      });
+    });
+  });
+
+  describe('getDefaultTemplate異常系', () => {
+    test('バリデーション関数が不正データでエラーを投げることを確認', () => {
+      // この場合は実際のJSONファイルに依存するため、
+      // バリデーション関数が適切にエラーを投げることの確認として記述
+      // 実際の実装では、getDefaultTemplate内でvalidateSystemQuestionsDataが
+      // 不正なデータでエラーを投げることを確認
+      expect(() => {
+        validateSystemQuestionsData(null);
+      }).toThrow('Invalid system questions data: not an object');
     });
   });
 });

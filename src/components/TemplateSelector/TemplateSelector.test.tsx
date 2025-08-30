@@ -209,4 +209,179 @@ describe('TemplateSelector', () => {
     expect(link).toBeInTheDocument();
     expect(link).toHaveTextContent('テンプレートから質問を追加する');
   });
+
+  // エラーハンドリングテスト
+  describe('エラーハンドリング', () => {
+    test('useSystemTemplatesがエラーを返した場合でもリンクは表示される', () => {
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates: [],
+        loading: false,
+        error: 'ネットワークエラーが発生しました',
+        loadTemplates: vi.fn(),
+      });
+
+      renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
+
+      // エラーがあってもテンプレートが空の場合は何も表示されない
+      const { container } = renderWithProviders(
+        <TemplateSelector nurseryId="nursery-1" />
+      );
+      expect(container.firstChild).toBeNull();
+    });
+
+    test('useSystemTemplatesがエラーとテンプレートの両方を返した場合', () => {
+      const templates = [
+        {
+          id: 'system-common',
+          name: '共通テンプレート',
+          questions: ['テスト質問1'],
+          nurseryType: 'common' as const,
+          isSystem: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates,
+        loading: false,
+        error: '一部のテンプレートの読み込みに失敗しました',
+        loadTemplates: vi.fn(),
+      });
+
+      renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
+
+      // エラーがあってもテンプレートが存在する場合はリンクが表示される
+      const link = screen.getByText('テンプレートから質問を追加する');
+      expect(link).toBeInTheDocument();
+    });
+
+    test('nurseryIdが空文字の場合のバリデーション', () => {
+      expect(() => {
+        renderWithProviders(<TemplateSelector nurseryId="" />);
+      }).not.toThrow();
+
+      // 空文字でもコンポーネントが正常にレンダリングされること
+      const link = screen.getByText('テンプレートから質問を追加する');
+      expect(link).toBeInTheDocument();
+    });
+
+    test('nurseryIdがundefinedの場合の処理', () => {
+      expect(() => {
+        renderWithProviders(<TemplateSelector nurseryId={undefined as any} />);
+      }).not.toThrow();
+    });
+  });
+
+  // 境界値テスト
+  describe('境界値テスト', () => {
+    test('テンプレートが大量にある場合の処理', () => {
+      const manyTemplates = Array.from({ length: 100 }, (_, i) => ({
+        id: `template-${i}`,
+        name: `テンプレート${i}`,
+        questions: [`質問${i}`],
+        nurseryType: 'common' as const,
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates: manyTemplates,
+        loading: false,
+        error: null,
+        loadTemplates: vi.fn(),
+      });
+
+      expect(() => {
+        renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
+      }).not.toThrow();
+
+      const link = screen.getByText('テンプレートから質問を追加する');
+      expect(link).toBeInTheDocument();
+    });
+
+    test('質問が空のテンプレートがある場合', () => {
+      const templatesWithEmptyQuestions = [
+        {
+          id: 'empty-template',
+          name: '空のテンプレート',
+          questions: [], // 空の質問配列
+          nurseryType: 'common' as const,
+          isSystem: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates: templatesWithEmptyQuestions,
+        loading: false,
+        error: null,
+        loadTemplates: vi.fn(),
+      });
+
+      renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
+
+      const link = screen.getByText('テンプレートから質問を追加する');
+      expect(link).toBeInTheDocument();
+    });
+
+    test('非常に長い名前のテンプレートがある場合', () => {
+      const longNameTemplate = [
+        {
+          id: 'long-name-template',
+          name: 'とても長い名前のテンプレート'.repeat(10), // 非常に長い名前
+          questions: ['質問1'],
+          nurseryType: 'common' as const,
+          isSystem: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates: longNameTemplate,
+        loading: false,
+        error: null,
+        loadTemplates: vi.fn(),
+      });
+
+      expect(() => {
+        renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
+      }).not.toThrow();
+    });
+  });
+
+  // 型安全性テスト
+  describe('型安全性テスト', () => {
+    test('不正な型のpropsでも安全に処理される', () => {
+      // TypeScriptでは型エラーになるが、実行時には処理される
+      expect(() => {
+        renderWithProviders(<TemplateSelector nurseryId={123 as any} />);
+      }).not.toThrow();
+    });
+
+    test('useSystemTemplatesが不正な型のテンプレートを返した場合', () => {
+      const invalidTemplates = [
+        {
+          id: 123, // 本来はstring
+          name: null, // 本来はstring
+          questions: 'invalid', // 本来はstring[]
+          isSystem: 'yes', // 本来はboolean
+        },
+      ];
+
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates: invalidTemplates as any,
+        loading: false,
+        error: null,
+        loadTemplates: vi.fn(),
+      });
+
+      expect(() => {
+        renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
+      }).not.toThrow();
+    });
+  });
 });

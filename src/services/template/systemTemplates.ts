@@ -18,7 +18,9 @@ interface SystemQuestionsData {
  * @returns 型ガードされたSystemQuestionsData
  * @throws {Error} データが期待される形式でない場合
  */
-function validateSystemQuestionsData(data: unknown): SystemQuestionsData {
+export function validateSystemQuestionsData(
+  data: unknown
+): SystemQuestionsData {
   if (typeof data !== 'object' || data === null) {
     throw new Error('Invalid system questions data: not an object');
   }
