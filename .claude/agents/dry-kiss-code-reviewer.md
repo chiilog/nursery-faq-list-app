@@ -1,7 +1,6 @@
 ---
 name: dry-kiss-code-reviewer
 description: DRY原則とKISS原則の観点からコードをレビューし、リファクタリング提案を行う専門エージェント。コード品質の改善に積極的に使用してください。
-tools: read_file, write_file, list_files
 color: cyan
 ---
 
