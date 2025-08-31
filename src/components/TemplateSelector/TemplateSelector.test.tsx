@@ -4,11 +4,27 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../test/test-utils';
 import { TemplateSelector } from './TemplateSelector';
 import { useSystemTemplates } from '../../hooks/template/useSystemTemplates';
+import { useNurseryStore } from '../../stores/nurseryStore';
+import { TemplateService } from '../../services/template/templateService';
+import { showToast } from '../../utils/toaster';
 
 // モックの設定
 vi.mock('../../hooks/template/useSystemTemplates');
+vi.mock('../../stores/nurseryStore');
+vi.mock('../../services/template/templateService');
+vi.mock('../../utils/toaster');
 
 describe('TemplateSelector', () => {
+  const mockNursery = {
+    id: 'nursery-1',
+    name: 'テスト保育園',
+    visitSessions: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockUpdateNursery = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -31,6 +47,17 @@ describe('TemplateSelector', () => {
       error: null,
       loadTemplates: vi.fn(),
     });
+
+    vi.mocked(useNurseryStore).mockReturnValue({
+      currentNursery: mockNursery,
+      updateNursery: mockUpdateNursery,
+    });
+
+    vi.mocked(TemplateService.applyTemplateToNursery).mockReturnValue(
+      mockNursery
+    );
+    vi.mocked(showToast.success).mockReturnValue('success-id');
+    vi.mocked(showToast.error).mockReturnValue('error-id');
   });
 
   test('「テンプレートから質問を追加する」リンクが表示される', () => {
@@ -68,8 +95,7 @@ describe('TemplateSelector', () => {
   });
 
   test('確認ダイアログで「追加する」をクリックするとテンプレートが適用される', async () => {
-    // console.logをスパイする
-    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    mockUpdateNursery.mockResolvedValueOnce(undefined);
 
     const user = userEvent.setup();
     renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
@@ -85,16 +111,23 @@ describe('TemplateSelector', () => {
     });
     await user.click(confirmButton);
 
-    // テンプレート適用のログが出力されることを確認
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      'テンプレート適用:',
-      expect.objectContaining({
-        id: 'system-common',
-        name: '共通テンプレート',
-        isSystem: true,
-      }),
-      'nursery-1'
-    );
+    // TemplateService.applyTemplateToNurseryが呼ばれることを確認
+    await waitFor(() => {
+      expect(TemplateService.applyTemplateToNursery).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'system-common',
+          name: '共通テンプレート',
+          isSystem: true,
+        }),
+        mockNursery
+      );
+    });
+
+    // updateNurseryが呼ばれることを確認
+    expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', mockNursery);
+
+    // 成功トーストが表示されることを確認
+    expect(showToast.success).toHaveBeenCalledWith('質問を追加しました');
 
     // ダイアログが閉じることを確認
     await waitFor(() => {
@@ -102,8 +135,6 @@ describe('TemplateSelector', () => {
         screen.queryByText('保活手帳オススメの質問リスト')
       ).not.toBeInTheDocument();
     });
-
-    consoleLogSpy.mockRestore();
   });
 
   test('確認ダイアログで「キャンセル」をクリックすると何もしない', async () => {
@@ -164,8 +195,13 @@ describe('TemplateSelector', () => {
   });
 
   test('テンプレート適用に失敗した場合のエラー処理', async () => {
-    // console.logをスパイする（正常パターンのテスト）
-    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    // updateNurseryがエラーを投げるようにモック
+    mockUpdateNursery.mockRejectedValueOnce(new Error('更新に失敗しました'));
+
+    // console.errorをスパイ
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
 
     const user = userEvent.setup();
     renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
@@ -181,25 +217,27 @@ describe('TemplateSelector', () => {
     });
     await user.click(confirmButton);
 
-    // テンプレート適用のログが出力されることを確認
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      'テンプレート適用:',
-      expect.objectContaining({
-        id: 'system-common',
-        name: '共通テンプレート',
-        isSystem: true,
-      }),
-      'nursery-1'
-    );
-
-    // ダイアログが閉じることを確認
+    // エラーログが出力されることを確認
     await waitFor(() => {
-      expect(
-        screen.queryByText(/基本質問セットを追加/i)
-      ).not.toBeInTheDocument();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'テンプレート適用エラー:',
+        expect.any(Error)
+      );
     });
 
-    consoleLogSpy.mockRestore();
+    // エラーメッセージが表示されることを確認
+    await waitFor(() => {
+      expect(
+        screen.getByText('質問の追加に失敗しました。もう一度お試しください。')
+      ).toBeInTheDocument();
+    });
+
+    // ダイアログは開いたまま（エラー時は閉じない）
+    expect(
+      screen.getByText('保活手帳オススメの質問リスト')
+    ).toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
   });
 
   test('アクセシビリティ: リンクが適切にアクセス可能', () => {

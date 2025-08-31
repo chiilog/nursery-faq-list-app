@@ -28,14 +28,14 @@ export const useDeleteNursery = (): UseDeleteNurseryReturn => {
 
     try {
       await deleteNursery(nurseryId);
-      showToast.success('削除完了', '保育園を削除しました');
+      showToast.success('保育園を削除しました');
       void navigate('/');
       return { success: true };
     } catch (err) {
       const errorMessage =
         '保育園の削除に失敗しました。もう一度お試しください。';
       setError(errorMessage);
-      showToast.error('削除エラー', errorMessage);
+      showToast.error(errorMessage);
       console.error('Failed to delete nursery:', err);
       return { success: false, error: errorMessage };
     } finally {

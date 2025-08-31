@@ -99,10 +99,9 @@ export function useNurseryEdit(
     const trimmedName = editingNurseryName.trim();
     if (!validateNurseryName(editingNurseryName)) {
       if (!trimmedName) {
-        showToast.error('入力エラー', '保育園名を入力してください');
+        showToast.error('保育園名を入力してください');
       } else {
         showToast.error(
-          '入力エラー',
           `保育園名は${NURSERY_NAME_MAX_LENGTH}文字以内で入力してください`
         );
       }
@@ -115,7 +114,7 @@ export function useNurseryEdit(
       // 見学日が入力されている場合：バリデーションして見学セッションを更新/作成
       const visitDateError = validateVisitDateSimple(newVisitDate, false);
       if (visitDateError) {
-        showToast.error('入力エラー', visitDateError);
+        showToast.error(visitDateError);
         return;
       }
 
@@ -140,7 +139,7 @@ export function useNurseryEdit(
       visitSessions: updatedSessions,
     });
 
-    showToast.success('保存完了', '保育園情報を更新しました');
+    showToast.success('保育園情報を更新しました');
     setIsEditingNursery(false);
   }, [
     currentNursery,

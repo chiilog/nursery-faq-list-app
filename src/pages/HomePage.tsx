@@ -35,10 +35,7 @@ export const HomePage = ({ onCreateNew }: HomePageProps) => {
       void navigate(`/nursery/${nursery.id}`);
     } catch (error) {
       console.error('保育園選択エラー:', error);
-      showToast.error(
-        '保育園選択エラー',
-        '保育園の選択に失敗しました。もう一度お試しください。'
-      );
+      showToast.error('保育園の選択に失敗しました。もう一度お試しください。');
     }
   };
 
