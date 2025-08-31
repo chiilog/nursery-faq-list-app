@@ -223,7 +223,12 @@ describe('useTemplate', () => {
 
   describe('isApplying', () => {
     test('適用中はtrueになる', async () => {
-      // 正常なモック
+      // updateNurseryを非同期にして遅延を作る
+      let resolveUpdate: () => void;
+      const updatePromise = new Promise<void>((resolve) => {
+        resolveUpdate = resolve;
+      });
+
       const updatedNursery = {
         ...mockNursery,
         visitSessions: [
@@ -234,30 +239,125 @@ describe('useTemplate', () => {
         ],
       };
 
+      // updateNurseryを非同期mockに設定
+      const mockUpdateNurseryAsync = vi.fn().mockImplementation(() => {
+        return updatePromise;
+      });
+
+      vi.mocked(useNurseryStore).mockReturnValue({
+        nurseries: [mockNursery],
+        currentNursery: mockNursery,
+        updateNursery: mockUpdateNurseryAsync,
+      } as ReturnType<typeof useNurseryStore>);
+
+      // templateService.applyTemplateToNurseryは同期的にmock
       vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
         updatedNursery
       );
 
       const { result } = renderHook(() => useTemplate());
 
+      // 初期状態は適用中でない
       expect(result.current.isApplying).toBe(false);
 
-      // 非同期処理を適切にテスト
-      let applyPromise: Promise<boolean> | undefined;
-
+      // テンプレート適用を開始
+      let applyPromise: Promise<boolean>;
       act(() => {
         applyPromise = result.current.applyTemplate('nursery-1');
       });
 
-      // 次のマイクロタスクまで待つ
+      // マイクロタスクを実行してsetIsApplying(true)を反映
       await act(async () => {
         await Promise.resolve();
       });
 
-      // 適用が完了している
-      const applied = await applyPromise;
-      expect(applied).toBe(true);
+      // 適用中であることを確認
+      expect(result.current.isApplying).toBe(true);
+
+      // updateNurseryを完了させる
+      act(() => {
+        resolveUpdate();
+      });
+
+      // 適用完了を待つ
+      await act(async () => {
+        const applied = await applyPromise!;
+        expect(applied).toBe(true);
+      });
+
+      // 適用完了後はfalseに戻る
       expect(result.current.isApplying).toBe(false);
+    });
+
+    test('エラー発生時もisApplyingがfalseに戻る', async () => {
+      // updateNurseryでエラーを発生させる
+      let rejectUpdate: (error: Error) => void;
+      const errorPromise = new Promise<void>((_, reject) => {
+        rejectUpdate = reject;
+      });
+
+      const updatedNursery = {
+        ...mockNursery,
+        visitSessions: [
+          {
+            ...mockNursery.visitSessions[0],
+            questions: [],
+          },
+        ],
+      };
+
+      // updateNurseryを非同期エラーmockに設定
+      const mockUpdateNurseryError = vi.fn().mockImplementation(() => {
+        return errorPromise;
+      });
+
+      vi.mocked(useNurseryStore).mockReturnValue({
+        nurseries: [mockNursery],
+        currentNursery: mockNursery,
+        updateNursery: mockUpdateNurseryError,
+      } as ReturnType<typeof useNurseryStore>);
+
+      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
+        updatedNursery
+      );
+
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      const { result } = renderHook(() => useTemplate());
+
+      expect(result.current.isApplying).toBe(false);
+
+      // テンプレート適用を開始
+      let applyPromise: Promise<boolean>;
+      act(() => {
+        applyPromise = result.current.applyTemplate('nursery-1');
+      });
+
+      // マイクロタスクを実行してsetIsApplying(true)を反映
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // 適用中であることを確認
+      expect(result.current.isApplying).toBe(true);
+
+      // エラーを発生させる
+      act(() => {
+        rejectUpdate(new Error('updateNursery エラー'));
+      });
+
+      // エラー処理完了を待つ
+      await act(async () => {
+        const applied = await applyPromise!;
+        expect(applied).toBe(false);
+      });
+
+      // エラー発生後もisApplyingがfalseに戻ることを確認
+      expect(result.current.isApplying).toBe(false);
+
+      consoleErrorSpy.mockRestore();
     });
   });
 
