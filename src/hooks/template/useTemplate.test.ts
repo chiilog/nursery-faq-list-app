@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTemplate } from './useTemplate';
 import { useNurseryStore } from '../../stores/nurseryStore';
+import type { NurseryState } from '../../stores/nurseryStore';
 import { useSystemTemplates } from './useSystemTemplates';
 import { useCustomTemplates } from './useCustomTemplates';
 import * as templateService from '../../services/template/templateService';
@@ -56,7 +57,7 @@ describe('useTemplate', () => {
   //   updatedAt: new Date(),
   // };
 
-  const mockUpdateNursery = vi.fn();
+  const mockUpdateNursery = vi.fn<NurseryState['updateNursery']>();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,26 +66,23 @@ describe('useTemplate', () => {
     vi.mocked(useNurseryStore).mockReturnValue({
       nurseries: [mockNursery],
       currentNursery: mockNursery,
-      addNursery: vi.fn(),
       updateNursery: mockUpdateNursery,
-      deleteNursery: vi.fn(),
-      getNurseryById: vi.fn((id) =>
-        id === 'nursery-1' ? mockNursery : undefined
-      ),
-      setCurrentNursery: vi.fn(),
-    });
+    } as ReturnType<typeof useNurseryStore>);
 
     vi.mocked(useSystemTemplates).mockReturnValue({
       templates: [mockSystemTemplate],
       loading: false,
       error: null,
-      loadTemplates: vi.fn(),
+      loadTemplates:
+        vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
     });
 
     vi.mocked(useCustomTemplates).mockReturnValue({
       customTemplates: [],
-      saveTemplate: vi.fn(),
-      loadCustomTemplates: vi.fn(),
+      saveTemplate:
+        vi.fn<ReturnType<typeof useCustomTemplates>['saveTemplate']>(),
+      loadCustomTemplates:
+        vi.fn<ReturnType<typeof useCustomTemplates>['loadCustomTemplates']>(),
     });
   });
 
@@ -182,12 +180,8 @@ describe('useTemplate', () => {
       vi.mocked(useNurseryStore).mockReturnValue({
         nurseries: [],
         currentNursery: null,
-        addNursery: vi.fn(),
         updateNursery: mockUpdateNursery,
-        deleteNursery: vi.fn(),
-        getNurseryById: vi.fn(),
-        setCurrentNursery: vi.fn(),
-      });
+      } as ReturnType<typeof useNurseryStore>);
 
       const { result } = renderHook(() => useTemplate());
 
