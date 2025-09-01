@@ -10,6 +10,7 @@ import { useCustomTemplates } from './useCustomTemplates';
 import { TemplateService } from '../../services/template/templateService';
 import { handleError } from '../../utils/errorHandler';
 import type { Template, Nursery } from '../../types/entities';
+import type { CreateVisitSessionInput } from '../../types/inputs';
 
 /**
  * @description 保育園オブジェクトの妥当性を検証する型ガード
@@ -21,13 +22,17 @@ function isValidNursery(
   nursery: unknown,
   expectedId: string
 ): nursery is Nursery {
+  if (typeof nursery !== 'object' || nursery === null) {
+    return false;
+  }
+
+  const obj = nursery as Record<string, unknown>;
+
   return (
-    typeof nursery === 'object' &&
-    nursery !== null &&
-    'id' in nursery &&
-    'visitSessions' in nursery &&
-    Array.isArray((nursery as Nursery).visitSessions) &&
-    (nursery as { id: unknown }).id === expectedId
+    'id' in obj &&
+    'visitSessions' in obj &&
+    obj.id === expectedId &&
+    Array.isArray(obj.visitSessions)
   );
 }
 
@@ -37,7 +42,12 @@ function isValidNursery(
  */
 export function useTemplate() {
   const [isApplying, setIsApplying] = useState(false);
-  const { currentNursery, updateNursery } = useNurseryStore();
+  const {
+    currentNursery,
+    updateNursery,
+    createVisitSession,
+    setCurrentNursery,
+  } = useNurseryStore();
   const {
     templates: systemTemplates,
     loading: systemLoading,
@@ -53,9 +63,7 @@ export function useTemplate() {
   /**
    * @description 全テンプレートを取得する
    */
-  const getAllTemplates = useCallback((): Template[] => {
-    return allTemplates;
-  }, [allTemplates]);
+  const getAllTemplates = useCallback(() => allTemplates, [allTemplates]);
 
   /**
    * @description 指定された種別のテンプレートを取得する
@@ -66,7 +74,9 @@ export function useTemplate() {
       if (isCustom === undefined) {
         return allTemplates;
       }
-      return allTemplates.filter((template) => !template.isSystem === isCustom);
+      return allTemplates.filter((template) =>
+        isCustom ? !template.isSystem : template.isSystem
+      );
     },
     [allTemplates]
   );
@@ -112,7 +122,7 @@ export function useTemplate() {
             return false;
           }
         } else {
-          template = systemTemplates[0];
+          template = systemTemplates.at(0);
           if (!template) {
             handleError(
               'システム提供テンプレートが見つかりません',
@@ -122,9 +132,43 @@ export function useTemplate() {
           }
         }
 
+        // 使用するNurseryオブジェクトを決定
+        let nurseryToUse = currentNursery;
+
+        // セッションが存在しない場合は新規作成
+        if (currentNursery.visitSessions.length === 0) {
+          const sessionInput: CreateVisitSessionInput = {
+            visitDate: new Date(),
+            status: 'planned' as const,
+            questions: [],
+            insights: [],
+          };
+
+          try {
+            await createVisitSession(nurseryId, sessionInput);
+            // セッション作成後、最新のデータを取得
+            await setCurrentNursery(nurseryId);
+
+            // セッション作成後の最新のNurseryデータを再度取得
+            const store = useNurseryStore.getState?.();
+            nurseryToUse = store?.currentNursery ?? currentNursery;
+
+            if (!isValidNursery(nurseryToUse, nurseryId)) {
+              handleError(
+                `セッション作成後の保育園データの取得に失敗しました（ID: ${nurseryId}）`,
+                new Error('Failed to get updated nursery data')
+              );
+              return false;
+            }
+          } catch (error) {
+            handleError('見学セッションの作成に失敗しました', error);
+            return false;
+          }
+        }
+
         const updatedNursery = TemplateService.applyTemplateToNursery(
           template,
-          currentNursery
+          nurseryToUse
         );
         await updateNursery(nurseryId, updatedNursery);
         return true;
@@ -135,7 +179,14 @@ export function useTemplate() {
         setIsApplying(false);
       }
     },
-    [currentNursery, updateNursery, allTemplates, systemTemplates]
+    [
+      currentNursery,
+      updateNursery,
+      createVisitSession,
+      setCurrentNursery,
+      allTemplates,
+      systemTemplates,
+    ]
   );
 
   // 初回ロード

@@ -58,6 +58,8 @@ describe('useTemplate', () => {
   // };
 
   const mockUpdateNursery = vi.fn<NurseryState['updateNursery']>();
+  const mockCreateVisitSession = vi.fn<NurseryState['createVisitSession']>();
+  const mockSetCurrentNursery = vi.fn<NurseryState['setCurrentNursery']>();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -67,7 +69,14 @@ describe('useTemplate', () => {
       nurseries: [mockNursery],
       currentNursery: mockNursery,
       updateNursery: mockUpdateNursery,
+      createVisitSession: mockCreateVisitSession,
+      setCurrentNursery: mockSetCurrentNursery,
     } as ReturnType<typeof useNurseryStore>);
+
+    // getStateメソッドのモック
+    vi.mocked(useNurseryStore).getState = vi.fn().mockReturnValue({
+      currentNursery: mockNursery,
+    });
 
     vi.mocked(useSystemTemplates).mockReturnValue({
       templates: [mockSystemTemplate],
@@ -173,6 +182,103 @@ describe('useTemplate', () => {
       expect(templateService.applyTemplateToNursery).toHaveBeenCalledWith(
         mockSystemTemplate,
         mockNursery
+      );
+    });
+
+    test('セッションが存在しない場合は新規作成してからテンプレートを適用する', async () => {
+      // セッションが存在しない保育園を作成
+      const nurseryWithoutSession: Nursery = {
+        ...mockNursery,
+        visitSessions: [],
+      };
+
+      // 新規セッション作成後の保育園データ
+      const nurseryWithNewSession: Nursery = {
+        ...mockNursery,
+        visitSessions: [
+          {
+            id: 'new-session',
+            visitDate: new Date(),
+            status: 'planned',
+            questions: [],
+            insights: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      vi.mocked(useNurseryStore).mockReturnValue({
+        nurseries: [nurseryWithoutSession],
+        currentNursery: nurseryWithoutSession,
+        updateNursery: mockUpdateNursery,
+        createVisitSession: mockCreateVisitSession,
+        setCurrentNursery: mockSetCurrentNursery,
+      } as ReturnType<typeof useNurseryStore>);
+
+      // getStateメソッドをセッション作成後のデータを返すように設定
+      vi.mocked(useNurseryStore).getState = vi.fn().mockReturnValue({
+        currentNursery: nurseryWithNewSession,
+      });
+
+      const updatedNursery = {
+        ...nurseryWithNewSession,
+        visitSessions: [
+          {
+            ...nurseryWithNewSession.visitSessions[0],
+            questions: [
+              {
+                id: 'q1',
+                text: '質問1',
+                answer: '',
+                isAnswered: false,
+                createdAt: expect.any(Date),
+                updatedAt: expect.any(Date),
+              },
+              {
+                id: 'q2',
+                text: '質問2',
+                answer: '',
+                isAnswered: false,
+                createdAt: expect.any(Date),
+                updatedAt: expect.any(Date),
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
+        updatedNursery
+      );
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(true);
+      });
+
+      // セッション作成が呼ばれることを確認
+      expect(mockCreateVisitSession).toHaveBeenCalledWith('nursery-1', {
+        visitDate: expect.any(Date),
+        status: 'planned',
+        questions: [],
+        insights: [],
+      });
+
+      // 最新データ取得が呼ばれることを確認
+      expect(mockSetCurrentNursery).toHaveBeenCalledWith('nursery-1');
+
+      // セッション作成後のデータでテンプレート適用が呼ばれることを確認
+      expect(templateService.applyTemplateToNursery).toHaveBeenCalledWith(
+        mockSystemTemplate,
+        nurseryWithNewSession
+      );
+
+      expect(mockUpdateNursery).toHaveBeenCalledWith(
+        'nursery-1',
+        updatedNursery
       );
     });
 
