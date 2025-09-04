@@ -315,7 +315,22 @@ describe('useTemplate', () => {
         visitSessions: [
           {
             ...mockNursery.visitSessions[0],
-            questions: [],
+            questions: [
+              {
+                id: 'q1',
+                text: '質問1',
+                isAnswered: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              {
+                id: 'q2',
+                text: '質問2',
+                isAnswered: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
           },
         ],
       };
@@ -382,7 +397,15 @@ describe('useTemplate', () => {
         visitSessions: [
           {
             ...mockNursery.visitSessions[0],
-            questions: [],
+            questions: [
+              {
+                id: 'q1',
+                text: '質問1',
+                isAnswered: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
           },
         ],
       };
