@@ -3,7 +3,7 @@
  * データ入力時の検証ロジック
  */
 
-import type { Question } from '../types/entities';
+import type { Question, Nursery } from '../types/entities';
 import type { CreateQuestionInput, UpdateQuestionInput } from '../types/inputs';
 
 // バリデーション制限値の定数定義
@@ -232,4 +232,28 @@ export function validateQuestion(question: Question): ValidationResult {
     isValid: errors.length === 0,
     errors,
   };
+}
+
+/**
+ * 保育園オブジェクトの型ガード
+ * @param nursery 検証対象のオブジェクト
+ * @param expectedId 期待する保育園ID
+ * @returns nursery が有効なNurseryオブジェクトでIDが一致する場合true
+ */
+export function isValidNursery(
+  nursery: unknown,
+  expectedId: string
+): nursery is Nursery {
+  if (typeof nursery !== 'object' || nursery === null) {
+    return false;
+  }
+
+  const obj = nursery as Record<string, unknown>;
+
+  return (
+    'id' in obj &&
+    'visitSessions' in obj &&
+    obj.id === expectedId &&
+    Array.isArray(obj.visitSessions)
+  );
 }

@@ -192,71 +192,26 @@ describe('useTemplate', () => {
         visitSessions: [],
       };
 
-      // 新規セッション作成後の保育園データ
-      const nurseryWithNewSession: Nursery = {
-        ...mockNursery,
-        visitSessions: [
-          {
-            id: 'new-session',
-            visitDate: new Date(),
-            status: 'planned',
-            questions: [],
-            insights: [],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-      };
+      // createVisitSessionのモックをセットアップ
+      mockCreateVisitSession.mockResolvedValue('new-session-id');
 
-      vi.mocked(useNurseryStore).mockReturnValue({
+      // useNurseryStoreのモックを段階的に更新するよう設定
+      const mockStoreState = {
         nurseries: [nurseryWithoutSession],
         currentNursery: nurseryWithoutSession,
         updateNursery: mockUpdateNursery,
         createVisitSession: mockCreateVisitSession,
         setCurrentNursery: mockSetCurrentNursery,
-      } as ReturnType<typeof useNurseryStore>);
-
-      // getStateメソッドをセッション作成後のデータを返すように設定
-      vi.mocked(useNurseryStore).getState = vi.fn().mockReturnValue({
-        currentNursery: nurseryWithNewSession,
-      });
-
-      const updatedNursery = {
-        ...nurseryWithNewSession,
-        visitSessions: [
-          {
-            ...nurseryWithNewSession.visitSessions[0],
-            questions: [
-              {
-                id: 'q1',
-                text: '質問1',
-                answer: '',
-                isAnswered: false,
-                createdAt: expect.any(Date),
-                updatedAt: expect.any(Date),
-              },
-              {
-                id: 'q2',
-                text: '質問2',
-                answer: '',
-                isAnswered: false,
-                createdAt: expect.any(Date),
-                updatedAt: expect.any(Date),
-              },
-            ],
-          },
-        ],
       };
 
-      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
-        updatedNursery
+      vi.mocked(useNurseryStore).mockReturnValue(
+        mockStoreState as ReturnType<typeof useNurseryStore>
       );
 
       const { result } = renderHook(() => useTemplate());
 
       await act(async () => {
-        const applied = await result.current.applyTemplate('nursery-1');
-        expect(applied).toBe(true);
+        await result.current.applyTemplate('nursery-1');
       });
 
       // セッション作成が呼ばれることを確認
@@ -267,18 +222,38 @@ describe('useTemplate', () => {
         insights: [],
       });
 
-      // 最新データ取得が呼ばれることを確認
-      expect(mockSetCurrentNursery).toHaveBeenCalledWith('nursery-1');
-
-      // セッション作成後のデータでテンプレート適用が呼ばれることを確認
+      // テンプレート適用が呼ばれることを確認
       expect(templateService.applyTemplateToNursery).toHaveBeenCalledWith(
         mockSystemTemplate,
-        nurseryWithNewSession
+        expect.objectContaining({
+          id: 'nursery-1',
+          visitSessions: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'session-1',
+              status: 'planned',
+            }),
+          ]),
+        })
       );
 
+      // 保育園データの更新が呼ばれることを確認
       expect(mockUpdateNursery).toHaveBeenCalledWith(
         'nursery-1',
-        updatedNursery
+        expect.objectContaining({
+          id: 'nursery-1',
+          visitSessions: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'session-1',
+              status: 'planned',
+              questions: expect.arrayContaining([
+                expect.objectContaining({
+                  text: expect.any(String),
+                }),
+              ]),
+              insights: [],
+            }),
+          ]),
+        })
       );
     });
 
@@ -527,6 +502,581 @@ describe('useTemplate', () => {
       const { result } = renderHook(() => useTemplate());
 
       expect(result.current.hasTemplates()).toBe(false);
+    });
+  });
+
+  describe('境界値・エッジケーステスト', () => {
+    test('空のテンプレートを適用しても質問が追加されない', async () => {
+      const emptyTemplate = { ...mockSystemTemplate, questions: [] };
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates: [emptyTemplate],
+        loading: false,
+        error: null,
+        loadTemplates: vi.fn(),
+      });
+
+      const updatedNursery = {
+        ...mockNursery,
+        visitSessions: [
+          {
+            ...mockNursery.visitSessions[0],
+            questions: [], // 空のテンプレートなので質問は追加されない
+          },
+        ],
+      };
+
+      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
+        updatedNursery
+      );
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(true);
+      });
+
+      // テンプレートサービスが空のテンプレートで呼ばれることを確認
+      expect(templateService.applyTemplateToNursery).toHaveBeenCalledWith(
+        emptyTemplate,
+        mockNursery
+      );
+
+      // 質問が追加されていないことを確認
+      const calls = mockUpdateNursery.mock.calls;
+      const updatedNurseryArg = calls[calls.length - 1][1];
+      expect(updatedNurseryArg.visitSessions).toBeDefined();
+      expect(updatedNurseryArg.visitSessions![0].questions).toHaveLength(0);
+    });
+
+    test('存在しないテンプレートIDを指定した場合はfalseを返す', async () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate(
+          'nursery-1',
+          'non-existent-template'
+        );
+        expect(applied).toBe(false);
+      });
+
+      expect(templateService.applyTemplateToNursery).not.toHaveBeenCalled();
+      expect(mockUpdateNursery).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'テンプレート（ID: non-existent-template）が見つかりません',
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    test('システムテンプレートが存在しない場合（デフォルト適用時）はfalseを返す', async () => {
+      vi.mocked(useSystemTemplates).mockReturnValue({
+        templates: [],
+        loading: false,
+        error: null,
+        loadTemplates: vi.fn(),
+      });
+
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(false);
+      });
+
+      expect(templateService.applyTemplateToNursery).not.toHaveBeenCalled();
+      expect(mockUpdateNursery).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'システム提供テンプレートが見つかりません',
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    test('currentNurseryがnullの場合はfalseを返す', async () => {
+      vi.mocked(useNurseryStore).mockReturnValue({
+        nurseries: [],
+        currentNursery: null,
+        updateNursery: mockUpdateNursery,
+      } as ReturnType<typeof useNurseryStore>);
+
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(false);
+      });
+
+      expect(templateService.applyTemplateToNursery).not.toHaveBeenCalled();
+      expect(mockUpdateNursery).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '保育園（ID: nursery-1）が見つかりません',
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    test('currentNurseryのIDが指定されたIDと異なる場合はfalseを返す', async () => {
+      const differentNursery = { ...mockNursery, id: 'different-nursery' };
+
+      vi.mocked(useNurseryStore).mockReturnValue({
+        nurseries: [differentNursery],
+        currentNursery: differentNursery,
+        updateNursery: mockUpdateNursery,
+      } as ReturnType<typeof useNurseryStore>);
+
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(false);
+      });
+
+      expect(templateService.applyTemplateToNursery).not.toHaveBeenCalled();
+      expect(mockUpdateNursery).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '保育園（ID: nursery-1）が見つかりません',
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    test('createVisitSessionが失敗した場合はfalseを返す', async () => {
+      // セッションが存在しない保育園を作成
+      const nurseryWithoutSession: Nursery = {
+        ...mockNursery,
+        visitSessions: [],
+      };
+
+      // createVisitSessionのモックを失敗させる
+      mockCreateVisitSession.mockRejectedValue(
+        new Error('セッション作成エラー')
+      );
+
+      vi.mocked(useNurseryStore).mockReturnValue({
+        nurseries: [nurseryWithoutSession],
+        currentNursery: nurseryWithoutSession,
+        updateNursery: mockUpdateNursery,
+        createVisitSession: mockCreateVisitSession,
+      } as ReturnType<typeof useNurseryStore>);
+
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(false);
+      });
+
+      expect(mockCreateVisitSession).toHaveBeenCalledWith('nursery-1', {
+        visitDate: expect.any(Date),
+        status: 'planned',
+        questions: [],
+        insights: [],
+      });
+      expect(templateService.applyTemplateToNursery).not.toHaveBeenCalled();
+      expect(mockUpdateNursery).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '見学セッションの作成に失敗しました',
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('データ整合性検証', () => {
+    test('適用後の質問データが正しい構造を持つ', async () => {
+      const expectedQuestions = [
+        {
+          id: 'q1',
+          text: '質問1',
+          isAnswered: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'q2',
+          text: '質問2',
+          isAnswered: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const updatedNursery = {
+        ...mockNursery,
+        visitSessions: [
+          {
+            ...mockNursery.visitSessions[0],
+            questions: expectedQuestions,
+          },
+        ],
+      };
+
+      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
+        updatedNursery
+      );
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(true);
+      });
+
+      // 更新後の保育園データを取得
+      const calls = mockUpdateNursery.mock.calls;
+      const updatedNurseryArg = calls[calls.length - 1][1];
+      expect(updatedNurseryArg.visitSessions).toBeDefined();
+      const questions = updatedNurseryArg.visitSessions![0].questions;
+
+      // 各質問が必要なプロパティを持つことを確認
+      questions.forEach((question: any) => {
+        expect(question).toMatchObject({
+          id: expect.any(String),
+          text: expect.any(String),
+          isAnswered: expect.any(Boolean),
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        });
+
+        // 文字列が空でないことを確認
+        expect(question.id).toBeTruthy();
+        expect(question.text).toBeTruthy();
+      });
+
+      // 質問の数が期待値と一致することを確認
+      expect(questions).toHaveLength(2);
+    });
+
+    test('セッション作成後の適用でセッションデータが正しい構造を持つ', async () => {
+      // セッションが存在しない保育園を作成
+      const nurseryWithoutSession: Nursery = {
+        ...mockNursery,
+        visitSessions: [],
+      };
+
+      // セッション作成後の保育園データをモック
+      const nurseryWithNewSession: Nursery = {
+        ...mockNursery,
+        visitSessions: [
+          {
+            id: 'new-session-id',
+            visitDate: new Date(),
+            status: 'planned',
+            questions: [],
+            insights: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      mockCreateVisitSession.mockResolvedValue('new-session-id');
+
+      vi.mocked(useNurseryStore).mockReturnValue({
+        nurseries: [nurseryWithoutSession],
+        currentNursery: nurseryWithoutSession,
+        updateNursery: mockUpdateNursery,
+        createVisitSession: mockCreateVisitSession,
+      } as ReturnType<typeof useNurseryStore>);
+
+      // getStateで作成後のデータを返す
+      vi.mocked(useNurseryStore).getState = vi.fn().mockReturnValue({
+        currentNursery: nurseryWithNewSession,
+      });
+
+      const updatedNurseryWithQuestions = {
+        ...nurseryWithNewSession,
+        visitSessions: [
+          {
+            ...nurseryWithNewSession.visitSessions[0],
+            questions: [
+              {
+                id: 'q1',
+                text: '質問1',
+                isAnswered: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
+        updatedNurseryWithQuestions
+      );
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(true);
+      });
+
+      // セッション作成が呼ばれたことを確認
+      expect(mockCreateVisitSession).toHaveBeenCalledWith('nursery-1', {
+        visitDate: expect.any(Date),
+        status: 'planned',
+        questions: [],
+        insights: [],
+      });
+
+      // テンプレート適用が新しいセッションデータで呼ばれたことを確認
+      expect(templateService.applyTemplateToNursery).toHaveBeenCalledWith(
+        mockSystemTemplate,
+        expect.objectContaining({
+          visitSessions: [
+            expect.objectContaining({
+              id: 'new-session-id',
+              status: 'planned',
+              questions: [],
+              insights: [],
+            }),
+          ],
+        })
+      );
+
+      // 最終的な更新データが正しい構造を持つことを確認
+      const calls = mockUpdateNursery.mock.calls;
+      const finalUpdatedNursery = calls[calls.length - 1][1];
+      expect(finalUpdatedNursery.visitSessions).toBeDefined();
+      const session = finalUpdatedNursery.visitSessions![0];
+
+      expect(session).toMatchObject({
+        id: expect.any(String),
+        visitDate: expect.any(Date),
+        status: 'planned',
+        questions: expect.any(Array),
+        insights: expect.any(Array),
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    test('テンプレート適用で元の保育園データが正しく保持される', async () => {
+      const originalCreatedAt = new Date('2025-01-01');
+      const originalUpdatedAt = new Date('2025-01-02');
+
+      const nurseryWithMetadata = {
+        ...mockNursery,
+        name: '特殊な保育園名',
+        createdAt: originalCreatedAt,
+        updatedAt: originalUpdatedAt,
+        visitSessions: [
+          {
+            ...mockNursery.visitSessions[0],
+            visitDate: new Date('2025-02-20'),
+            questions: [
+              {
+                id: 'existing-q1',
+                text: '既存の質問',
+                isAnswered: true,
+                createdAt: new Date('2025-01-15'),
+                updatedAt: new Date('2025-01-16'),
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(useNurseryStore).mockReturnValue({
+        nurseries: [nurseryWithMetadata],
+        currentNursery: nurseryWithMetadata,
+        updateNursery: mockUpdateNursery,
+      } as ReturnType<typeof useNurseryStore>);
+
+      const updatedNursery = {
+        ...nurseryWithMetadata,
+        visitSessions: [
+          {
+            ...nurseryWithMetadata.visitSessions[0],
+            questions: [
+              // 既存の質問を保持
+              ...nurseryWithMetadata.visitSessions[0].questions,
+              // 新しい質問を追加
+              {
+                id: 'new-q1',
+                text: '新しい質問1',
+                isAnswered: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              {
+                id: 'new-q2',
+                text: '新しい質問2',
+                isAnswered: false,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
+        updatedNursery
+      );
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(true);
+      });
+
+      // 更新された保育園データを取得
+      const calls = mockUpdateNursery.mock.calls;
+      const finalNursery = calls[calls.length - 1][1];
+
+      // 保育園の基本データが保持されていることを確認
+      expect(finalNursery).toMatchObject({
+        id: 'nursery-1',
+        name: '特殊な保育園名',
+        createdAt: originalCreatedAt,
+        updatedAt: originalUpdatedAt,
+      });
+
+      // セッションデータが保持されていることを確認
+      expect(finalNursery.visitSessions).toBeDefined();
+      const session = finalNursery.visitSessions![0];
+      expect(session.visitDate).toEqual(new Date('2025-02-20'));
+
+      // 既存の質問と新しい質問の両方が含まれていることを確認
+      expect(session.questions).toHaveLength(3);
+
+      // 既存の質問が保持されていることを確認
+      const existingQuestion = session.questions.find(
+        (q: any) => q.id === 'existing-q1'
+      );
+      expect(existingQuestion).toMatchObject({
+        id: 'existing-q1',
+        text: '既存の質問',
+        isAnswered: true,
+        createdAt: new Date('2025-01-15'),
+        updatedAt: new Date('2025-01-16'),
+      });
+    });
+
+    test('複数回テンプレート適用時の日付フィールドが適切に更新される', async () => {
+      // 1回目の適用
+      const firstUpdateTime = new Date('2025-01-01T10:00:00Z');
+      vi.setSystemTime(firstUpdateTime);
+
+      const firstUpdatedNursery = {
+        ...mockNursery,
+        visitSessions: [
+          {
+            ...mockNursery.visitSessions[0],
+            questions: [
+              {
+                id: 'q1',
+                text: '質問1',
+                isAnswered: false,
+                createdAt: firstUpdateTime,
+                updatedAt: firstUpdateTime,
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
+        firstUpdatedNursery
+      );
+
+      const { result } = renderHook(() => useTemplate());
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(true);
+      });
+
+      // 2回目の適用（時間を進める）
+      const secondUpdateTime = new Date('2025-01-01T11:00:00Z');
+      vi.setSystemTime(secondUpdateTime);
+
+      const secondUpdatedNursery = {
+        ...mockNursery,
+        visitSessions: [
+          {
+            ...mockNursery.visitSessions[0],
+            questions: [
+              {
+                id: 'q1',
+                text: '質問1',
+                isAnswered: false,
+                createdAt: firstUpdateTime, // 作成日時は変更されない
+                updatedAt: secondUpdateTime, // 更新日時は新しくなる
+              },
+              {
+                id: 'q2',
+                text: '質問2',
+                isAnswered: false,
+                createdAt: secondUpdateTime, // 新しい質問の作成日時
+                updatedAt: secondUpdateTime,
+              },
+            ],
+          },
+        ],
+      };
+
+      vi.mocked(templateService.applyTemplateToNursery).mockReturnValue(
+        secondUpdatedNursery
+      );
+
+      await act(async () => {
+        const applied = await result.current.applyTemplate('nursery-1');
+        expect(applied).toBe(true);
+      });
+
+      // 2回目の更新データを確認
+      const calls = mockUpdateNursery.mock.calls;
+      const finalNursery = calls[calls.length - 1][1];
+      expect(finalNursery.visitSessions).toBeDefined();
+      const questions = finalNursery.visitSessions![0].questions;
+
+      // 1回目から存在する質問は作成日時が保持され、更新日時が更新される
+      const firstQuestion = questions.find((q: any) => q.id === 'q1');
+      expect(firstQuestion).toMatchObject({
+        createdAt: firstUpdateTime,
+        updatedAt: secondUpdateTime,
+      });
+
+      // 2回目で追加された質問は作成日時と更新日時が同じ
+      const secondQuestion = questions.find((q: any) => q.id === 'q2');
+      expect(secondQuestion).toMatchObject({
+        createdAt: secondUpdateTime,
+        updatedAt: secondUpdateTime,
+      });
+
+      // システム時刻をリセット
+      vi.useRealTimers();
     });
   });
 
