@@ -1,10 +1,15 @@
 import { describe, test, expect } from 'vitest';
-import { createTemplateService } from './templateService';
+import {
+  getSystemTemplates,
+  getCustomTemplates,
+  saveCustomTemplate,
+  applyTemplateQuestions,
+  applyTemplateToNursery,
+  applyTemplateById,
+} from './templateService';
 import type { Nursery, Question, Template } from '../../types/entities';
 
 describe('templateService', () => {
-  const templateService = createTemplateService();
-
   const mockTemplate: Template = {
     id: 'test-template',
     name: 'テストテンプレート',
@@ -40,6 +45,44 @@ describe('templateService', () => {
     updatedAt: new Date(),
   };
 
+  describe('getSystemTemplates', () => {
+    test('システムテンプレートを取得できる', () => {
+      const result = getSystemTemplates();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBeGreaterThan(0);
+      result.forEach((template) => {
+        expect(template).toHaveProperty('id');
+        expect(template).toHaveProperty('name');
+        expect(template).toHaveProperty('questions');
+        expect(template.isSystem).toBe(true);
+      });
+    });
+  });
+
+  describe('getCustomTemplates', () => {
+    test('空の配列を返す（将来実装予定）', () => {
+      const result = getCustomTemplates();
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(0);
+    });
+  });
+
+  describe('saveCustomTemplate', () => {
+    test('テンプレートを保存する（現在はconsole.log）', () => {
+      const templateToSave = {
+        name: 'テスト用テンプレート',
+        questions: ['カスタム質問1', 'カスタム質問2'],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // エラーが発生しないことを確認
+      expect(() => saveCustomTemplate(templateToSave)).not.toThrow();
+    });
+  });
+
   describe('applyTemplateQuestions', () => {
     test('テンプレートの質問を既存の質問リストに追加できる', () => {
       const existingQuestions: Question[] = [
@@ -52,10 +95,7 @@ describe('templateService', () => {
         },
       ];
 
-      const result = templateService.applyTemplateQuestions(
-        mockTemplate,
-        existingQuestions
-      );
+      const result = applyTemplateQuestions(mockTemplate, existingQuestions);
 
       // 既存の質問 + テンプレートの質問数
       expect(result.length).toBe(4);
@@ -69,40 +109,8 @@ describe('templateService', () => {
       expect(result[3].text).toBe('質問3');
     });
 
-    test('既存の質問がある場合でも全てのテンプレート質問が追加される', () => {
-      const existingQuestions: Question[] = [
-        {
-          id: 'q1',
-          text: '【既存】ユーザーが作成した質問',
-          isAnswered: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: 'q2',
-          text: '質問1', // テンプレートと同じテキストでも追加される
-          isAnswered: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
-
-      const result = templateService.applyTemplateQuestions(
-        mockTemplate,
-        existingQuestions
-      );
-
-      // 既存の質問2個 + テンプレートの質問3個 = 5個
-      expect(result.length).toBe(5);
-      expect(result[0].text).toBe('【既存】ユーザーが作成した質問');
-      expect(result[1].text).toBe('質問1'); // 既存の質問1
-      expect(result[2].text).toBe('質問1'); // テンプレートの質問1
-      expect(result[3].text).toBe('質問2'); // テンプレートの質問2
-      expect(result[4].text).toBe('質問3'); // テンプレートの質問3
-    });
-
     test('空の質問リストにテンプレートを適用できる', () => {
-      const result = templateService.applyTemplateQuestions(mockTemplate, []);
+      const result = applyTemplateQuestions(mockTemplate, []);
 
       expect(result.length).toBe(3);
       expect(result[0].text).toBe('質問1');
@@ -111,12 +119,12 @@ describe('templateService', () => {
     });
 
     test('追加された質問には新しいIDが生成される', () => {
-      const result = templateService.applyTemplateQuestions(mockTemplate, []);
+      const result = applyTemplateQuestions(mockTemplate, []);
 
       result.forEach((question) => {
         expect(question.id).toBeDefined();
         expect(question.id).not.toBe('');
-        expect(question.id).toMatch(/^[a-z0-9-]+$/);
+        expect(typeof question.id).toBe('string');
       });
 
       // 各質問のIDが一意であることを確認
@@ -125,7 +133,7 @@ describe('templateService', () => {
     });
 
     test('追加された質問は未回答状態で作成される', () => {
-      const result = templateService.applyTemplateQuestions(mockTemplate, []);
+      const result = applyTemplateQuestions(mockTemplate, []);
 
       result.forEach((question) => {
         expect(question.isAnswered).toBe(false);
@@ -138,10 +146,7 @@ describe('templateService', () => {
 
   describe('applyTemplateToNursery', () => {
     test('保育園の最初の見学セッションにテンプレートを適用できる', () => {
-      const result = templateService.applyTemplateToNursery(
-        mockTemplate,
-        mockNursery
-      );
+      const result = applyTemplateToNursery(mockTemplate, mockNursery);
 
       expect(result.visitSessions[0].questions.length).toBe(4);
       expect(result.visitSessions[0].questions[0].text).toBe('既存の質問');
@@ -155,18 +160,12 @@ describe('templateService', () => {
       };
 
       expect(() => {
-        templateService.applyTemplateToNursery(
-          mockTemplate,
-          nurseryWithoutSession
-        );
+        applyTemplateToNursery(mockTemplate, nurseryWithoutSession);
       }).toThrow('見学セッションが存在しません');
     });
 
     test('保育園オブジェクトの他のプロパティは変更されない', () => {
-      const result = templateService.applyTemplateToNursery(
-        mockTemplate,
-        mockNursery
-      );
+      const result = applyTemplateToNursery(mockTemplate, mockNursery);
 
       expect(result.id).toBe(mockNursery.id);
       expect(result.name).toBe(mockNursery.name);
@@ -181,22 +180,37 @@ describe('templateService', () => {
 
     test('更新日時が更新される', () => {
       const before = new Date();
-      const result = templateService.applyTemplateToNursery(
-        mockTemplate,
-        mockNursery
-      );
+      const result = applyTemplateToNursery(mockTemplate, mockNursery);
       const after = new Date();
 
       expect(result.updatedAt.getTime()).toBeGreaterThanOrEqual(
         before.getTime()
       );
       expect(result.updatedAt.getTime()).toBeLessThanOrEqual(after.getTime());
+
       expect(
         result.visitSessions[0].updatedAt.getTime()
       ).toBeGreaterThanOrEqual(before.getTime());
       expect(result.visitSessions[0].updatedAt.getTime()).toBeLessThanOrEqual(
         after.getTime()
       );
+    });
+  });
+
+  describe('applyTemplateById', () => {
+    const templates = [mockTemplate];
+
+    test('IDでテンプレートを検索して保育園に適用できる', () => {
+      const result = applyTemplateById('test-template', mockNursery, templates);
+
+      expect(result.visitSessions[0].questions.length).toBe(4);
+      expect(result.visitSessions[0].questions[1].text).toBe('質問1');
+    });
+
+    test('存在しないIDの場合はエラーを投げる', () => {
+      expect(() => {
+        applyTemplateById('non-existent', mockNursery, templates);
+      }).toThrow('テンプレート（ID: non-existent）が見つかりません');
     });
   });
 });

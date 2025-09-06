@@ -1,152 +1,114 @@
 /**
- * @description テンプレート関連のサービス統合レイヤー
+ * @description テンプレート関連のサービス
+ * 複雑なファクトリーパターンと依存性注入を排除したシンプルな実装
  */
 
-import type {
-  TemplateRepository,
-  TemplateApplicationService,
-} from '../../types/template';
-import {
-  getTemplateRepository,
-  getTemplateApplicationService,
-} from '../../infrastructure/di/container';
+import type { Template, Nursery, Question } from '../../types/entities';
+import { getDefaultTemplate } from './systemTemplates';
 
 /**
- * @description テンプレートデータサービスを作成するファクトリー関数
- * データアクセス層に特化した機能を提供
- * @param repository - 依存性注入されるリポジトリ
- * @returns データアクセス関数群
+ * @description システムテンプレートを取得する
+ * @returns システムテンプレートの配列を含むPromise
  */
-export const createTemplateDataService = (
-  repository: TemplateRepository = getTemplateRepository()
-) => {
+export const getSystemTemplates = (): Template[] => {
+  // 現在はローカルJSONデータのみなので、AbortSignalは不要
+  return getDefaultTemplate();
+};
+
+/**
+ * @description カスタムテンプレートを取得する
+ * @returns 空の配列（将来実装予定）
+ */
+export const getCustomTemplates = (): Template[] => {
+  // 将来的にローカルストレージやAPIから取得
+  return [];
+};
+
+/**
+ * @description カスタムテンプレートを保存する
+ * @param template - 保存するテンプレート（idとisSystemは除外）
+ */
+export const saveCustomTemplate = (
+  template: Pick<Template, 'name' | 'questions' | 'createdAt' | 'updatedAt'>
+): void => {
+  // 将来的にローカルストレージやAPIに保存
+  console.log('カスタムテンプレートを保存:', template);
+};
+
+/**
+ * @description テンプレートの質問から新しいQuestion配列を作成する
+ * @param template - テンプレート
+ * @param existingQuestions - 既存の質問配列
+ * @returns 既存の質問とテンプレート質問を結合した配列
+ */
+export const applyTemplateQuestions = (
+  template: Template,
+  existingQuestions: Question[]
+): Question[] => {
+  const templateQuestions: Question[] = template.questions.map((text) => ({
+    id: crypto.randomUUID(),
+    text,
+    isAnswered: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }));
+
+  return [...existingQuestions, ...templateQuestions];
+};
+
+/**
+ * @description テンプレートを保育園の最初の見学セッションに適用する
+ * @param template - 適用するテンプレート
+ * @param nursery - 対象の保育園
+ * @returns テンプレートが適用された保育園オブジェクト
+ * @throws 見学セッションが存在しない場合
+ */
+export const applyTemplateToNursery = (
+  template: Template,
+  nursery: Nursery
+): Nursery => {
+  if (nursery.visitSessions.length === 0) {
+    throw new Error('見学セッションが存在しません');
+  }
+
+  const firstSession = nursery.visitSessions[0];
+  const updatedQuestions = applyTemplateQuestions(
+    template,
+    firstSession.questions
+  );
+
   return {
-    async getSystemTemplates(signal?: AbortSignal) {
-      return repository.getSystemTemplates(signal);
-    },
-
-    async getCustomTemplates() {
-      return repository.getCustomTemplates();
-    },
-
-    async saveCustomTemplate(
-      template: Parameters<TemplateRepository['saveCustomTemplate']>[0]
-    ) {
-      return repository.saveCustomTemplate(template);
-    },
+    ...nursery,
+    visitSessions: [
+      {
+        ...firstSession,
+        questions: updatedQuestions,
+        updatedAt: new Date(),
+      },
+      ...nursery.visitSessions.slice(1),
+    ],
+    updatedAt: new Date(),
   };
 };
 
 /**
- * @description テンプレート適用サービスを作成するファクトリー関数
- * ビジネスロジック層に特化した機能を提供
- * @param applicationService - 依存性注入されるアプリケーションサービス
- * @returns ビジネスロジック関数群
+ * @description IDでテンプレートを検索して保育園に適用する
+ * @param templateId - テンプレートID
+ * @param nursery - 対象の保育園
+ * @param templates - テンプレート配列
+ * @returns テンプレートが適用された保育園オブジェクト
+ * @throws テンプレートが見つからない場合
  */
-export const createTemplateApplicationService = (
-  applicationService: TemplateApplicationService = getTemplateApplicationService()
-) => {
-  return {
-    applyTemplateToNursery(
-      template: Parameters<
-        TemplateApplicationService['applyTemplateToNursery']
-      >[0],
-      nursery: Parameters<
-        TemplateApplicationService['applyTemplateToNursery']
-      >[1]
-    ) {
-      return applicationService.applyTemplateToNursery(template, nursery);
-    },
+export const applyTemplateById = (
+  templateId: string,
+  nursery: Nursery,
+  templates: readonly Template[]
+): Nursery => {
+  const template = templates.find((t) => t.id === templateId);
 
-    applyTemplateQuestions(
-      template: Parameters<
-        TemplateApplicationService['applyTemplateQuestions']
-      >[0],
-      existingQuestions: Parameters<
-        TemplateApplicationService['applyTemplateQuestions']
-      >[1]
-    ) {
-      return applicationService.applyTemplateQuestions(
-        template,
-        existingQuestions
-      );
-    },
-  };
+  if (!template) {
+    throw new Error(`テンプレート（ID: ${templateId}）が見つかりません`);
+  }
+
+  return applyTemplateToNursery(template, nursery);
 };
-
-/**
- * @description 統合テンプレートサービスを作成するファクトリー関数（Facade パターン）
- * データアクセス層とアプリケーション層を統合
- * @param dataService - データサービス
- * @param applicationService - アプリケーションサービス
- * @returns 統合サービス関数群
- */
-export const createTemplateService = (
-  dataService: ReturnType<
-    typeof createTemplateDataService
-  > = createTemplateDataService(),
-  applicationService: ReturnType<
-    typeof createTemplateApplicationService
-  > = createTemplateApplicationService()
-) => {
-  return {
-    // データアクセス層のメソッド
-    async getSystemTemplates(signal?: AbortSignal) {
-      return dataService.getSystemTemplates(signal);
-    },
-
-    async getCustomTemplates() {
-      return dataService.getCustomTemplates();
-    },
-
-    async saveCustomTemplate(
-      template: Parameters<TemplateRepository['saveCustomTemplate']>[0]
-    ) {
-      return dataService.saveCustomTemplate(template);
-    },
-
-    // アプリケーション層のメソッド
-    applyTemplateToNursery(
-      template: Parameters<
-        TemplateApplicationService['applyTemplateToNursery']
-      >[0],
-      nursery: Parameters<
-        TemplateApplicationService['applyTemplateToNursery']
-      >[1]
-    ) {
-      return applicationService.applyTemplateToNursery(template, nursery);
-    },
-
-    applyTemplateQuestions(
-      template: Parameters<
-        TemplateApplicationService['applyTemplateQuestions']
-      >[0],
-      existingQuestions: Parameters<
-        TemplateApplicationService['applyTemplateQuestions']
-      >[1]
-    ) {
-      return applicationService.applyTemplateQuestions(
-        template,
-        existingQuestions
-      );
-    },
-  };
-};
-
-// applyTemplateById は templateApplicationService から取得
-import * as TemplateApplication from './templateApplicationService';
-export const applyTemplateById = TemplateApplication.applyTemplateById;
-
-/**
- * @description リポジトリインスタンス取得（テストモックや依存性注入で使用）
- */
-export { getTemplateRepository } from '../../infrastructure/di/container';
-
-/**
- * @description テンプレートサービスの型定義
- */
-export type TemplateService = ReturnType<typeof createTemplateService>;
-export type TemplateDataService = ReturnType<typeof createTemplateDataService>;
-export type TemplateApplicationServiceType = ReturnType<
-  typeof createTemplateApplicationService
->;

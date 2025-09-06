@@ -100,14 +100,7 @@ export function useTemplate() {
 
   // 初回ロード
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        await loadTemplates();
-      } catch (error) {
-        handleError('テンプレートの読み込みに失敗しました', error);
-      }
-    };
-    void loadData();
+    loadTemplates();
   }, [loadTemplates]);
 
   const templateStats = {

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { Template, Nursery } from '../../types/entities';
 import type { CreateVisitSessionInput } from '../../types/inputs';
 import { useNurseryStore } from '../../stores/nurseryStore';
-import { createTemplateService } from '../../services/template/templateService';
+import { applyTemplateToNursery } from '../../services/template/templateService';
 import { handleError } from '../../utils/errorHandler';
 
 const isValidNursery = (
@@ -74,11 +74,7 @@ export const useTemplateApplication = () => {
           }
         }
 
-        const templateService = createTemplateService();
-        const updatedNursery = templateService.applyTemplateToNursery(
-          template,
-          nurseryToUse
-        );
+        const updatedNursery = applyTemplateToNursery(template, nurseryToUse);
         await updateNursery(nurseryId, updatedNursery);
         return true;
       } catch (error) {

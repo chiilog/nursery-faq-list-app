@@ -333,26 +333,5 @@ describe('useTemplate', () => {
 
       expect(mockLoadTemplates).toHaveBeenCalledTimes(1);
     });
-
-    test('loadTemplatesでエラーが発生した場合はハンドリングされる', async () => {
-      const error = new Error('Load error');
-      mockLoadTemplates.mockRejectedValue(error);
-
-      const consoleErrorSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
-
-      renderHook(() => useTemplate());
-
-      // useEffectの非同期処理を待つ
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'テンプレートの読み込みに失敗しました',
-        error
-      );
-
-      consoleErrorSpy.mockRestore();
-    });
   });
 });

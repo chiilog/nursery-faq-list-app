@@ -1,16 +1,13 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSystemTemplates } from './useSystemTemplates';
-import {
-  createTemplateService,
-  type TemplateService,
-} from '../../services/template/templateService';
+import { getSystemTemplates } from '../../services/template/templateService';
 import { handleError } from '../../utils/errorHandler';
 import type { Template } from '../../types/entities';
 
 // モックの設定
 vi.mock('../../services/template/templateService', () => ({
-  createTemplateService: vi.fn(),
+  getSystemTemplates: vi.fn(),
 }));
 vi.mock('../../utils/errorHandler');
 
@@ -35,27 +32,11 @@ describe('useSystemTemplates', () => {
     },
   ];
 
-  // 型安全なモック関数の作成
-  const mockGetSystemTemplates = vi.fn<TemplateService['getSystemTemplates']>();
-  const mockHandleError = vi.fn<typeof handleError>();
+  const mockGetSystemTemplates = vi.mocked(getSystemTemplates);
+  const mockHandleError = vi.mocked(handleError);
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // モック関数のクリア
-    mockGetSystemTemplates.mockClear();
-    mockHandleError.mockClear();
-
-    vi.mocked(handleError).mockImplementation(mockHandleError);
-
-    // createTemplateServiceのモック設定
-    vi.mocked(createTemplateService).mockReturnValue({
-      getSystemTemplates: mockGetSystemTemplates,
-      getCustomTemplates: vi.fn(),
-      saveCustomTemplate: vi.fn(),
-      applyTemplateToNursery: vi.fn(),
-      applyTemplateQuestions: vi.fn(),
-    });
   });
 
   describe('初期状態', () => {
@@ -71,15 +52,15 @@ describe('useSystemTemplates', () => {
   });
 
   describe('loadTemplates 正常系', () => {
-    test('システムテンプレートを正常に読み込める', async () => {
+    test('システムテンプレートを正常に読み込める', () => {
       // Given: 成功するサービスモック
-      mockGetSystemTemplates.mockResolvedValue(mockSystemTemplates);
+      mockGetSystemTemplates.mockReturnValue(mockSystemTemplates);
 
       const { result } = renderHook(() => useSystemTemplates());
 
       // When: loadTemplatesを実行
-      await act(async () => {
-        await result.current.loadTemplates();
+      act(() => {
+        void result.current.loadTemplates();
       });
 
       // Then: 状態が正しく更新される
@@ -89,55 +70,43 @@ describe('useSystemTemplates', () => {
       expect(mockGetSystemTemplates).toHaveBeenCalledTimes(1);
     });
 
-    test('ローディング状態が適切に管理される', async () => {
-      // Given: 少し時間のかかるサービスモック
-      let resolvePromise: (value: Template[]) => void;
-      const loadPromise = new Promise<Template[]>((resolve) => {
-        resolvePromise = resolve;
-      });
-      mockGetSystemTemplates.mockReturnValue(loadPromise);
+    test('ローディング状態が適切に管理される', () => {
+      // Given: 正常なモック
+      mockGetSystemTemplates.mockReturnValue(mockSystemTemplates);
 
       const { result } = renderHook(() => useSystemTemplates());
 
-      // When: loadTemplatesを実行（まだ完了していない）
+      // When: loadTemplatesを実行
       act(() => {
         void result.current.loadTemplates();
       });
 
-      // Then: ローディング中の状態
-      expect(result.current.loading).toBe(true);
-      expect(result.current.error).toBeNull();
-
-      // When: 処理が完了
-      await act(async () => {
-        resolvePromise!(mockSystemTemplates);
-        await loadPromise;
-      });
-
-      // Then: ローディングが終了
+      // Then: 同期処理なので即座に完了
       expect(result.current.loading).toBe(false);
       expect(result.current.templates).toEqual(mockSystemTemplates);
     });
 
-    test('既存のエラー状態をクリアできる', async () => {
+    test('既存のエラー状態をクリアできる', () => {
       // Given: 初期状態でエラーを設定
-      mockGetSystemTemplates.mockRejectedValueOnce(new Error('初期エラー'));
+      mockGetSystemTemplates.mockImplementationOnce(() => {
+        throw new Error('初期エラー');
+      });
       const { result } = renderHook(() => useSystemTemplates());
 
       // 最初にエラーを発生させる
-      await act(async () => {
-        await result.current.loadTemplates();
+      act(() => {
+        void result.current.loadTemplates();
       });
       expect(result.current.error).toBe(
         'システムテンプレートの読み込みに失敗しました'
       );
 
       // Given: 今度は成功するモック
-      mockGetSystemTemplates.mockResolvedValue(mockSystemTemplates);
+      mockGetSystemTemplates.mockReturnValue(mockSystemTemplates);
 
       // When: 再度loadTemplatesを実行
-      await act(async () => {
-        await result.current.loadTemplates();
+      act(() => {
+        void result.current.loadTemplates();
       });
 
       // Then: エラー状態がクリアされる
@@ -147,16 +116,18 @@ describe('useSystemTemplates', () => {
   });
 
   describe('loadTemplates 異常系', () => {
-    test('読み込みエラー時は適切にエラーハンドリングされる', async () => {
+    test('読み込みエラー時は適切にエラーハンドリングされる', () => {
       // Given: エラーを投げるモック
       const loadError = new Error('サーバーエラー');
-      mockGetSystemTemplates.mockRejectedValue(loadError);
+      mockGetSystemTemplates.mockImplementation(() => {
+        throw loadError;
+      });
 
       const { result } = renderHook(() => useSystemTemplates());
 
       // When: loadTemplatesを実行
-      await act(async () => {
-        await result.current.loadTemplates();
+      act(() => {
+        void result.current.loadTemplates();
       });
 
       // Then: エラー状態が設定される
@@ -173,35 +144,20 @@ describe('useSystemTemplates', () => {
       );
     });
 
-    test('エラー時もローディング状態は最終的にfalseになる', async () => {
+    test('エラー時もローディング状態は最終的にfalseになる', () => {
       // Given: エラーを投げるモック
-      let rejectPromise: (error: Error) => void;
-      const loadPromise = new Promise<Template[]>((_, reject) => {
-        rejectPromise = reject;
+      mockGetSystemTemplates.mockImplementation(() => {
+        throw new Error('テストエラー');
       });
-      mockGetSystemTemplates.mockReturnValue(loadPromise);
 
       const { result } = renderHook(() => useSystemTemplates());
 
-      // When: loadTemplatesを実行（まだエラーになっていない）
+      // When: loadTemplatesを実行
       act(() => {
         void result.current.loadTemplates();
       });
 
-      // Then: ローディング中
-      expect(result.current.loading).toBe(true);
-
-      // When: エラーが発生
-      await act(async () => {
-        rejectPromise!(new Error('テストエラー'));
-        try {
-          await loadPromise;
-        } catch {
-          // エラーを無視
-        }
-      });
-
-      // Then: ローディングが終了している
+      // Then: 同期処理なのでローディングは即座に終了
       expect(result.current.loading).toBe(false);
       expect(result.current.error).toBe(
         'システムテンプレートの読み込みに失敗しました'
@@ -210,22 +166,22 @@ describe('useSystemTemplates', () => {
   });
 
   describe('連続呼び出しのテスト', () => {
-    test('複数回呼び出し時の状態管理が正しく動作する', async () => {
+    test('複数回呼び出し時の状態管理が正しく動作する', () => {
       // Given: 成功するモック
-      mockGetSystemTemplates.mockResolvedValue(mockSystemTemplates);
+      mockGetSystemTemplates.mockReturnValue(mockSystemTemplates);
 
       const { result } = renderHook(() => useSystemTemplates());
 
       // When: 複数回呼び出し
-      await act(async () => {
-        await result.current.loadTemplates();
+      act(() => {
+        void result.current.loadTemplates();
       });
 
       expect(result.current.templates).toEqual(mockSystemTemplates);
 
       // 2回目の呼び出し
-      await act(async () => {
-        await result.current.loadTemplates();
+      act(() => {
+        void result.current.loadTemplates();
       });
 
       // Then: 状態は正常
@@ -237,20 +193,8 @@ describe('useSystemTemplates', () => {
   });
 
   describe('関数の参照安定性', () => {
-    test('同じサービスインスタンスを使用時は関数の参照が安定している', () => {
-      // Given: 安定したサービスインスタンスを作成
-      const stableService = {
-        getSystemTemplates: mockGetSystemTemplates,
-        getCustomTemplates: vi.fn(),
-        saveCustomTemplate: vi.fn(),
-        applyTemplateToNursery: vi.fn(),
-        applyTemplateQuestions: vi.fn(),
-      };
-
-      // 複数回レンダー
-      const { result, rerender } = renderHook(() =>
-        useSystemTemplates(stableService)
-      );
+    test('loadTemplates関数の参照が安定している', () => {
+      const { result, rerender } = renderHook(() => useSystemTemplates());
 
       const initialLoadTemplates = result.current.loadTemplates;
 

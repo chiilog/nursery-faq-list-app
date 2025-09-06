@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTemplateApplication } from './useTemplateApplication';
 import { useNurseryStore } from '../../stores/nurseryStore';
-import { createTemplateService } from '../../services/template/templateService';
+import { applyTemplateToNursery } from '../../services/template/templateService';
 import type { Nursery, Template } from '../../types/entities';
 
 // モックの設定
@@ -93,14 +93,12 @@ describe('useTemplateApplication', () => {
       currentNursery: mockNursery,
     });
 
-    vi.mocked(createTemplateService).mockReturnValue({
-      applyTemplateToNursery: mockApplyTemplateToNursery,
-      getSystemTemplates: vi.fn(),
-      getCustomTemplates: vi.fn(),
-      saveCustomTemplate: vi.fn(),
-    } as any);
-
     mockApplyTemplateToNursery.mockReturnValue(mockUpdatedNursery);
+
+    // templateServiceのapplyTemplateToNursery関数をモック
+    vi.mocked(applyTemplateToNursery).mockImplementation(
+      mockApplyTemplateToNursery
+    );
   });
 
   describe('基本的なテンプレート適用', () => {
