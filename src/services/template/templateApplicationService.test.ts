@@ -13,8 +13,8 @@ describe('templateApplicationService', () => {
     name: 'テンプレート1',
     questions: ['テンプレート質問1', 'テンプレート質問2'],
     isSystem: true,
-    createdAt: '2025-08-30T09:00:00.000Z',
-    updatedAt: '2025-08-30T09:00:00.000Z',
+    createdAt: new Date('2025-08-30T09:00:00.000Z'),
+    updatedAt: new Date('2025-08-30T09:00:00.000Z'),
     ...overrides,
   });
 

@@ -16,16 +16,16 @@ describe('TemplateDataStore', () => {
       name: 'システムテンプレート1',
       questions: ['システム質問1', 'システム質問2'],
       isSystem: true,
-      createdAt: '2025-08-30T10:00:00.000Z',
-      updatedAt: '2025-08-30T10:00:00.000Z',
+      createdAt: new Date('2025-08-30T10:00:00.000Z'),
+      updatedAt: new Date('2025-08-30T10:00:00.000Z'),
     },
     {
       id: 'system-template-2',
       name: 'システムテンプレート2',
       questions: ['システム質問3'],
       isSystem: true,
-      createdAt: '2025-08-30T10:00:00.000Z',
-      updatedAt: '2025-08-30T10:00:00.000Z',
+      createdAt: new Date('2025-08-30T10:00:00.000Z'),
+      updatedAt: new Date('2025-08-30T10:00:00.000Z'),
     },
   ];
 
@@ -34,8 +34,8 @@ describe('TemplateDataStore', () => {
     name: 'カスタムテンプレート1',
     questions: ['カスタム質問1', 'カスタム質問2'],
     isSystem: false,
-    createdAt: '2025-08-30T10:00:00.000Z',
-    updatedAt: '2025-08-30T10:00:00.000Z',
+    createdAt: new Date('2025-08-30T10:00:00.000Z'),
+    updatedAt: new Date('2025-08-30T10:00:00.000Z'),
   };
 
   beforeEach(() => {
@@ -211,8 +211,8 @@ describe('TemplateDataStore', () => {
         name: '特定のテンプレート',
         questions: ['特定の質問1', '特定の質問2'],
         isSystem: false,
-        createdAt: '2025-08-30T11:00:00.000Z',
-        updatedAt: '2025-08-30T11:00:00.000Z',
+        createdAt: new Date('2025-08-30T11:00:00.000Z'),
+        updatedAt: new Date('2025-08-30T11:00:00.000Z'),
       };
 
       const consoleLogSpy = vi.spyOn(console, 'log');

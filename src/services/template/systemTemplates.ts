@@ -67,8 +67,8 @@ export const getDefaultTemplate = (): Template[] => {
     name,
     questions,
     isSystem: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   return [template];

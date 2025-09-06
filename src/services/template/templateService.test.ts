@@ -1,18 +1,17 @@
 import { describe, test, expect } from 'vitest';
-import {
-  applyTemplateToNursery,
-  applyTemplateQuestions,
-} from './templateService';
+import { createTemplateService } from './templateService';
 import type { Nursery, Question, Template } from '../../types/entities';
 
 describe('templateService', () => {
+  const templateService = createTemplateService();
+
   const mockTemplate: Template = {
     id: 'test-template',
     name: 'テストテンプレート',
     questions: ['質問1', '質問2', '質問3'],
     isSystem: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   const mockNursery: Nursery = {
@@ -53,7 +52,10 @@ describe('templateService', () => {
         },
       ];
 
-      const result = applyTemplateQuestions(mockTemplate, existingQuestions);
+      const result = templateService.applyTemplateQuestions(
+        mockTemplate,
+        existingQuestions
+      );
 
       // 既存の質問 + テンプレートの質問数
       expect(result.length).toBe(4);
@@ -85,7 +87,10 @@ describe('templateService', () => {
         },
       ];
 
-      const result = applyTemplateQuestions(mockTemplate, existingQuestions);
+      const result = templateService.applyTemplateQuestions(
+        mockTemplate,
+        existingQuestions
+      );
 
       // 既存の質問2個 + テンプレートの質問3個 = 5個
       expect(result.length).toBe(5);
@@ -97,7 +102,7 @@ describe('templateService', () => {
     });
 
     test('空の質問リストにテンプレートを適用できる', () => {
-      const result = applyTemplateQuestions(mockTemplate, []);
+      const result = templateService.applyTemplateQuestions(mockTemplate, []);
 
       expect(result.length).toBe(3);
       expect(result[0].text).toBe('質問1');
@@ -106,7 +111,7 @@ describe('templateService', () => {
     });
 
     test('追加された質問には新しいIDが生成される', () => {
-      const result = applyTemplateQuestions(mockTemplate, []);
+      const result = templateService.applyTemplateQuestions(mockTemplate, []);
 
       result.forEach((question) => {
         expect(question.id).toBeDefined();
@@ -120,7 +125,7 @@ describe('templateService', () => {
     });
 
     test('追加された質問は未回答状態で作成される', () => {
-      const result = applyTemplateQuestions(mockTemplate, []);
+      const result = templateService.applyTemplateQuestions(mockTemplate, []);
 
       result.forEach((question) => {
         expect(question.isAnswered).toBe(false);
@@ -133,7 +138,10 @@ describe('templateService', () => {
 
   describe('applyTemplateToNursery', () => {
     test('保育園の最初の見学セッションにテンプレートを適用できる', () => {
-      const result = applyTemplateToNursery(mockTemplate, mockNursery);
+      const result = templateService.applyTemplateToNursery(
+        mockTemplate,
+        mockNursery
+      );
 
       expect(result.visitSessions[0].questions.length).toBe(4);
       expect(result.visitSessions[0].questions[0].text).toBe('既存の質問');
@@ -147,12 +155,18 @@ describe('templateService', () => {
       };
 
       expect(() => {
-        applyTemplateToNursery(mockTemplate, nurseryWithoutSession);
+        templateService.applyTemplateToNursery(
+          mockTemplate,
+          nurseryWithoutSession
+        );
       }).toThrow('見学セッションが存在しません');
     });
 
     test('保育園オブジェクトの他のプロパティは変更されない', () => {
-      const result = applyTemplateToNursery(mockTemplate, mockNursery);
+      const result = templateService.applyTemplateToNursery(
+        mockTemplate,
+        mockNursery
+      );
 
       expect(result.id).toBe(mockNursery.id);
       expect(result.name).toBe(mockNursery.name);
@@ -167,7 +181,10 @@ describe('templateService', () => {
 
     test('更新日時が更新される', () => {
       const before = new Date();
-      const result = applyTemplateToNursery(mockTemplate, mockNursery);
+      const result = templateService.applyTemplateToNursery(
+        mockTemplate,
+        mockNursery
+      );
       const after = new Date();
 
       expect(result.updatedAt.getTime()).toBeGreaterThanOrEqual(

@@ -97,8 +97,8 @@ describe('systemTemplates', () => {
       const templates = getDefaultTemplate();
       const template = templates[0];
 
-      expect(typeof template.createdAt).toBe('string');
-      expect(typeof template.updatedAt).toBe('string');
+      expect(template.createdAt).toBeInstanceOf(Date);
+      expect(template.updatedAt).toBeInstanceOf(Date);
       expect(template.createdAt).toEqual(template.updatedAt);
     });
   });
