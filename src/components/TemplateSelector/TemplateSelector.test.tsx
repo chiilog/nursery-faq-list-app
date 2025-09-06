@@ -51,7 +51,7 @@ describe('TemplateSelector', () => {
     vi.mocked(showToast).error = mockShowToastError;
   });
 
-  test('「テンプレートから質問を追加する」リンクが表示される', () => {
+  test('基本的なリンクの表示確認', () => {
     renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
 
     const button = screen.getByText('テンプレートから質問を追加する');
@@ -151,7 +151,7 @@ describe('TemplateSelector', () => {
     });
   });
 
-  test('テンプレートが存在する場合はリンクが表示される', () => {
+  test('テンプレートが存在し、loading状態でない場合はリンクが表示される', () => {
     const mockSystemTemplates = [
       {
         id: 'system-common',
@@ -254,8 +254,6 @@ describe('TemplateSelector', () => {
         error: 'ネットワークエラーが発生しました',
         loadTemplates: vi.fn(),
       });
-
-      renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
 
       // エラーがあってもテンプレートが空の場合は何も表示されない
       const { container } = renderWithProviders(
