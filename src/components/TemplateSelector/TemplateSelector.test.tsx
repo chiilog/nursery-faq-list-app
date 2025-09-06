@@ -4,26 +4,19 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../test/test-utils';
 import { TemplateSelector } from './TemplateSelector';
 import { useSystemTemplates } from '../../hooks/template/useSystemTemplates';
-import { useNurseryStore } from '../../stores/nurseryStore';
-import { TemplateService } from '../../services/template/templateService';
+import { useTemplateApplication } from '../../hooks/template/useTemplateApplication';
 import { showToast } from '../../utils/toaster';
 
 // モックの設定
 vi.mock('../../hooks/template/useSystemTemplates');
-vi.mock('../../stores/nurseryStore');
-vi.mock('../../services/template/templateService');
+vi.mock('../../hooks/template/useTemplateApplication');
 vi.mock('../../utils/toaster');
 
 describe('TemplateSelector', () => {
-  const mockNursery = {
-    id: 'nursery-1',
-    name: 'テスト保育園',
-    visitSessions: [],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  const mockUpdateNursery = vi.fn();
+  const mockApplyTemplate =
+    vi.fn<ReturnType<typeof useTemplateApplication>['applyTemplate']>();
+  const mockShowToastSuccess = vi.fn();
+  const mockShowToastError = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -36,8 +29,8 @@ describe('TemplateSelector', () => {
         questions: ['テスト質問1', 'テスト質問2'],
         nurseryType: 'common' as const,
         isSystem: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ];
 
@@ -48,16 +41,14 @@ describe('TemplateSelector', () => {
       loadTemplates: vi.fn(),
     });
 
-    vi.mocked(useNurseryStore).mockReturnValue({
-      currentNursery: mockNursery,
-      updateNursery: mockUpdateNursery,
+    vi.mocked(useTemplateApplication).mockReturnValue({
+      isApplying: false,
+      applyTemplate: mockApplyTemplate,
     });
 
-    vi.mocked(TemplateService.applyTemplateToNursery).mockReturnValue(
-      mockNursery
-    );
-    vi.mocked(showToast.success).mockReturnValue('success-id');
-    vi.mocked(showToast.error).mockReturnValue('error-id');
+    // showToastの各メソッドを個別にモック
+    vi.mocked(showToast).success = mockShowToastSuccess;
+    vi.mocked(showToast).error = mockShowToastError;
   });
 
   test('「テンプレートから質問を追加する」リンクが表示される', () => {
@@ -95,7 +86,7 @@ describe('TemplateSelector', () => {
   });
 
   test('確認ダイアログで「追加する」をクリックするとテンプレートが適用される', async () => {
-    mockUpdateNursery.mockResolvedValueOnce(undefined);
+    mockApplyTemplate.mockResolvedValueOnce(true);
 
     const user = userEvent.setup();
     renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
@@ -111,23 +102,20 @@ describe('TemplateSelector', () => {
     });
     await user.click(confirmButton);
 
-    // TemplateService.applyTemplateToNurseryが呼ばれることを確認
+    // useTemplateApplication.applyTemplateが正しいパラメータで呼ばれることを確認
     await waitFor(() => {
-      expect(TemplateService.applyTemplateToNursery).toHaveBeenCalledWith(
+      expect(mockApplyTemplate).toHaveBeenCalledWith(
+        'nursery-1',
         expect.objectContaining({
           id: 'system-common',
           name: '共通テンプレート',
           isSystem: true,
-        }),
-        mockNursery
+        })
       );
     });
 
-    // updateNurseryが呼ばれることを確認
-    expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', mockNursery);
-
     // 成功トーストが表示されることを確認
-    expect(showToast.success).toHaveBeenCalledWith('質問を追加しました');
+    expect(mockShowToastSuccess).toHaveBeenCalledWith('質問を追加しました');
 
     // ダイアログが閉じることを確認
     await waitFor(() => {
@@ -163,10 +151,22 @@ describe('TemplateSelector', () => {
     });
   });
 
-  test('適用中でもリンクは表示される（ローディング状態は確認ダイアログ内で制御される）', () => {
+  test('テンプレートが存在する場合はリンクが表示される', () => {
+    const mockSystemTemplates = [
+      {
+        id: 'system-common',
+        name: '共通テンプレート',
+        questions: ['テスト質問1', 'テスト質問2'],
+        nurseryType: 'common' as const,
+        isSystem: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
     vi.mocked(useSystemTemplates).mockReturnValue({
-      templates: [],
-      loading: true,
+      templates: mockSystemTemplates, // テンプレートがある状態でテスト
+      loading: false, // loading: trueだとリンクが表示されないため
       error: null,
       loadTemplates: vi.fn(),
     });
@@ -195,8 +195,8 @@ describe('TemplateSelector', () => {
   });
 
   test('テンプレート適用に失敗した場合のエラー処理', async () => {
-    // updateNurseryがエラーを投げるようにモック
-    mockUpdateNursery.mockRejectedValueOnce(new Error('更新に失敗しました'));
+    // applyTemplateがエラーを投げるようにモック
+    mockApplyTemplate.mockResolvedValueOnce(false);
 
     // console.errorをスパイ
     const consoleErrorSpy = vi
@@ -217,12 +217,9 @@ describe('TemplateSelector', () => {
     });
     await user.click(confirmButton);
 
-    // エラーログが出力されることを確認
+    // applyTemplateがfalseを返したことを確認
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'テンプレート適用エラー:',
-        expect.any(Error)
-      );
+      expect(mockApplyTemplate).toHaveBeenCalledTimes(1);
     });
 
     // エラーメッセージが表示されることを確認
@@ -275,8 +272,8 @@ describe('TemplateSelector', () => {
           questions: ['テスト質問1'],
           nurseryType: 'common' as const,
           isSystem: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
 
@@ -320,8 +317,8 @@ describe('TemplateSelector', () => {
         questions: [`質問${i}`],
         nurseryType: 'common' as const,
         isSystem: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }));
 
       vi.mocked(useSystemTemplates).mockReturnValue({
@@ -347,8 +344,8 @@ describe('TemplateSelector', () => {
           questions: [], // 空の質問配列
           nurseryType: 'common' as const,
           isSystem: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
 
@@ -373,8 +370,8 @@ describe('TemplateSelector', () => {
           questions: ['質問1'],
           nurseryType: 'common' as const,
           isSystem: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
 

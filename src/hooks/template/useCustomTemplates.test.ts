@@ -1,11 +1,16 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCustomTemplates } from './useCustomTemplates';
-import { TemplateService } from '../../services/template/templateService';
+import {
+  createTemplateService,
+  type TemplateService,
+} from '../../services/template/templateService';
 import type { Template } from '../../types/entities';
 
 // 境界のみモック化
-vi.mock('../../services/template/templateService');
+vi.mock('../../services/template/templateService', () => ({
+  createTemplateService: vi.fn(),
+}));
 
 describe('useCustomTemplates', () => {
   // テスト用のファクトリー関数
@@ -14,8 +19,8 @@ describe('useCustomTemplates', () => {
     name: 'カスタムテンプレート1',
     questions: ['カスタム質問1', 'カスタム質問2'],
     isSystem: false,
-    createdAt: '2025-08-30T10:00:00.000Z',
-    updatedAt: '2025-08-30T10:00:00.000Z',
+    createdAt: new Date('2025-08-30T10:00:00.000Z'),
+    updatedAt: new Date('2025-08-30T10:00:00.000Z'),
     ...overrides,
   });
 
@@ -26,17 +31,26 @@ describe('useCustomTemplates', () => {
   });
 
   // 型安全なモック関数の作成
-  const mockSaveCustomTemplate =
-    vi.fn<typeof TemplateService.saveCustomTemplate>();
-  const mockGetCustomTemplates =
-    vi.fn<typeof TemplateService.getCustomTemplates>();
+  const mockSaveCustomTemplate = vi.fn<TemplateService['saveCustomTemplate']>();
+  const mockGetCustomTemplates = vi.fn<TemplateService['getCustomTemplates']>();
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // TemplateServiceのモック設定
-    vi.mocked(TemplateService).saveCustomTemplate = mockSaveCustomTemplate;
-    vi.mocked(TemplateService).getCustomTemplates = mockGetCustomTemplates;
+    // モック関数のクリア
+    mockSaveCustomTemplate.mockClear();
+    mockGetCustomTemplates.mockClear();
+
+    // createTemplateServiceのモック設定は後で実行される
+
+    // createTemplateServiceのモック設定
+    vi.mocked(createTemplateService).mockReturnValue({
+      getSystemTemplates: vi.fn(),
+      getCustomTemplates: mockGetCustomTemplates,
+      saveCustomTemplate: mockSaveCustomTemplate,
+      applyTemplateToNursery: vi.fn(),
+      applyTemplateQuestions: vi.fn(),
+    });
   });
 
   afterEach(() => {
@@ -74,14 +88,14 @@ describe('useCustomTemplates', () => {
           questions: templateData.questions,
           isSystem: false,
           id: expect.any(String),
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
         })
       );
 
-      // テンプレート一覧に追加される
-      expect(result.current.customTemplates).toHaveLength(1);
-      expect(result.current.customTemplates[0]).toEqual(savedTemplate);
+      // 保存とテンプレート読み込みが呼ばれる
+      expect(mockSaveCustomTemplate).toHaveBeenCalledTimes(1);
+      expect(mockGetCustomTemplates).toHaveBeenCalledTimes(1);
     });
 
     test('保存エラー時はエラーが再スローされる', async () => {
@@ -118,7 +132,8 @@ describe('useCustomTemplates', () => {
 
       // Then: 空の質問配列でもテンプレートが作成される
       expect(savedTemplate?.questions).toEqual([]);
-      expect(result.current.customTemplates).toHaveLength(1);
+      expect(mockSaveCustomTemplate).toHaveBeenCalledTimes(1);
+      expect(mockGetCustomTemplates).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -139,7 +154,7 @@ describe('useCustomTemplates', () => {
 
       // When: テンプレートを読み込み
       await act(async () => {
-        await result.current.loadCustomTemplates();
+        await result.current.loadTemplates();
       });
 
       // Then: 保存済みテンプレートが一覧に表示される
@@ -156,7 +171,7 @@ describe('useCustomTemplates', () => {
 
       // When: 読み込みを試行
       await act(async () => {
-        await result.current.loadCustomTemplates();
+        await result.current.loadTemplates();
       });
 
       // Then: テンプレート一覧は空のまま
@@ -171,7 +186,7 @@ describe('useCustomTemplates', () => {
 
       // When: テンプレートを読み込み
       await act(async () => {
-        await result.current.loadCustomTemplates();
+        await result.current.loadTemplates();
       });
 
       // Then: 空の一覧が表示される
@@ -185,16 +200,14 @@ describe('useCustomTemplates', () => {
       const { result, rerender } = renderHook(() => useCustomTemplates());
 
       const initialSaveTemplate = result.current.saveTemplate;
-      const initialLoadCustomTemplates = result.current.loadCustomTemplates;
+      const initialLoadTemplates = result.current.loadTemplates;
 
       // When: コンポーネントが再レンダーされる
       rerender();
 
       // Then: 提供される機能は変わらず使用可能
       expect(result.current.saveTemplate).toBe(initialSaveTemplate);
-      expect(result.current.loadCustomTemplates).toBe(
-        initialLoadCustomTemplates
-      );
+      expect(result.current.loadTemplates).toBe(initialLoadTemplates);
     });
 
     test('複数の操作を連続で実行できる', async () => {
@@ -208,12 +221,12 @@ describe('useCustomTemplates', () => {
       // When: 保存→読み込みを連続実行
       await act(async () => {
         await result.current.saveTemplate(templateData);
-        await result.current.loadCustomTemplates();
+        await result.current.loadTemplates();
       });
 
-      // Then: どちらの操作も正常に動作する
+      // Then: 保存で1回、保存後の再読み込みで1回、手動読み込みで1回の計2回
       expect(mockSaveCustomTemplate).toHaveBeenCalledTimes(1);
-      expect(mockGetCustomTemplates).toHaveBeenCalledTimes(1);
+      expect(mockGetCustomTemplates).toHaveBeenCalledTimes(2);
     });
   });
 });

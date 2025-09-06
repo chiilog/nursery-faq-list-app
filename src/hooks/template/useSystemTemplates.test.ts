@@ -1,12 +1,17 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSystemTemplates } from './useSystemTemplates';
-import { TemplateService } from '../../services/template/templateService';
+import {
+  createTemplateService,
+  type TemplateService,
+} from '../../services/template/templateService';
 import { handleError } from '../../utils/errorHandler';
 import type { Template } from '../../types/entities';
 
 // モックの設定
-vi.mock('../../services/template/templateService');
+vi.mock('../../services/template/templateService', () => ({
+  createTemplateService: vi.fn(),
+}));
 vi.mock('../../utils/errorHandler');
 
 describe('useSystemTemplates', () => {
@@ -17,30 +22,40 @@ describe('useSystemTemplates', () => {
       name: '保育園見学 基本質問セット',
       questions: ['質問1', '質問2', '質問3'],
       isSystem: true,
-      createdAt: '2025-08-30T10:00:00.000Z',
-      updatedAt: '2025-08-30T10:00:00.000Z',
+      createdAt: new Date('2025-08-30T10:00:00.000Z'),
+      updatedAt: new Date('2025-08-30T10:00:00.000Z'),
     },
     {
       id: 'nursery-facilities',
       name: '保育園設備チェック',
       questions: ['設備質問1', '設備質問2'],
       isSystem: true,
-      createdAt: '2025-08-30T10:00:00.000Z',
-      updatedAt: '2025-08-30T10:00:00.000Z',
+      createdAt: new Date('2025-08-30T10:00:00.000Z'),
+      updatedAt: new Date('2025-08-30T10:00:00.000Z'),
     },
   ];
 
   // 型安全なモック関数の作成
-  const mockGetSystemTemplates =
-    vi.fn<typeof TemplateService.getSystemTemplates>();
+  const mockGetSystemTemplates = vi.fn<TemplateService['getSystemTemplates']>();
   const mockHandleError = vi.fn<typeof handleError>();
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // TemplateServiceのモック設定
-    vi.mocked(TemplateService).getSystemTemplates = mockGetSystemTemplates;
+    // モック関数のクリア
+    mockGetSystemTemplates.mockClear();
+    mockHandleError.mockClear();
+
     vi.mocked(handleError).mockImplementation(mockHandleError);
+
+    // createTemplateServiceのモック設定
+    vi.mocked(createTemplateService).mockReturnValue({
+      getSystemTemplates: mockGetSystemTemplates,
+      getCustomTemplates: vi.fn(),
+      saveCustomTemplate: vi.fn(),
+      applyTemplateToNursery: vi.fn(),
+      applyTemplateQuestions: vi.fn(),
+    });
   });
 
   describe('初期状態', () => {
@@ -222,9 +237,20 @@ describe('useSystemTemplates', () => {
   });
 
   describe('関数の参照安定性', () => {
-    test('loadTemplates関数の参照は安定している', () => {
-      // Given: 複数回レンダー
-      const { result, rerender } = renderHook(() => useSystemTemplates());
+    test('同じサービスインスタンスを使用時は関数の参照が安定している', () => {
+      // Given: 安定したサービスインスタンスを作成
+      const stableService = {
+        getSystemTemplates: mockGetSystemTemplates,
+        getCustomTemplates: vi.fn(),
+        saveCustomTemplate: vi.fn(),
+        applyTemplateToNursery: vi.fn(),
+        applyTemplateQuestions: vi.fn(),
+      };
+
+      // 複数回レンダー
+      const { result, rerender } = renderHook(() =>
+        useSystemTemplates(stableService)
+      );
 
       const initialLoadTemplates = result.current.loadTemplates;
 
