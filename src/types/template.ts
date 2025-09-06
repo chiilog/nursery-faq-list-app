@@ -6,16 +6,17 @@
 import type { Template, Nursery, Question } from './entities';
 
 /**
- * @description テンプレートリポジトリのインターフェース
- * データの取得・保存に関する責任を持つ
+ * @description テンプレート読み取り専用リポジトリのインターフェース
+ * データの取得に関する責任を持つ
  */
-export interface TemplateRepository {
+export interface TemplateReader {
   /**
    * @description システム提供のデフォルトテンプレートを取得する
+   * @param signal - リクエストをキャンセルするためのAbortSignal
    * @returns システムテンプレートの配列を含むPromise
    * @throws {Error} システムテンプレートの取得に失敗した場合
    */
-  getSystemTemplates(): Promise<Template[]>;
+  getSystemTemplates(signal?: AbortSignal): Promise<Template[]>;
 
   /**
    * @description ユーザーが作成したカスタムテンプレートの一覧を取得する
@@ -23,15 +24,29 @@ export interface TemplateRepository {
    * @throws {Error} カスタムテンプレートの取得に失敗した場合
    */
   getCustomTemplates(): Promise<Template[]>;
+}
 
+/**
+ * @description テンプレート書き込み専用リポジトリのインターフェース
+ * データの保存に関する責任を持つ
+ */
+export interface TemplateWriter {
   /**
    * @description カスタムテンプレートをストレージに保存する
-   * @param template - 保存するテンプレートオブジェクト
+   * @param template - 保存するテンプレートオブジェクト（idとisSystemは除外）
    * @returns 保存処理の完了を示すPromise
    * @throws {Error} テンプレートの保存に失敗した場合
    */
-  saveCustomTemplate(template: Template): Promise<void>;
+  saveCustomTemplate(
+    template: Pick<Template, 'name' | 'questions' | 'createdAt' | 'updatedAt'>
+  ): Promise<void>;
 }
+
+/**
+ * @description テンプレートリポジトリのインターフェース
+ * データの取得・保存に関する責任を持つ（読み取り専用と書き込み専用の複合）
+ */
+export interface TemplateRepository extends TemplateReader, TemplateWriter {}
 
 /**
  * @description テンプレート適用サービスのインターフェース
