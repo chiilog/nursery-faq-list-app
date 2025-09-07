@@ -26,6 +26,7 @@ describe('useTemplate', () => {
     name: 'カスタムテンプレート1',
     questions: ['カスタム質問1'],
     isSystem: false,
+    createdBy: 'user-1',
     createdAt: new Date(),
     updatedAt: new Date(),
   };

@@ -74,6 +74,7 @@ export const useCustomTemplates = () => {
           name: normalizedData.name,
           questions: normalizedData.questions,
           isSystem: false,
+          createdBy: 'current-user', // TODO: 実際のユーザーIDを設定
           createdAt: new Date(),
           updatedAt: new Date(),
         };

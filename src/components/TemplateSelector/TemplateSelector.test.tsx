@@ -1,7 +1,10 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders } from '../../test/test-utils';
+import {
+  renderWithProviders,
+  createSystemTemplateMock,
+} from '../../test/test-utils';
 import { TemplateSelector } from './TemplateSelector';
 import { useSystemTemplates } from '../../hooks/template/useSystemTemplates';
 import { useTemplateApplication } from '../../hooks/template/useTemplateApplication';
@@ -24,14 +27,11 @@ describe('TemplateSelector', () => {
 
     // デフォルトのモック実装
     const templates = [
-      {
+      createSystemTemplateMock({
         id: 'system-common',
         name: '共通テンプレート',
         questions: ['テスト質問1', 'テスト質問2'],
-        isSystem: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+      }),
     ];
 
     vi.mocked(useSystemTemplates).mockReturnValue({
@@ -154,14 +154,11 @@ describe('TemplateSelector', () => {
 
   test('テンプレートが存在し、loading状態でない場合はリンクが表示される', () => {
     const mockSystemTemplates = [
-      {
+      createSystemTemplateMock({
         id: 'system-common',
         name: '共通テンプレート',
         questions: ['テスト質問1', 'テスト質問2'],
-        isSystem: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+      }),
     ];
 
     vi.mocked(useSystemTemplates).mockReturnValue({
@@ -267,14 +264,11 @@ describe('TemplateSelector', () => {
 
     test('useSystemTemplatesがエラーとテンプレートの両方を返した場合', () => {
       const templates = [
-        {
+        createSystemTemplateMock({
           id: 'system-common',
           name: '共通テンプレート',
           questions: ['テスト質問1'],
-          isSystem: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        }),
       ];
 
       vi.mocked(useSystemTemplates).mockReturnValue({
@@ -314,14 +308,13 @@ describe('TemplateSelector', () => {
   // 境界値テスト
   describe('境界値テスト', () => {
     test('テンプレートが大量にある場合の処理', () => {
-      const manyTemplates = Array.from({ length: 100 }, (_, i) => ({
-        id: `template-${i}`,
-        name: `テンプレート${i}`,
-        questions: [`質問${i}`],
-        isSystem: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
+      const manyTemplates = Array.from({ length: 100 }, (_, i) =>
+        createSystemTemplateMock({
+          id: `template-${i}`,
+          name: `テンプレート${i}`,
+          questions: [`質問${i}`],
+        })
+      );
 
       vi.mocked(useSystemTemplates).mockReturnValue({
         templates: manyTemplates,
@@ -341,14 +334,11 @@ describe('TemplateSelector', () => {
 
     test('質問が空のテンプレートがある場合', () => {
       const templatesWithEmptyQuestions = [
-        {
+        createSystemTemplateMock({
           id: 'empty-template',
           name: '空のテンプレート',
           questions: [], // 空の質問配列
-          isSystem: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        }),
       ];
 
       vi.mocked(useSystemTemplates).mockReturnValue({
@@ -367,14 +357,11 @@ describe('TemplateSelector', () => {
 
     test('非常に長い名前のテンプレートがある場合', () => {
       const longNameTemplate = [
-        {
+        createSystemTemplateMock({
           id: 'long-name-template',
           name: 'とても長い名前のテンプレート'.repeat(10), // 非常に長い名前
           questions: ['質問1'],
-          isSystem: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        }),
       ];
 
       vi.mocked(useSystemTemplates).mockReturnValue({

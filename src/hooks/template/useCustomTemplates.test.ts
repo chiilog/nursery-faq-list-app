@@ -40,6 +40,7 @@ describe('useCustomTemplates', () => {
           name: 'カスタムテンプレート1',
           questions: ['質問1', '質問2'],
           isSystem: false,
+          createdBy: 'user-1',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -104,6 +105,7 @@ describe('useCustomTemplates', () => {
       expect(mockSaveCustomTemplate).toHaveBeenCalledWith({
         name: templateData.name,
         questions: templateData.questions,
+        createdBy: expect.any(String),
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
       });

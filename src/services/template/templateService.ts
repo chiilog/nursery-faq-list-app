@@ -45,13 +45,15 @@ export const applyTemplateQuestions = (
   template: Template,
   existingQuestions: Question[]
 ): Question[] => {
-  const templateQuestions: Question[] = template.questions.map((text) => ({
-    id: crypto.randomUUID(),
-    text,
-    isAnswered: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }));
+  const templateQuestions: Question[] = template.questions.map(
+    (questionText) => ({
+      id: crypto.randomUUID(),
+      text: questionText,
+      isAnswered: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+  );
 
   return [...existingQuestions, ...templateQuestions];
 };
