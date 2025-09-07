@@ -6,6 +6,7 @@ import { TemplateSelector } from './TemplateSelector';
 import { useSystemTemplates } from '../../hooks/template/useSystemTemplates';
 import { useTemplateApplication } from '../../hooks/template/useTemplateApplication';
 import { showToast } from '../../utils/toaster';
+import type { Template } from '../../types/entities';
 
 // モックの設定
 vi.mock('../../hooks/template/useSystemTemplates');
@@ -15,8 +16,8 @@ vi.mock('../../utils/toaster');
 describe('TemplateSelector', () => {
   const mockApplyTemplate =
     vi.fn<ReturnType<typeof useTemplateApplication>['applyTemplate']>();
-  const mockShowToastSuccess = vi.fn();
-  const mockShowToastError = vi.fn();
+  const mockShowToastSuccess = vi.fn<typeof showToast.success>();
+  const mockShowToastError = vi.fn<typeof showToast.error>();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -37,7 +38,8 @@ describe('TemplateSelector', () => {
       templates,
       loading: false,
       error: null,
-      loadTemplates: vi.fn(),
+      loadTemplates:
+        vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
     });
 
     vi.mocked(useTemplateApplication).mockReturnValue({
@@ -166,7 +168,8 @@ describe('TemplateSelector', () => {
       templates: mockSystemTemplates, // テンプレートがある状態でテスト
       loading: false, // loading: trueだとリンクが表示されないため
       error: null,
-      loadTemplates: vi.fn(),
+      loadTemplates:
+        vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
     });
 
     renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
@@ -182,7 +185,8 @@ describe('TemplateSelector', () => {
       templates: [],
       loading: false,
       error: null,
-      loadTemplates: vi.fn(),
+      loadTemplates:
+        vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
     });
 
     const { container } = renderWithProviders(
@@ -245,12 +249,13 @@ describe('TemplateSelector', () => {
 
   // エラーハンドリングテスト
   describe('エラーハンドリング', () => {
-    test('useSystemTemplatesがエラーを返した場合でもリンクは表示される', () => {
+    test('useSystemTemplatesがエラーかつテンプレート空の場合は何も表示しない', () => {
       vi.mocked(useSystemTemplates).mockReturnValue({
         templates: [],
         loading: false,
         error: 'ネットワークエラーが発生しました',
-        loadTemplates: vi.fn(),
+        loadTemplates:
+          vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
       });
 
       // エラーがあってもテンプレートが空の場合は何も表示されない
@@ -276,7 +281,8 @@ describe('TemplateSelector', () => {
         templates,
         loading: false,
         error: '一部のテンプレートの読み込みに失敗しました',
-        loadTemplates: vi.fn(),
+        loadTemplates:
+          vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
       });
 
       renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
@@ -298,7 +304,9 @@ describe('TemplateSelector', () => {
 
     test('nurseryIdがundefinedの場合の処理', () => {
       expect(() => {
-        renderWithProviders(<TemplateSelector nurseryId={undefined as any} />);
+        renderWithProviders(
+          <TemplateSelector nurseryId={undefined as unknown as string} />
+        );
       }).not.toThrow();
     });
   });
@@ -319,7 +327,8 @@ describe('TemplateSelector', () => {
         templates: manyTemplates,
         loading: false,
         error: null,
-        loadTemplates: vi.fn(),
+        loadTemplates:
+          vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
       });
 
       expect(() => {
@@ -346,7 +355,8 @@ describe('TemplateSelector', () => {
         templates: templatesWithEmptyQuestions,
         loading: false,
         error: null,
-        loadTemplates: vi.fn(),
+        loadTemplates:
+          vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
       });
 
       renderWithProviders(<TemplateSelector nurseryId="nursery-1" />);
@@ -371,7 +381,8 @@ describe('TemplateSelector', () => {
         templates: longNameTemplate,
         loading: false,
         error: null,
-        loadTemplates: vi.fn(),
+        loadTemplates:
+          vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
       });
 
       expect(() => {
@@ -385,7 +396,9 @@ describe('TemplateSelector', () => {
     test('不正な型のpropsでも安全に処理される', () => {
       // TypeScriptでは型エラーになるが、実行時には処理される
       expect(() => {
-        renderWithProviders(<TemplateSelector nurseryId={123 as any} />);
+        renderWithProviders(
+          <TemplateSelector nurseryId={123 as unknown as string} />
+        );
       }).not.toThrow();
     });
 
@@ -400,10 +413,11 @@ describe('TemplateSelector', () => {
       ];
 
       vi.mocked(useSystemTemplates).mockReturnValue({
-        templates: invalidTemplates as any,
+        templates: invalidTemplates as unknown as Template[],
         loading: false,
         error: null,
-        loadTemplates: vi.fn(),
+        loadTemplates:
+          vi.fn<ReturnType<typeof useSystemTemplates>['loadTemplates']>(),
       });
 
       expect(() => {
