@@ -1,16 +1,10 @@
 import { useState, useCallback } from 'react';
-import type { Template, Nursery } from '../../types/entities';
+import type { Template } from '../../types/entities';
 import type { CreateVisitSessionInput } from '../../types/inputs';
 import { useNurseryStore } from '../../stores/nurseryStore';
 import { applyTemplateToNursery } from '../../services/template/templateService';
 import { handleError } from '../../utils/errorHandler';
-
-const isValidNursery = (
-  nursery: Nursery | null,
-  nurseryId: string
-): nursery is Nursery => {
-  return nursery !== null && nursery.id === nurseryId;
-};
+import { isValidNursery } from '../../utils/validation';
 
 /**
  * @description テンプレート適用専用のフック
