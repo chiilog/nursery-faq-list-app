@@ -10,8 +10,8 @@ const customConfig = defineConfig({
           100: { value: '#ffd6d6' },
           200: { value: '#ffb3b3' },
           300: { value: '#ff9999' },
-          400: { value: '#ff8080' },
-          500: { value: '#ff8080' }, // メインカラー（コーラル系）
+          400: { value: '#ff7a7a' },
+          500: { value: '#d45d5d' }, // メインカラー（コーラル系）
           600: { value: '#cc6666' },
           700: { value: '#b35a5a' },
           800: { value: '#994d4d' },
