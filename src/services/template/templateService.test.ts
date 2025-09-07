@@ -15,6 +15,7 @@ describe('templateService', () => {
     name: 'テストテンプレート',
     questions: ['質問1', '質問2', '質問3'],
     isSystem: false,
+    createdBy: 'user-1',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
