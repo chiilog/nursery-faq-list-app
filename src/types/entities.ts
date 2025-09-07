@@ -39,27 +39,37 @@ export interface Nursery {
   updatedAt: Date;
 }
 
-// 質問テンプレートの型定義
-export interface QuestionTemplate {
+// テンプレート型定義（判別共用体）
+export type Template = SystemTemplate | CustomTemplate;
+
+export interface SystemTemplate {
   id: string;
-  title: string;
-  description?: string;
-  isCustom: boolean; // true: ユーザー作成、false: システム提供
-  questions: Array<{
-    text: string;
-    order?: number;
-  }>;
-  createdBy?: string; // ユーザーID（カスタムテンプレートの場合のみ）
+  name: string;
+  questions: ReadonlyArray<string>;
+  isSystem: true; // true: システム提供
   createdAt: Date;
   updatedAt: Date;
 }
 
-// 新しいテンプレート型定義（DRY/KISS原則に基づく統合版）
-export interface Template {
+export interface CustomTemplate {
   id: string;
   name: string;
-  questions: string[]; // 質問文字列の配列にシンプル化
-  isSystem: boolean; // true: システム提供、false: カスタム
+  questions: ReadonlyArray<string>;
+  isSystem: false; // false: ユーザー作成
+  createdBy: string; // ユーザーID（カスタムテンプレートの場合必須）
   createdAt: Date;
   updatedAt: Date;
+}
+
+// 型ガード関数
+export function isSystemTemplate(
+  template: Template
+): template is SystemTemplate {
+  return template.isSystem === true;
+}
+
+export function isCustomTemplate(
+  template: Template
+): template is CustomTemplate {
+  return template.isSystem === false;
 }
