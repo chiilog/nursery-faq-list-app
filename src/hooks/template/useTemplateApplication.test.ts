@@ -121,11 +121,10 @@ describe('useTemplateApplication', () => {
         mockNursery
       );
 
-      // 保育園データの更新が呼ばれたことを確認
-      expect(mockUpdateNursery).toHaveBeenCalledWith(
-        'nursery-1',
-        mockUpdatedNursery
-      );
+      // 保育園データの更新が呼ばれたことを確認（UpdateNurseryInput形式）
+      expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+        visitSessions: mockUpdatedNursery.visitSessions,
+      });
 
       // セッション作成は呼ばれない
       expect(mockCreateVisitSession).not.toHaveBeenCalled();
@@ -210,10 +209,9 @@ describe('useTemplateApplication', () => {
         mockTemplate,
         nurseryAfterSessionCreation
       );
-      expect(mockUpdateNursery).toHaveBeenCalledWith(
-        'nursery-1',
-        mockUpdatedNursery
-      );
+      expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+        visitSessions: mockUpdatedNursery.visitSessions,
+      });
     });
 
     test('セッション作成後にgetStateで最新データを取得できない場合はfalseを返す', async () => {
@@ -476,10 +474,9 @@ describe('useTemplateApplication', () => {
         emptyTemplate,
         mockNursery
       );
-      expect(mockUpdateNursery).toHaveBeenCalledWith(
-        'nursery-1',
-        emptyResultNursery
-      );
+      expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+        visitSessions: emptyResultNursery.visitSessions,
+      });
     });
 
     test('複数回連続でテンプレートを適用できる', async () => {
@@ -544,14 +541,12 @@ describe('useTemplateApplication', () => {
 
       // 両方の保育園で適用されたことを確認
       expect(mockUpdateNursery).toHaveBeenCalledTimes(2);
-      expect(mockUpdateNursery).toHaveBeenCalledWith(
-        'nursery-1',
-        mockUpdatedNursery
-      );
-      expect(mockUpdateNursery).toHaveBeenCalledWith(
-        'nursery-2',
-        mockUpdatedNursery
-      );
+      expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+        visitSessions: mockUpdatedNursery.visitSessions,
+      });
+      expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-2', {
+        visitSessions: mockUpdatedNursery.visitSessions,
+      });
     });
   });
 });

@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
 import type { Template } from '../../types/entities';
-import type { CreateVisitSessionInput } from '../../types/inputs';
+import type {
+  CreateVisitSessionInput,
+  UpdateNurseryInput,
+} from '../../types/inputs';
 import { useNurseryStore } from '../../stores/nurseryStore';
 import { applyTemplateToNursery } from '../../services/template/templateService';
 import { handleError } from '../../utils/errorHandler';
@@ -69,7 +72,10 @@ export const useTemplateApplication = () => {
         }
 
         const updatedNursery = applyTemplateToNursery(template, nurseryToUse);
-        await updateNursery(nurseryId, updatedNursery);
+        const updates: UpdateNurseryInput = {
+          visitSessions: updatedNursery.visitSessions,
+        };
+        await updateNursery(nurseryId, updates);
         return true;
       } catch (error) {
         handleError('テンプレート適用中にエラーが発生しました', error);
