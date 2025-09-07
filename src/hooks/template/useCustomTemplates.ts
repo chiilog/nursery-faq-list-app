@@ -7,69 +7,98 @@ import {
 import { handleError } from '../../utils/errorHandler';
 
 /**
+ * @description テンプレートデータのバリデーションと正規化を行う
+ * @param templateData - バリデーション対象のデータ
+ * @returns 正規化されたデータ
+ * @throws バリデーションエラーの場合
+ */
+const validateAndNormalizeTemplate = (templateData: {
+  name: string;
+  questions: string[];
+}) => {
+  const trimmedName = templateData.name.trim();
+  if (!trimmedName) {
+    throw new Error('テンプレート名を入力してください');
+  }
+
+  const normalizedQuestions = Array.from(
+    new Set(
+      templateData.questions.map((q) => q.trim()).filter((q) => q.length > 0)
+    )
+  );
+
+  if (normalizedQuestions.length === 0) {
+    throw new Error('質問を1つ以上入力してください');
+  }
+
+  return {
+    name: trimmedName,
+    questions: normalizedQuestions,
+  };
+};
+
+/**
  * @description カスタムテンプレートの状態管理フック
  */
 export const useCustomTemplates = () => {
   const [customTemplates, setCustomTemplates] = useState<Template[]>([]);
-  const [loadingTemplates, setLoadingTemplates] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  // 保存処理用の状態（読み込み状態とは分離）
-  const [savingTemplate, setSavingTemplate] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadTemplates = useCallback(() => {
-    setLoadingTemplates(true);
-    setLoadError(null);
+    setLoading(true);
+    setError(null);
 
     try {
       const result = getCustomTemplates();
       setCustomTemplates(result);
     } catch (err: unknown) {
       const errorMessage = 'カスタムテンプレートの読み込みに失敗しました';
-      setLoadError(errorMessage);
+      setError(errorMessage);
       handleError(errorMessage, err);
     } finally {
-      setLoadingTemplates(false);
+      setLoading(false);
     }
   }, []);
 
   const saveTemplate = useCallback(
     (templateData: { name: string; questions: string[] }) => {
-      setSavingTemplate(true);
-      setSaveError(null);
+      setLoading(true);
+      setError(null);
+
       try {
+        const normalizedData = validateAndNormalizeTemplate(templateData);
+
         const newTemplate: Template = {
           id: crypto.randomUUID(),
-          name: templateData.name,
-          questions: templateData.questions,
+          name: normalizedData.name,
+          questions: normalizedData.questions,
           isSystem: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
+
         const { id, isSystem, ...templateToSave } = newTemplate;
         saveCustomTemplate(templateToSave);
 
-        // 保存後にテンプレート一覧を再読み込み
-        loadTemplates();
+        // 楽観的更新
+        setCustomTemplates((prev) => [...prev, newTemplate]);
 
         return newTemplate;
       } catch (err) {
-        const errorMessage = 'テンプレートの保存に失敗しました';
-        setSaveError(errorMessage);
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : 'テンプレートの保存に失敗しました';
+        setError(errorMessage);
         handleError(errorMessage, err);
         throw err;
       } finally {
-        setSavingTemplate(false);
+        setLoading(false);
       }
     },
-    [loadTemplates]
+    []
   );
-
-  // 統合されたローディング状態（読み込み中または保存中）
-  const loading = loadingTemplates || savingTemplate;
-  // 統合されたエラー状態（読み込みエラーまたは保存エラー）
-  const error = loadError || saveError;
 
   return {
     customTemplates,

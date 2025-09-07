@@ -107,8 +107,6 @@ describe('useCustomTemplates', () => {
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
       });
-
-      expect(mockGetCustomTemplates).toHaveBeenCalledTimes(1);
     });
   });
 
