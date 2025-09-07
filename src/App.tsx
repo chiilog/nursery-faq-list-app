@@ -4,6 +4,7 @@ import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { ScrollToTop } from './components/ScrollToTop';
 import { AnalyticsProvider } from './providers/AnalyticsProvider';
 import { AnalyticsRouter } from './components/AnalyticsRouter';
+import { Toaster } from './components/ui/toaster';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <AppRouter />
         </AnalyticsRouter>
         <CookieConsentBanner />
+        <Toaster />
       </AnalyticsProvider>
     </BrowserRouter>
   );

@@ -3,7 +3,7 @@
  * CRUD操作用の入力型定義を集約
  */
 
-import type { VisitSession, Question, VisitSessionStatus } from './entities';
+import type { VisitSession, VisitSessionStatus } from './entities';
 
 // 保育園作成時の入力データ型
 export interface CreateNurseryInput {
@@ -48,19 +48,8 @@ export interface UpdateQuestionInput {
   isAnswered?: boolean;
 }
 
-// 質問テンプレート作成時の入力データ型
-export interface CreateQuestionTemplateInput {
-  title: string;
-  description?: string;
-  ageGroup?: string;
-  questions: Omit<
-    Question,
-    | 'id'
-    | 'answer'
-    | 'isAnswered'
-    | 'answeredBy'
-    | 'answeredAt'
-    | 'createdAt'
-    | 'updatedAt'
-  >[];
+// テンプレート作成時の入力データ型
+export interface CreateTemplateInput {
+  name: string;
+  questions: string[];
 }

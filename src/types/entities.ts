@@ -39,16 +39,37 @@ export interface Nursery {
   updatedAt: Date;
 }
 
-// 質問テンプレートの型定義
-export interface QuestionTemplate {
+// テンプレート型定義（判別共用体）
+export type Template = SystemTemplate | CustomTemplate;
+
+export interface SystemTemplate {
   id: string;
-  title: string;
-  description?: string;
-  ageGroup?: string; // '0-1歳', '1-2歳', '2-3歳', '一般' など
-  questions: Omit<
-    Question,
-    'id' | 'answer' | 'isAnswered' | 'answeredBy' | 'answeredAt'
-  >[];
+  name: string;
+  questions: ReadonlyArray<string>;
+  isSystem: true; // true: システム提供
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface CustomTemplate {
+  id: string;
+  name: string;
+  questions: ReadonlyArray<string>;
+  isSystem: false; // false: ユーザー作成
+  createdBy: string; // ユーザーID（カスタムテンプレートの場合必須）
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 型ガード関数
+export function isSystemTemplate(
+  template: Template
+): template is SystemTemplate {
+  return template.isSystem === true;
+}
+
+export function isCustomTemplate(
+  template: Template
+): template is CustomTemplate {
+  return template.isSystem === false;
 }

@@ -37,7 +37,7 @@ export interface LoadingState {
 }
 
 // ストアの状態型定義
-interface NurseryState {
+export interface NurseryState {
   // データ状態
   nurseries: Nursery[];
   currentNursery: Nursery | null;

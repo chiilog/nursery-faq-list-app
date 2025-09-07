@@ -27,6 +27,7 @@ import { showToast } from '../utils/toaster';
 import { useNurseryEdit } from '../hooks/useNurseryEdit';
 import { useQuestionEditor } from '../hooks/useQuestionEditor';
 import { useQuestionForm } from '../hooks/useQuestionForm';
+import { TemplateSelector } from '../components/TemplateSelector/TemplateSelector';
 
 /**
  * 保育園詳細画面コンポーネント
@@ -96,14 +97,11 @@ export const NurseryDetailPage = () => {
           isAnswered: questionEditor.editState.answer.trim() !== '',
         }
       );
-      showToast.success('保存完了', '回答を保存しました');
+      showToast.success('回答を保存しました');
       questionEditor.resetEdit();
     } catch (error) {
       console.error('Failed to save answer:', error);
-      showToast.error(
-        '保存エラー',
-        '回答の保存に失敗しました。もう一度お試しください。'
-      );
+      showToast.error('回答の保存に失敗しました。もう一度お試しください。');
     }
   }, [currentNursery, questionEditor, updateQuestion]);
 
@@ -119,14 +117,11 @@ export const NurseryDetailPage = () => {
         answer: questionForm.formState.answerText.trim(),
         isAnswered: questionForm.formState.answerText.trim() !== '',
       });
-      showToast.success('追加完了', '質問を追加しました');
+      showToast.success('質問を追加しました');
       questionForm.resetForm();
     } catch (error) {
       console.error('Failed to add question:', error);
-      showToast.error(
-        '追加エラー',
-        '質問の追加に失敗しました。もう一度お試しください。'
-      );
+      showToast.error('質問の追加に失敗しました。もう一度お試しください。');
     }
   }, [currentNursery, questionForm, addQuestion]);
 
@@ -139,7 +134,7 @@ export const NurseryDetailPage = () => {
 
       try {
         await deleteQuestion(currentNursery.id, session.id, questionId);
-        showToast.success('削除完了', '質問を削除しました');
+        showToast.success('質問を削除しました');
 
         // 編集中の質問が削除された場合は編集状態をリセット
         if (questionEditor.editState.questionId === questionId) {
@@ -147,10 +142,7 @@ export const NurseryDetailPage = () => {
         }
       } catch (error) {
         console.error('Failed to delete question:', error);
-        showToast.error(
-          '削除エラー',
-          '質問の削除に失敗しました。もう一度お試しください。'
-        );
+        showToast.error('質問の削除に失敗しました。もう一度お試しください。');
       }
     },
     [currentNursery, deleteQuestion, questionEditor]
@@ -168,10 +160,7 @@ export const NurseryDetailPage = () => {
         await updateVisitSession(session.id, { insights });
       } catch (error) {
         console.error('Failed to save insights:', error);
-        showToast.error(
-          '保存エラー',
-          'タグの保存に失敗しました。もう一度お試しください。'
-        );
+        showToast.error('タグの保存に失敗しました。もう一度お試しください。');
       }
     },
     [currentNursery, updateVisitSession]
@@ -301,6 +290,11 @@ export const NurseryDetailPage = () => {
               }
               onAddQuestion={() => void handleAddQuestion()}
             />
+          </Box>
+
+          {/* テンプレート機能 */}
+          <Box py={2}>
+            <TemplateSelector nurseryId={currentNursery.id} />
           </Box>
 
           {/* 質問リスト */}

@@ -140,21 +140,41 @@ interface Question {
 }
 ```
 
-#### QuestionTemplate（質問テンプレート）
+#### Template（統一テンプレート型）
 
 ```typescript
-interface QuestionTemplate {
+export type Template = SystemTemplate | CustomTemplate;
+
+interface SystemTemplate {
   id: string;
-  title: string;
-  description?: string;
-  isCustom: boolean; // true: ユーザー作成、false: システム提供
-  questions: Array<{
-    text: string;
-    order?: number;
-  }>;
-  createdBy?: string; // ユーザーID（カスタムテンプレートの場合のみ）
+  name: string;
+  questions: ReadonlyArray<string>;
+  isSystem: true; // true: システム提供
   createdAt: Date;
   updatedAt: Date;
+}
+
+interface CustomTemplate {
+  id: string;
+  name: string;
+  questions: ReadonlyArray<string>;
+  isSystem: false; // false: ユーザー作成
+  createdBy: string; // ユーザーID（カスタムテンプレートの場合必須）
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 型ガード関数
+export function isSystemTemplate(
+  template: Template
+): template is SystemTemplate {
+  return template.isSystem === true;
+}
+
+export function isCustomTemplate(
+  template: Template
+): template is CustomTemplate {
+  return template.isSystem === false;
 }
 ```
 

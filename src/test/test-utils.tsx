@@ -89,12 +89,37 @@ export const testUtils = {
     category: '基本情報',
     ...overrides,
   }),
+
+  // システムテンプレートのモック作成
+  createMockSystemTemplate: (overrides = {}) => ({
+    id: 'system-template-1',
+    name: 'システムテンプレート',
+    questions: ['テスト質問1', 'テスト質問2'],
+    isSystem: true as const,
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
+    ...overrides,
+  }),
+
+  // カスタムテンプレートのモック作成
+  createMockCustomTemplate: (overrides = {}) => ({
+    id: 'custom-template-1',
+    name: 'カスタムテンプレート',
+    questions: ['カスタム質問1', 'カスタム質問2'],
+    isSystem: false as const,
+    createdBy: 'user-1',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
+    ...overrides,
+  }),
 };
 
 // より簡潔な関数名のエクスポート
 export const createQuestionMock = testUtils.createMockQuestion;
 export const createCreateQuestionInputMock =
   testUtils.createMockCreateQuestionInput;
+export const createSystemTemplateMock = testUtils.createMockSystemTemplate;
+export const createCustomTemplateMock = testUtils.createMockCustomTemplate;
 
 // re-export everything
 export * from '@testing-library/react';

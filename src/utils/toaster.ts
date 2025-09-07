@@ -1,45 +1,61 @@
 /**
  * トースト通知のユーティリティ
+ * Chakra UI v3対応
  */
 
-import { createToaster } from '@chakra-ui/react';
+import { toaster } from '../lib/toaster';
 
-export const toaster = createToaster({
-  placement: 'top',
-  max: 3,
-  pauseOnPageIdle: true,
-});
-
+/**
+ * トースト表示のヘルパーユーティリティ
+ * Chakra UI v3の最新仕様に対応
+ */
 export const showToast = {
-  success: (title: string, description?: string) =>
+  /**
+   * 成功通知を表示
+   */
+  success: (message: string) =>
     toaster.create({
-      title,
-      description,
+      description: message,
       type: 'success',
       duration: 3000,
     }),
 
-  error: (title: string, description?: string) =>
+  /**
+   * エラー通知を表示
+   */
+  error: (message: string) =>
     toaster.create({
-      title,
-      description,
+      description: message,
       type: 'error',
       duration: 5000,
     }),
 
-  warning: (title: string, description?: string) =>
+  /**
+   * 警告通知を表示
+   */
+  warning: (message: string) =>
     toaster.create({
-      title,
-      description,
+      description: message,
       type: 'warning',
       duration: 4000,
     }),
 
-  info: (title: string, description?: string) =>
+  /**
+   * 情報通知を表示
+   */
+  info: (message: string) =>
     toaster.create({
-      title,
-      description,
+      description: message,
       type: 'info',
       duration: 3000,
+    }),
+
+  /**
+   * 読み込み中の通知を表示
+   */
+  loading: (message: string) =>
+    toaster.create({
+      description: message,
+      type: 'loading',
     }),
 };
