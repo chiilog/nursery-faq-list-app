@@ -40,13 +40,6 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleInteraction();
-    }
-  };
-
   const { visitDate, questionProgress, insights } = useNurseryStatus(
     nursery.visitSessions
   );
@@ -55,7 +48,6 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
     <Box
       as="button"
       aria-label={`${nursery.name}の詳細を開く`}
-      tabIndex={0}
       p={4}
       borderWidth={1}
       borderRadius="md"
@@ -65,7 +57,6 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
       width="100%"
       cursor="pointer"
       onClick={handleInteraction}
-      onKeyDown={handleKeyDown}
     >
       <HStack align="center" gap={3} width="100%">
         <VStack align="stretch" gap={3} flex={1}>
