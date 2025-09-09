@@ -50,6 +50,7 @@ export const PrimaryFormActions = ({
         variant="subtle"
         size={size}
         data-size={size}
+        aria-label="保育園編集をキャンセル"
         flex={1}
         {...primaryCancelButtonStyles}
       >
@@ -138,6 +139,7 @@ export const VerticalFormActions = ({
         variant="subtle"
         size={size}
         data-size={size}
+        aria-label="保育園編集をキャンセル"
         {...primaryCancelButtonStyles}
         w="full"
         py={3} // 縦並びでは異なるパディングを維持

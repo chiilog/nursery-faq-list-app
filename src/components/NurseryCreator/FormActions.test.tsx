@@ -52,7 +52,9 @@ describe('FormActionsコンポーネント群', () => {
         <PrimaryFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(screen.getByText('キャンセル'));
+      await user.click(
+        screen.getByRole('button', { name: '保育園編集をキャンセル' })
+      );
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -68,7 +70,9 @@ describe('FormActionsコンポーネント群', () => {
       const saveButton = screen.getByText('保存');
       expect(saveButton).toBeDisabled();
 
-      const cancelButton = screen.getByText('キャンセル');
+      const cancelButton = screen.getByRole('button', {
+        name: '保育園編集をキャンセル',
+      });
       expect(cancelButton).not.toBeDisabled();
     });
 
@@ -144,7 +148,9 @@ describe('FormActionsコンポーネント群', () => {
         <InlineFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(screen.getByText('キャンセル'));
+      await user.click(
+        screen.getByRole('button', { name: '保育園編集をキャンセル' })
+      );
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -160,7 +166,9 @@ describe('FormActionsコンポーネント群', () => {
       const saveButton = screen.getByText('保存');
       expect(saveButton).toBeDisabled();
 
-      const cancelButton = screen.getByText('キャンセル');
+      const cancelButton = screen.getByRole('button', {
+        name: '保育園編集をキャンセル',
+      });
       expect(cancelButton).not.toBeDisabled();
     });
 
@@ -207,7 +215,9 @@ describe('FormActionsコンポーネント群', () => {
         <VerticalFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(screen.getByText('キャンセル'));
+      await user.click(
+        screen.getByRole('button', { name: '保育園編集をキャンセル' })
+      );
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -223,7 +233,9 @@ describe('FormActionsコンポーネント群', () => {
       const saveButton = screen.getByText('保存');
       expect(saveButton).toBeDisabled();
 
-      const cancelButton = screen.getByText('キャンセル');
+      const cancelButton = screen.getByRole('button', {
+        name: '保育園編集をキャンセル',
+      });
       expect(cancelButton).not.toBeDisabled();
     });
 
