@@ -5,7 +5,6 @@
 
 import { Button, HStack, VStack } from '@chakra-ui/react';
 import type { ButtonProps } from '@chakra-ui/react';
-import { APP_CONFIG } from '../../constants/app';
 
 // 共通のボタンスタイル
 const commonButtonStyles = {
@@ -16,14 +15,10 @@ const primarySaveButtonStyles = {
   ...commonButtonStyles,
   fontWeight: 'bold',
   shadow: 'sm',
-  bgColor: APP_CONFIG.COLORS.PRIMARY,
-  color: APP_CONFIG.COLORS.WHITE,
 };
 
 const primaryCancelButtonStyles = {
   ...commonButtonStyles,
-  bgColor: APP_CONFIG.COLORS.PRIMARY_LIGHT,
-  color: APP_CONFIG.COLORS.PRIMARY_DARK,
 };
 
 // 基本的なProps型
@@ -51,6 +46,7 @@ export const PrimaryFormActions = ({
     <HStack gap={4} justify="space-between">
       <Button
         onClick={onCancel}
+        colorPalette="brand"
         variant="subtle"
         size={size}
         data-size={size}
@@ -61,6 +57,7 @@ export const PrimaryFormActions = ({
       </Button>
       <Button
         onClick={onSave}
+        colorPalette="brand"
         disabled={isDisabled}
         size={size}
         data-size={size}
@@ -88,21 +85,20 @@ export const InlineFormActions = ({
     <HStack gap={2}>
       <Button
         onClick={onCancel}
+        colorPalette="brand"
         variant="subtle"
         size={size}
         data-size={size}
         {...commonButtonStyles}
-        bgColor={APP_CONFIG.COLORS.PRIMARY_LIGHT}
-        color={APP_CONFIG.COLORS.PRIMARY_DARK}
       >
         {cancelLabel}
       </Button>
       <Button
         onClick={onSave}
+        colorPalette="brand"
         disabled={isDisabled}
         size={size}
         data-size={size}
-        bgColor={APP_CONFIG.COLORS.PRIMARY}
         {...commonButtonStyles}
       >
         {saveLabel}
@@ -126,6 +122,7 @@ export const VerticalFormActions = ({
     <VStack gap={3} align="stretch" w="full">
       <Button
         onClick={onSave}
+        colorPalette="brand"
         disabled={isDisabled}
         size={size}
         data-size={size}
@@ -136,6 +133,7 @@ export const VerticalFormActions = ({
       </Button>
       <Button
         onClick={onCancel}
+        colorPalette="brand"
         variant="subtle"
         size={size}
         data-size={size}

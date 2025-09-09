@@ -2,7 +2,6 @@ import { Box, HStack, VStack, Text, Portal } from '@chakra-ui/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useCallback, useId } from 'react';
 import { ROUTES } from '../constants/routes';
-import { APP_CONFIG } from '../constants/app';
 import { NavigationDrawer } from './NavigationDrawer';
 import {
   BOTTOM_NAVIGATION_ITEMS,
@@ -27,7 +26,7 @@ export const BottomNavigation = () => {
 
   // KISS: 色の取得をシンプル化
   const getItemColor = (isSelected: boolean) =>
-    isSelected ? APP_CONFIG.COLORS.PRIMARY : 'gray.600';
+    isSelected ? 'brand.500' : 'gray.600';
 
   /**
    * @description ナビゲーション項目のクリックハンドラ
