@@ -7,46 +7,12 @@ import { describe, test, expect } from 'vitest';
 import { useQuestionForm } from './useQuestionForm';
 
 describe('useQuestionForm', () => {
-  test('初期状態は追加モードではない', () => {
+  test('初期状態は質問と回答が空で無効', () => {
     const { result } = renderHook(() => useQuestionForm());
 
-    expect(result.current.formState.isAdding).toBe(false);
     expect(result.current.formState.questionText).toBe('');
     expect(result.current.formState.answerText).toBe('');
     expect(result.current.isValid).toBe(false);
-  });
-
-  test('startAddingで追加モードに移行する', () => {
-    const { result } = renderHook(() => useQuestionForm());
-
-    act(() => {
-      result.current.startAdding();
-    });
-
-    expect(result.current.formState.isAdding).toBe(true);
-    expect(result.current.formState.questionText).toBe('');
-    expect(result.current.formState.answerText).toBe('');
-  });
-
-  test('startAddingは既存の入力値を保持する', () => {
-    const { result } = renderHook(() => useQuestionForm());
-
-    // 先に入力値を設定
-    act(() => {
-      result.current.updateQuestionText('下書きの質問');
-      result.current.updateAnswerText('下書きの回答');
-    });
-
-    // startAddingを実行
-    act(() => {
-      result.current.startAdding();
-    });
-
-    // 入力値が保持されることを確認
-    expect(result.current.formState.isAdding).toBe(true);
-    expect(result.current.formState.questionText).toBe('下書きの質問');
-    expect(result.current.formState.answerText).toBe('下書きの回答');
-    expect(result.current.isValid).toBe(true);
   });
 
   test('updateQuestionTextで質問テキストが更新される', () => {
@@ -70,112 +36,63 @@ describe('useQuestionForm', () => {
 
     expect(result.current.formState.questionText).toBe('');
     expect(result.current.formState.answerText).toBe('新しい回答');
-    expect(result.current.isValid).toBe(false); // 質問が空なのでinvalid
+    expect(result.current.isValid).toBe(false); // 質問が空なので無効
   });
 
-  test('質問テキストが空文字の場合はinvalid', () => {
+  test('質問テキストと回答テキストの両方が設定される', () => {
     const { result } = renderHook(() => useQuestionForm());
 
     act(() => {
-      result.current.updateQuestionText('');
-      result.current.updateAnswerText('回答がある');
-    });
-
-    expect(result.current.isValid).toBe(false);
-  });
-
-  test('質問テキストが空白のみの場合はinvalid', () => {
-    const { result } = renderHook(() => useQuestionForm());
-
-    act(() => {
-      result.current.updateQuestionText('   ');
-      result.current.updateAnswerText('回答がある');
-    });
-
-    expect(result.current.isValid).toBe(false);
-  });
-
-  test('質問テキストがある場合はvalid（回答は任意）', () => {
-    const { result } = renderHook(() => useQuestionForm());
-
-    act(() => {
-      result.current.updateQuestionText('質問がある');
-    });
-
-    expect(result.current.isValid).toBe(true);
-
-    act(() => {
-      result.current.updateAnswerText('回答も追加');
-    });
-
-    expect(result.current.isValid).toBe(true);
-  });
-
-  test('resetFormで初期状態に戻る', () => {
-    const { result } = renderHook(() => useQuestionForm());
-
-    act(() => {
-      result.current.startAdding();
       result.current.updateQuestionText('質問');
       result.current.updateAnswerText('回答');
     });
 
-    expect(result.current.formState.isAdding).toBe(true);
+    expect(result.current.formState.questionText).toBe('質問');
+    expect(result.current.formState.answerText).toBe('回答');
+    expect(result.current.isValid).toBe(true);
+  });
+
+  test('質問テキストが空白のみの場合は無効', () => {
+    const { result } = renderHook(() => useQuestionForm());
+
+    act(() => {
+      result.current.updateQuestionText('   ');
+    });
+
+    expect(result.current.formState.questionText).toBe('   ');
+    expect(result.current.isValid).toBe(false);
+  });
+
+  test('resetFormで全ての値がリセットされる', () => {
+    const { result } = renderHook(() => useQuestionForm());
+
+    act(() => {
+      result.current.updateQuestionText('質問');
+      result.current.updateAnswerText('回答');
+    });
+
+    expect(result.current.formState.questionText).toBe('質問');
+    expect(result.current.formState.answerText).toBe('回答');
     expect(result.current.isValid).toBe(true);
 
     act(() => {
       result.current.resetForm();
     });
 
-    expect(result.current.formState.isAdding).toBe(false);
     expect(result.current.formState.questionText).toBe('');
     expect(result.current.formState.answerText).toBe('');
     expect(result.current.isValid).toBe(false);
   });
 
-  test('cancelAddingで初期状態に戻る', () => {
+  test('質問テキストのみでフォームが有効になる', () => {
     const { result } = renderHook(() => useQuestionForm());
 
     act(() => {
-      result.current.startAdding();
-      result.current.updateQuestionText('質問');
-      result.current.updateAnswerText('回答');
+      result.current.updateQuestionText('質問のみ');
     });
 
-    act(() => {
-      result.current.cancelAdding();
-    });
-
-    expect(result.current.formState.isAdding).toBe(false);
-    expect(result.current.formState.questionText).toBe('');
+    expect(result.current.formState.questionText).toBe('質問のみ');
     expect(result.current.formState.answerText).toBe('');
-    expect(result.current.isValid).toBe(false);
-  });
-
-  test('複数回の更新が正しく動作する', () => {
-    const { result } = renderHook(() => useQuestionForm());
-
-    act(() => {
-      result.current.updateQuestionText('質問1');
-    });
-
-    expect(result.current.isValid).toBe(true);
-
-    act(() => {
-      result.current.updateQuestionText('質問2');
-      result.current.updateAnswerText('回答1');
-    });
-
-    expect(result.current.formState.questionText).toBe('質問2');
-    expect(result.current.formState.answerText).toBe('回答1');
-    expect(result.current.isValid).toBe(true);
-
-    act(() => {
-      result.current.updateAnswerText('回答2');
-    });
-
-    expect(result.current.formState.questionText).toBe('質問2');
-    expect(result.current.formState.answerText).toBe('回答2');
     expect(result.current.isValid).toBe(true);
   });
 });
