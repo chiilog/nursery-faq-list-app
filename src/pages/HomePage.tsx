@@ -7,7 +7,6 @@ import { EmptyState } from '../components/EmptyState';
 import { Layout } from '../components/Layout';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { showToast } from '../utils/toaster';
-import { APP_CONFIG } from '../constants/app';
 import type { Nursery } from '../types/entities';
 
 interface HomePageProps {
@@ -60,7 +59,7 @@ export const HomePage = ({ onCreateNew }: HomePageProps) => {
         <VStack gap={4} align="stretch">
           <Box textAlign="center">
             <Button
-              bgColor={APP_CONFIG.COLORS.PRIMARY}
+              colorPalette="brand"
               size="lg"
               onClick={onCreateNew}
               borderRadius="full"

@@ -23,7 +23,6 @@ import {
 import { Layout } from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
-import { APP_CONFIG } from '../constants/app';
 import { useCookieConsent } from '../hooks/useCookieConsent';
 import { useEffect, useState } from 'react';
 
@@ -79,13 +78,13 @@ export const PrivacyPolicyPage = () => {
       <Box maxW="container.md" mx="auto" py={4}>
         <VStack gap={6} align="stretch">
           <Box>
-            <Heading as="h1" color={APP_CONFIG.COLORS.PRIMARY}>
+            <Heading as="h1" color="brand.500">
               プライバシーポリシー
             </Heading>
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               法的根拠と準拠法
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -103,7 +102,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               個人情報の収集について
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -118,7 +117,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               Google Analytics 4について
             </Heading>
             <Text lineHeight={1.7} mb={3}>
@@ -136,7 +135,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               Microsoft Clarityについて
             </Heading>
             <Text lineHeight={1.7} mb={3}>
@@ -158,7 +157,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               分析ツールの利用設定
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -243,7 +242,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               国際データ転送について
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -288,7 +287,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               データの保存について
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -302,7 +301,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               データ保持期間
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -338,7 +337,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               ユーザーの権利
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -375,7 +374,7 @@ export const PrivacyPolicyPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h2" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h2" size="md" color="brand.500" mb={3}>
               お問い合わせ
             </Heading>
             <Text lineHeight={1.7} mb={4}>

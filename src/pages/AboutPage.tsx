@@ -2,7 +2,6 @@ import { Box, Heading, Text, VStack, Button, HStack } from '@chakra-ui/react';
 import { Layout } from '../components/Layout';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
-import { APP_CONFIG } from '../constants/app';
 import { ROUTES } from '../constants/routes';
 
 export const AboutPage = () => {
@@ -25,7 +24,7 @@ export const AboutPage = () => {
       <Box maxW="container.md" mx="auto" py={4}>
         <VStack gap={6} align="stretch">
           <Box>
-            <Heading as="h2" color={APP_CONFIG.COLORS.PRIMARY}>
+            <Heading as="h2" color="brand.500">
               保活手帳について
             </Heading>
 
@@ -38,7 +37,7 @@ export const AboutPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h3" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h3" size="md" color="brand.500" mb={3}>
               個人情報について
             </Heading>
             <Text lineHeight={1.7} mb={4}>
@@ -53,7 +52,7 @@ export const AboutPage = () => {
           </Box>
 
           <Box>
-            <Heading as="h3" size="md" color={APP_CONFIG.COLORS.PRIMARY} mb={3}>
+            <Heading as="h3" size="md" color="brand.500" mb={3}>
               プライバシー設定
             </Heading>
             <Text lineHeight={1.7} mb={4}>
