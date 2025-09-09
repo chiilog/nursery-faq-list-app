@@ -239,6 +239,7 @@ export const NurseryDetailPage = () => {
                 onSave={() => void nurseryEdit.handleSaveNursery()}
                 onCancel={nurseryEdit.handleCancelEditNursery}
                 isDisabled={nurseryEdit.isSaveDisabled}
+                cancelContext="保育園編集をキャンセル"
               />
             ) : (
               <Button

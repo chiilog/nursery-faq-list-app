@@ -28,6 +28,7 @@ interface FormActionsProps {
   isDisabled?: boolean;
   saveLabel?: string;
   cancelLabel?: string;
+  cancelContext?: string;
   size?: ButtonProps['size'];
 }
 
@@ -40,6 +41,7 @@ export const PrimaryFormActions = ({
   isDisabled = false,
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
+  cancelContext,
   size = 'lg',
 }: FormActionsProps) => {
   return (
@@ -50,7 +52,9 @@ export const PrimaryFormActions = ({
         variant="subtle"
         size={size}
         data-size={size}
-        aria-label="保育園編集をキャンセル"
+        aria-label={
+          cancelContext ? `${cancelLabel}（${cancelContext}）` : cancelLabel
+        }
         flex={1}
         {...primaryCancelButtonStyles}
       >
@@ -80,6 +84,7 @@ export const InlineFormActions = ({
   isDisabled = false,
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
+  cancelContext,
   size = 'sm',
 }: FormActionsProps) => {
   return (
@@ -90,7 +95,9 @@ export const InlineFormActions = ({
         variant="subtle"
         size={size}
         data-size={size}
-        aria-label="保育園編集をキャンセル"
+        aria-label={
+          cancelContext ? `${cancelLabel}（${cancelContext}）` : cancelLabel
+        }
         {...commonButtonStyles}
       >
         {cancelLabel}
@@ -118,6 +125,7 @@ export const VerticalFormActions = ({
   isDisabled = false,
   saveLabel = '保存',
   cancelLabel = 'キャンセル',
+  cancelContext,
   size = 'lg',
 }: FormActionsProps) => {
   return (
@@ -139,7 +147,9 @@ export const VerticalFormActions = ({
         variant="subtle"
         size={size}
         data-size={size}
-        aria-label="保育園編集をキャンセル"
+        aria-label={
+          cancelContext ? `${cancelLabel}（${cancelContext}）` : cancelLabel
+        }
         {...primaryCancelButtonStyles}
         w="full"
         py={3} // 縦並びでは異なるパディングを維持

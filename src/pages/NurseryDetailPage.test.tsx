@@ -213,9 +213,7 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       // 編集用のUI要素が表示される（詳細テストはNurseryInfoCardで実施）
       const saveButton = screen.getByRole('button', { name: '保存' });
-      const nurseryCancelButton = screen.getByRole('button', {
-        name: '保育園編集をキャンセル',
-      });
+      const nurseryCancelButton = screen.getAllByText('キャンセル')[0]; // 最初のキャンセルボタン（保育園編集用）
       const questionCancelButton = screen.getByRole('button', {
         name: '質問追加をキャンセル',
       });

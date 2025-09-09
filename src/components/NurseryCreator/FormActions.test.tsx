@@ -52,9 +52,7 @@ describe('FormActionsコンポーネント群', () => {
         <PrimaryFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(
-        screen.getByRole('button', { name: '保育園編集をキャンセル' })
-      );
+      await user.click(screen.getByRole('button', { name: 'キャンセル' }));
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -71,7 +69,7 @@ describe('FormActionsコンポーネント群', () => {
       expect(saveButton).toBeDisabled();
 
       const cancelButton = screen.getByRole('button', {
-        name: '保育園編集をキャンセル',
+        name: 'キャンセル',
       });
       expect(cancelButton).not.toBeDisabled();
     });
@@ -148,9 +146,7 @@ describe('FormActionsコンポーネント群', () => {
         <InlineFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(
-        screen.getByRole('button', { name: '保育園編集をキャンセル' })
-      );
+      await user.click(screen.getByRole('button', { name: 'キャンセル' }));
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -167,7 +163,7 @@ describe('FormActionsコンポーネント群', () => {
       expect(saveButton).toBeDisabled();
 
       const cancelButton = screen.getByRole('button', {
-        name: '保育園編集をキャンセル',
+        name: 'キャンセル',
       });
       expect(cancelButton).not.toBeDisabled();
     });
@@ -215,9 +211,7 @@ describe('FormActionsコンポーネント群', () => {
         <VerticalFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(
-        screen.getByRole('button', { name: '保育園編集をキャンセル' })
-      );
+      await user.click(screen.getByRole('button', { name: 'キャンセル' }));
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -234,7 +228,7 @@ describe('FormActionsコンポーネント群', () => {
       expect(saveButton).toBeDisabled();
 
       const cancelButton = screen.getByRole('button', {
-        name: '保育園編集をキャンセル',
+        name: 'キャンセル',
       });
       expect(cancelButton).not.toBeDisabled();
     });
