@@ -6,7 +6,6 @@ import { Box, Button, Heading, HStack, IconButton } from '@chakra-ui/react';
 import { IoHelpCircleOutline } from 'react-icons/io5';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMemo } from 'react';
-import { APP_CONFIG } from '../constants/app';
 import type { HeaderButton, HeaderVariant } from '../types/header';
 
 /**
@@ -97,7 +96,7 @@ export const NurseryHeader = ({
         <Heading
           as="h1"
           size={{ base: 'md', md: 'lg' }}
-          color={APP_CONFIG.COLORS.PRIMARY}
+          color="brand.500"
           textAlign="center"
           cursor="pointer"
           transition="opacity 0.2s"
@@ -141,7 +140,7 @@ export const NurseryHeader = ({
         <Heading
           as="h1"
           size={{ base: 'md', md: 'lg' }}
-          color={APP_CONFIG.COLORS.PRIMARY}
+          color="brand.500"
           textAlign="center"
           cursor="pointer"
           transition="opacity 0.2s"
