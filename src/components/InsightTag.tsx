@@ -6,7 +6,6 @@
 import { Tag } from '@chakra-ui/react';
 import { IoClose } from 'react-icons/io5';
 import { UI_SIZES } from '../constants/ui-theme';
-import { APP_CONFIG } from '../constants/app';
 
 interface InsightTagProps {
   /** タグに表示するテキスト */
@@ -45,9 +44,8 @@ export const InsightTag = ({
 
   return (
     <Tag.Root
+      colorPalette="accent"
       variant="solid"
-      bgColor={APP_CONFIG.COLORS.ACCENT}
-      color={APP_CONFIG.COLORS.WHITE}
       size={UI_SIZES.MEDIUM}
       opacity={opacity}
       py={1}

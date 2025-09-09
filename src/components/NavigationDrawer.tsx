@@ -8,7 +8,6 @@ import {
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { useCallback, useId } from 'react';
-import { APP_CONFIG } from '../constants/app';
 import { DRAWER_MENU_ITEMS } from '../constants/navigation';
 
 /**
@@ -100,7 +99,7 @@ export const NavigationDrawer = ({
                 id={titleId}
                 fontSize="lg"
                 fontWeight="semibold"
-                color={APP_CONFIG.COLORS.PRIMARY}
+                color="brand.500"
               >
                 メニュー
               </Drawer.Title>

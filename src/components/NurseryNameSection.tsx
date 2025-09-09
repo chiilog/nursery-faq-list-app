@@ -3,7 +3,6 @@
  */
 
 import { Box, Text, Input } from '@chakra-ui/react';
-import { APP_CONFIG } from '../constants/app';
 
 interface NurseryNameSectionProps {
   nurseryName: string;
@@ -54,7 +53,7 @@ export const NurseryNameSection = ({
       <Text
         fontSize={{ base: 'lg', md: 'xl' }}
         fontWeight="bold"
-        color={APP_CONFIG.COLORS.PRIMARY}
+        color="brand.500"
         textAlign="center"
       >
         {nurseryName}

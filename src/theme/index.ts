@@ -73,6 +73,15 @@ const customConfig = defineConfig({
           emphasized: { value: '{colors.brand.200}' },
           focusRing: { value: '{colors.brand.500}' },
         },
+        accent: {
+          solid: { value: '{colors.accent.500}' },
+          contrast: { value: '{colors.black}' },
+          fg: { value: '{colors.accent.700}' },
+          muted: { value: '{colors.accent.100}' },
+          subtle: { value: '{colors.accent.50}' },
+          emphasized: { value: '{colors.accent.200}' },
+          focusRing: { value: '{colors.accent.500}' },
+        },
       },
     },
     breakpoints: {
