@@ -3,7 +3,8 @@
  * 保育園情報をカード形式で表示し、見学状況と進捗を提供
  */
 
-import { Box, Text, VStack, HStack, Flex } from '@chakra-ui/react';
+import { Box, Text, VStack, HStack, Flex, Icon } from '@chakra-ui/react';
+import { IoChevronForward } from 'react-icons/io5';
 import type { Nursery } from '../types/entities';
 import { InsightTag } from './InsightTag';
 import { useNurseryStatus } from '../hooks/useNurseryStatus';
@@ -66,47 +67,54 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
       onClick={handleInteraction}
       onKeyDown={handleKeyDown}
     >
-      <VStack align="stretch" gap={3}>
-        {/* ヘッダー部分: 保育園名とバッジ */}
-        <HStack justify="space-between" align="flex-start">
-          <Text
-            fontWeight="bold"
-            fontSize="lg"
-            color="gray.800"
-            textAlign="left"
-            flex={1}
-            lineHeight="1.3"
-          >
-            {nursery.name}
-          </Text>
-        </HStack>
+      <HStack align="center" gap={3} width="100%">
+        <VStack align="stretch" gap={3} flex={1}>
+          {/* ヘッダー部分: 保育園名とバッジ */}
+          <HStack justify="space-between" align="center">
+            <Text
+              fontWeight="bold"
+              fontSize="lg"
+              color="gray.800"
+              textAlign="left"
+              flex={1}
+              lineHeight="1.3"
+            >
+              {nursery.name}
+            </Text>
+          </HStack>
 
-        {/* 詳細情報部分: 見学日と質問進捗 */}
-        <VStack align="stretch" gap={2}>
-          <Text color="gray.600" fontSize="sm" textAlign="left">
-            見学日: {visitDate}
-          </Text>
-          <Text color="gray.600" fontSize="sm" textAlign="left">
-            質問進捗: {questionProgress}
-          </Text>
+          {/* 詳細情報部分: 見学日と質問進捗 */}
+          <VStack align="stretch" gap={2}>
+            <Text color="gray.600" fontSize="sm" textAlign="left">
+              見学日: {visitDate}
+            </Text>
+            <Text color="gray.600" fontSize="sm" textAlign="left">
+              質問進捗: {questionProgress}
+            </Text>
 
-          {/* 気づきタグ表示 */}
-          {insights.length > 0 && (
-            <Box>
-              <Flex wrap="wrap" gap={1} mt={1}>
-                {insights.map((insight, index) => (
-                  <InsightTag
-                    key={`insight-${index}`}
-                    text={insight}
-                    showDeleteButton={false}
-                    isReadOnly={true}
-                  />
-                ))}
-              </Flex>
-            </Box>
-          )}
+            {/* 気づきタグ表示 */}
+            {insights.length > 0 && (
+              <Box>
+                <Flex wrap="wrap" gap={1} mt={1}>
+                  {insights.map((insight, index) => (
+                    <InsightTag
+                      key={`insight-${index}`}
+                      text={insight}
+                      showDeleteButton={false}
+                      isReadOnly={true}
+                    />
+                  ))}
+                </Flex>
+              </Box>
+            )}
+          </VStack>
         </VStack>
-      </VStack>
+
+        {/* 右矢印アイコン */}
+        <Icon color="gray.400" size="md">
+          <IoChevronForward />
+        </Icon>
+      </HStack>
     </Box>
   );
 };
