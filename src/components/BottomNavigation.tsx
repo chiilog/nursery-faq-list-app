@@ -26,7 +26,7 @@ export const BottomNavigation = () => {
 
   // KISS: 色の取得をシンプル化
   const getItemColor = (isSelected: boolean) =>
-    isSelected ? 'brand.500' : 'gray.600';
+    isSelected ? 'brand.500' : 'fg.muted';
 
   /**
    * @description ナビゲーション項目のクリックハンドラ
