@@ -213,12 +213,15 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       // 編集用のUI要素が表示される（詳細テストはNurseryInfoCardで実施）
       const saveButton = screen.getByRole('button', { name: '保存' });
-      const cancelButtons = screen.getAllByRole('button', {
-        name: 'キャンセル',
+      const nurseryCancelButton = screen.getByRole('button', {
+        name: '保育園編集をキャンセル',
+      });
+      const questionCancelButton = screen.getByRole('button', {
+        name: '質問追加をキャンセル',
       });
       expect(saveButton).toBeInTheDocument();
-      // 保育園編集用と質問追加フォーム用の2つのキャンセルボタンが存在
-      expect(cancelButtons).toHaveLength(2);
+      expect(nurseryCancelButton).toBeInTheDocument();
+      expect(questionCancelButton).toBeInTheDocument();
     });
   });
 

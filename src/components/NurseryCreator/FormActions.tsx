@@ -89,6 +89,7 @@ export const InlineFormActions = ({
         variant="subtle"
         size={size}
         data-size={size}
+        aria-label="保育園編集をキャンセル"
         {...commonButtonStyles}
       >
         {cancelLabel}

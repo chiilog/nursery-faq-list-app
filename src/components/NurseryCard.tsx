@@ -102,7 +102,7 @@ export const NurseryCard = ({ nursery, onClick }: NurseryCardProps) => {
         </VStack>
 
         {/* 右矢印アイコン */}
-        <Icon color="gray.400" size="md">
+        <Icon color="gray.400" size="md" aria-hidden="true">
           <IoChevronForward />
         </Icon>
       </HStack>

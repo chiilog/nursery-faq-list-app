@@ -51,6 +51,7 @@ export const QuestionAddForm = ({
           variant="subtle"
           onClick={handleCancel}
           size={{ base: 'sm', md: 'md' }}
+          aria-label="質問追加をキャンセル"
         >
           キャンセル
         </Button>

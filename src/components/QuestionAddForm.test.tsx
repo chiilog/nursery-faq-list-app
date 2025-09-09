@@ -41,7 +41,7 @@ describe('QuestionAddForm', () => {
 
       expect(screen.getByRole('button', { name: '追加' })).toBeInTheDocument();
       expect(
-        screen.getByRole('button', { name: 'キャンセル' })
+        screen.getByRole('button', { name: '質問追加をキャンセル' })
       ).toBeInTheDocument();
     });
 
@@ -116,7 +116,9 @@ describe('QuestionAddForm', () => {
         />
       );
 
-      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      const cancelButton = screen.getByRole('button', {
+        name: '質問追加をキャンセル',
+      });
       await user.click(cancelButton);
 
       expect(mockOnQuestionChange).toHaveBeenCalledWith('');
