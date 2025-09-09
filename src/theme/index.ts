@@ -75,7 +75,7 @@ const customConfig = defineConfig({
         },
         accent: {
           solid: { value: '{colors.accent.500}' },
-          contrast: { value: '{colors.white}' },
+          contrast: { value: '{colors.black}' },
           fg: { value: '{colors.accent.700}' },
           muted: { value: '{colors.accent.100}' },
           subtle: { value: '{colors.accent.50}' },
