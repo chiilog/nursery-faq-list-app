@@ -761,6 +761,55 @@ describe('useNurseryEdit', () => {
     expect(calledWith.visitSessions[0].visitDate).toBe(null);
   });
 
+  it('既存の見学日を削除して保存すると、visitDate が null になり質問は保持される', async () => {
+    const nurseryWithDate: Nursery = {
+      ...mockNursery,
+      visitSessions: [
+        {
+          ...mockNursery.visitSessions[0],
+          visitDate: new Date('2026-02-03'),
+          questions: [
+            {
+              id: 'q-1',
+              text: '延長保育はありますか？',
+              answer: '',
+              isAnswered: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+      ],
+    };
+
+    mockUpdateNursery.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useNurseryEdit(nurseryWithDate, mockUpdateNursery)
+    );
+
+    act(() => {
+      result.current.handleEditNursery();
+    });
+
+    // 見学日をクリア
+    act(() => {
+      result.current.setNewVisitDate(null);
+    });
+
+    await act(async () => {
+      await result.current.handleSaveNursery();
+    });
+
+    const calledWith = mockUpdateNursery.mock.calls[0][1];
+    expect(calledWith.visitSessions).toHaveLength(1);
+    expect(calledWith.visitSessions[0].visitDate).toBeNull();
+    expect(calledWith.visitSessions[0].questions).toHaveLength(1);
+    expect(calledWith.visitSessions[0].questions[0].text).toBe(
+      '延長保育はありますか？'
+    );
+  });
+
   describe('キャンセル処理', () => {
     it('handleCancelEditNurseryで編集状態がリセットされる', () => {
       const { result } = renderHook(() =>
