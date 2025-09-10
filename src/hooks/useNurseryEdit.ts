@@ -110,7 +110,8 @@ export function useNurseryEdit(
 
     // 見学日の処理
     let updatedSessions = [...currentNursery.visitSessions];
-    if (newVisitDate) {
+
+    if (newVisitDate !== null) {
       // 見学日が入力されている場合：バリデーションして見学セッションを更新/作成
       const visitDateError = validateVisitDateSimple(newVisitDate, false);
       if (visitDateError) {
@@ -130,8 +131,15 @@ export function useNurseryEdit(
         updatedSessions = [updatedSession];
       }
     } else {
-      // 見学日が削除された場合：見学セッションも削除
-      updatedSessions = [];
+      // newVisitDate === null の場合：既存セッションの visitDate を null に更新
+      const existingSession = updatedSessions[0];
+      if (existingSession) {
+        updatedSessions[0] = {
+          ...existingSession,
+          visitDate: null,
+          updatedAt: new Date(),
+        };
+      }
     }
 
     await updateNursery(currentNursery.id, {
