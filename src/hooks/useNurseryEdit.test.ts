@@ -557,7 +557,12 @@ describe('useNurseryEdit', () => {
     // セッションと質問が保持されていることを確認
     expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
       name: '更新された保育園名',
-      visitSessions: [nurseryWithoutDate.visitSessions[0]],
+      visitSessions: [
+        {
+          ...nurseryWithoutDate.visitSessions[0],
+          updatedAt: expect.any(Date),
+        },
+      ],
     });
 
     const calledWith = mockUpdateNursery.mock.calls[0][1];
@@ -566,6 +571,133 @@ describe('useNurseryEdit', () => {
     expect(calledWith.visitSessions[0].questions[0].text).toBe(
       '園の方針について教えてください'
     );
+  });
+
+  it('見学日を明示的に削除した場合、visitDateがnullに更新される', async () => {
+    // 見学日ありの保育園データ
+    const nurseryWithDate = {
+      ...mockNursery,
+      visitSessions: [
+        {
+          ...mockNursery.visitSessions[0],
+          visitDate: new Date('2025-12-31'),
+          questions: [
+            {
+              id: 'question-1',
+              text: '園の雰囲気はどうですか？',
+              answer: 'とても良い雰囲気です',
+              isAnswered: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+      ],
+    };
+
+    mockUpdateNursery.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useNurseryEdit(nurseryWithDate, mockUpdateNursery)
+    );
+
+    // 編集開始
+    act(() => {
+      result.current.handleEditNursery();
+    });
+
+    // 見学日を削除（nullに設定）
+    act(() => {
+      result.current.setNewVisitDate(null);
+    });
+
+    // 保存
+    await act(async () => {
+      await result.current.handleSaveNursery();
+    });
+
+    // セッションは保持され、visitDateがnullに更新されることを確認
+    expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+      name: 'テスト保育園',
+      visitSessions: [
+        {
+          ...nurseryWithDate.visitSessions[0],
+          visitDate: null,
+          updatedAt: expect.any(Date),
+        },
+      ],
+    });
+
+    // 質問が保持されていることを確認
+    const calledWith = mockUpdateNursery.mock.calls[0][1];
+    expect(calledWith.visitSessions).toHaveLength(1);
+    expect(calledWith.visitSessions[0].questions).toHaveLength(1);
+    expect(calledWith.visitSessions[0].questions[0].text).toBe(
+      '園の雰囲気はどうですか？'
+    );
+    expect(calledWith.visitSessions[0].visitDate).toBe(null);
+  });
+
+  it('見学日を削除してから保育園名も変更した場合、両方の変更が反映される', async () => {
+    // 見学日ありの保育園データ
+    const nurseryWithDate = {
+      ...mockNursery,
+      visitSessions: [
+        {
+          ...mockNursery.visitSessions[0],
+          visitDate: new Date('2025-12-31'),
+          questions: [
+            {
+              id: 'question-1',
+              text: '保育料について教えてください',
+              answer: '',
+              isAnswered: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+      ],
+    };
+
+    mockUpdateNursery.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useNurseryEdit(nurseryWithDate, mockUpdateNursery)
+    );
+
+    // 編集開始
+    act(() => {
+      result.current.handleEditNursery();
+    });
+
+    // 見学日を削除し、保育園名も変更
+    act(() => {
+      result.current.setNewVisitDate(null);
+      result.current.handleNurseryNameChange('変更された保育園名');
+    });
+
+    // 保存
+    await act(async () => {
+      await result.current.handleSaveNursery();
+    });
+
+    // 保育園名の変更とvisitDateのnull更新が反映されることを確認
+    expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+      name: '変更された保育園名',
+      visitSessions: [
+        {
+          ...nurseryWithDate.visitSessions[0],
+          visitDate: null,
+          updatedAt: expect.any(Date),
+        },
+      ],
+    });
+
+    // 質問が保持されていることを確認
+    const calledWith = mockUpdateNursery.mock.calls[0][1];
+    expect(calledWith.visitSessions[0].questions).toHaveLength(1);
+    expect(calledWith.visitSessions[0].visitDate).toBe(null);
   });
 
   describe('キャンセル処理', () => {
