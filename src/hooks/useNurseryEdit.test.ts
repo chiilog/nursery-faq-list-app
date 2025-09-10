@@ -439,6 +439,135 @@ describe('useNurseryEdit', () => {
     });
   });
 
+  it('質問がある保育園の名前のみを編集しても質問リストが保持される', async () => {
+    // 質問を含む保育園データ
+    const nurseryWithQuestions = {
+      ...mockNursery,
+      visitSessions: [
+        {
+          ...mockNursery.visitSessions[0],
+          questions: [
+            {
+              id: 'question-1',
+              text: '園庭はありますか？',
+              answer: 'はい、あります',
+              isAnswered: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: 'question-2',
+              text: '給食について教えてください',
+              answer: '',
+              isAnswered: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+      ],
+    };
+
+    mockUpdateNursery.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useNurseryEdit(nurseryWithQuestions, mockUpdateNursery)
+    );
+
+    // 編集開始
+    act(() => {
+      result.current.handleEditNursery();
+    });
+
+    // 保育園名のみを変更（見学日は変更しない）
+    act(() => {
+      result.current.handleNurseryNameChange('変更された保育園名');
+    });
+
+    // 保存
+    await act(async () => {
+      await result.current.handleSaveNursery();
+    });
+
+    // 質問リストが保持されていることを確認
+    expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+      name: '変更された保育園名',
+      visitSessions: [
+        {
+          ...nurseryWithQuestions.visitSessions[0],
+          updatedAt: expect.any(Date),
+        },
+      ],
+    });
+
+    // 質問が保持されていることを確認
+    const calledWith = mockUpdateNursery.mock.calls[0][1];
+    expect(calledWith.visitSessions[0].questions).toHaveLength(2);
+    expect(calledWith.visitSessions[0].questions[0].text).toBe(
+      '園庭はありますか？'
+    );
+    expect(calledWith.visitSessions[0].questions[1].text).toBe(
+      '給食について教えてください'
+    );
+  });
+
+  it('見学日がnullの保育園の名前のみを編集してもセッションが保持される', async () => {
+    // 見学日なしの保育園データ（但し、質問は存在）
+    const nurseryWithoutDate = {
+      ...mockNursery,
+      visitSessions: [
+        {
+          ...mockNursery.visitSessions[0],
+          visitDate: null,
+          questions: [
+            {
+              id: 'question-1',
+              text: '園の方針について教えてください',
+              answer: '子供の自主性を重視しています',
+              isAnswered: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        },
+      ],
+    };
+
+    mockUpdateNursery.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useNurseryEdit(nurseryWithoutDate, mockUpdateNursery)
+    );
+
+    // 編集開始
+    act(() => {
+      result.current.handleEditNursery();
+    });
+
+    // 保育園名のみを変更
+    act(() => {
+      result.current.handleNurseryNameChange('更新された保育園名');
+    });
+
+    // 保存
+    await act(async () => {
+      await result.current.handleSaveNursery();
+    });
+
+    // セッションと質問が保持されていることを確認
+    expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
+      name: '更新された保育園名',
+      visitSessions: [nurseryWithoutDate.visitSessions[0]],
+    });
+
+    const calledWith = mockUpdateNursery.mock.calls[0][1];
+    expect(calledWith.visitSessions).toHaveLength(1);
+    expect(calledWith.visitSessions[0].questions).toHaveLength(1);
+    expect(calledWith.visitSessions[0].questions[0].text).toBe(
+      '園の方針について教えてください'
+    );
+  });
+
   describe('キャンセル処理', () => {
     it('handleCancelEditNurseryで編集状態がリセットされる', () => {
       const { result } = renderHook(() =>
