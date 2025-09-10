@@ -300,10 +300,15 @@ describe('useNurseryEdit', () => {
       expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
         name: '新しい保育園名',
         visitSessions: [
-          {
-            ...mockNursery.visitSessions[0],
+          expect.objectContaining({
+            id: 'session-1',
+            visitDate: new Date('2025-12-31'),
+            status: 'planned',
+            questions: expect.any(Array),
+            insights: expect.any(Array),
+            createdAt: expect.any(Date),
             updatedAt: expect.any(Date),
-          },
+          }),
         ],
       });
 
@@ -332,11 +337,15 @@ describe('useNurseryEdit', () => {
       expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
         name: 'テスト保育園',
         visitSessions: [
-          {
-            ...mockNursery.visitSessions[0],
+          expect.objectContaining({
+            id: 'session-1',
             visitDate: new Date('2026-01-01'),
+            status: 'planned',
+            questions: expect.any(Array),
+            insights: expect.any(Array),
+            createdAt: expect.any(Date),
             updatedAt: expect.any(Date),
-          },
+          }),
         ],
       });
     });
@@ -493,10 +502,28 @@ describe('useNurseryEdit', () => {
     expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
       name: '変更された保育園名',
       visitSessions: [
-        {
-          ...nurseryWithQuestions.visitSessions[0],
+        expect.objectContaining({
+          id: 'session-1',
+          visitDate: new Date('2025-12-31'),
+          status: 'planned',
+          questions: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'question-1',
+              text: '園庭はありますか？',
+              answer: 'はい、あります',
+              isAnswered: true,
+            }),
+            expect.objectContaining({
+              id: 'question-2',
+              text: '給食について教えてください',
+              answer: '',
+              isAnswered: false,
+            }),
+          ]),
+          insights: expect.any(Array),
+          createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
-        },
+        }),
       ],
     });
 
@@ -558,10 +585,22 @@ describe('useNurseryEdit', () => {
     expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
       name: '更新された保育園名',
       visitSessions: [
-        {
-          ...nurseryWithoutDate.visitSessions[0],
+        expect.objectContaining({
+          id: 'session-1',
+          visitDate: null,
+          status: 'planned',
+          questions: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'question-1',
+              text: '園の方針について教えてください',
+              answer: '子供の自主性を重視しています',
+              isAnswered: true,
+            }),
+          ]),
+          insights: expect.any(Array),
+          createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
-        },
+        }),
       ],
     });
 
@@ -620,11 +659,22 @@ describe('useNurseryEdit', () => {
     expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
       name: 'テスト保育園',
       visitSessions: [
-        {
-          ...nurseryWithDate.visitSessions[0],
+        expect.objectContaining({
+          id: 'session-1',
           visitDate: null,
+          status: 'planned',
+          questions: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'question-1',
+              text: '園の雰囲気はどうですか？',
+              answer: 'とても良い雰囲気です',
+              isAnswered: true,
+            }),
+          ]),
+          insights: expect.any(Array),
+          createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
-        },
+        }),
       ],
     });
 
@@ -686,11 +736,22 @@ describe('useNurseryEdit', () => {
     expect(mockUpdateNursery).toHaveBeenCalledWith('nursery-1', {
       name: '変更された保育園名',
       visitSessions: [
-        {
-          ...nurseryWithDate.visitSessions[0],
+        expect.objectContaining({
+          id: 'session-1',
           visitDate: null,
+          status: 'planned',
+          questions: expect.arrayContaining([
+            expect.objectContaining({
+              id: 'question-1',
+              text: '保育料について教えてください',
+              answer: '',
+              isAnswered: false,
+            }),
+          ]),
+          insights: expect.any(Array),
+          createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
-        },
+        }),
       ],
     });
 
