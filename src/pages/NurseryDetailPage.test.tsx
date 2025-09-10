@@ -124,9 +124,7 @@ describe('NurseryDetailPage コンポーネント', () => {
       expect(screen.getByText(/質問進捗:/)).toBeInTheDocument();
 
       // QuestionsSection、QuestionAddForm、InsightsSectionの存在確認
-      expect(
-        screen.getByRole('button', { name: '+ 質問を追加' })
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText('質問入力')).toBeInTheDocument();
       expect(
         screen.getByText('保育時間は何時から何時までですか？')
       ).toBeInTheDocument();
@@ -199,8 +197,8 @@ describe('NurseryDetailPage コンポーネント', () => {
       renderWithProviders(<NurseryDetailPage />);
 
       // 質問追加フォームが表示されることを確認（詳細動作はQuestionAddFormでテスト）
-      const addButton = screen.getByRole('button', { name: '+ 質問を追加' });
-      expect(addButton).toBeInTheDocument();
+      const questionInput = screen.getByLabelText('質問入力');
+      expect(questionInput).toBeInTheDocument();
     });
   });
 
@@ -215,9 +213,13 @@ describe('NurseryDetailPage コンポーネント', () => {
 
       // 編集用のUI要素が表示される（詳細テストはNurseryInfoCardで実施）
       const saveButton = screen.getByRole('button', { name: '保存' });
-      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      const nurseryCancelButton = screen.getAllByText('キャンセル')[0]; // 最初のキャンセルボタン（保育園編集用）
+      const questionCancelButton = screen.getByRole('button', {
+        name: '質問追加をキャンセル',
+      });
       expect(saveButton).toBeInTheDocument();
-      expect(cancelButton).toBeInTheDocument();
+      expect(nurseryCancelButton).toBeInTheDocument();
+      expect(questionCancelButton).toBeInTheDocument();
     });
   });
 
@@ -283,11 +285,9 @@ describe('NurseryDetailPage コンポーネント', () => {
       editButton.focus();
       expect(editButton).toHaveFocus();
 
-      const addQuestionButton = screen.getByRole('button', {
-        name: '+ 質問を追加',
-      });
-      addQuestionButton.focus();
-      expect(addQuestionButton).toHaveFocus();
+      const questionInput = screen.getByLabelText('質問入力');
+      questionInput.focus();
+      expect(questionInput).toHaveFocus();
     });
 
     test('スクリーンリーダー向けの適切なラベルが設定されている', () => {
@@ -358,9 +358,7 @@ describe('NurseryDetailPage コンポーネント', () => {
       ).toBeInTheDocument();
 
       // エラー時は主要コンポーネントが表示されないことを確認
-      expect(
-        screen.queryByRole('button', { name: '+ 質問を追加' })
-      ).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('質問入力')).not.toBeInTheDocument();
     });
 
     test('ローディング状態が全体に適切に反映される', () => {
@@ -384,9 +382,7 @@ describe('NurseryDetailPage コンポーネント', () => {
       ).toBeInTheDocument();
 
       // ローディング時は主要コンポーネントが表示されないことを確認
-      expect(
-        screen.queryByRole('button', { name: '+ 質問を追加' })
-      ).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('質問入力')).not.toBeInTheDocument();
     });
   });
 });

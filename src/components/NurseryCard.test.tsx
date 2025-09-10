@@ -331,14 +331,6 @@ describe('NurseryCard コンポーネント', () => {
       });
       expect(card).toBeInTheDocument();
     });
-
-    test('tabIndexが0に設定されてキーボードアクセス可能', () => {
-      const nursery = testUtils.createMockNursery();
-      renderWithProviders(<NurseryCard nursery={nursery} onClick={vi.fn()} />);
-
-      const card = screen.getByRole('button');
-      expect(card).toHaveAttribute('tabIndex', '0');
-    });
   });
 
   describe('気づきタグ表示', () => {

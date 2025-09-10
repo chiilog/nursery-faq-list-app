@@ -239,6 +239,7 @@ export const NurseryDetailPage = () => {
                 onSave={() => void nurseryEdit.handleSaveNursery()}
                 onCancel={nurseryEdit.handleCancelEditNursery}
                 isDisabled={nurseryEdit.isSaveDisabled}
+                cancelContext="保育園編集をキャンセル"
               />
             ) : (
               <Button
@@ -280,14 +281,10 @@ export const NurseryDetailPage = () => {
           {/* 質問追加フォーム */}
           <Box mb={2}>
             <QuestionAddForm
-              isAddingQuestion={questionForm.formState.isAdding}
               newQuestionText={questionForm.formState.questionText}
               newAnswerText={questionForm.formState.answerText}
               onNewQuestionTextChange={questionForm.updateQuestionText}
               onNewAnswerTextChange={questionForm.updateAnswerText}
-              onToggleAddForm={(value) =>
-                value ? questionForm.startAdding() : questionForm.cancelAdding()
-              }
               onAddQuestion={() => void handleAddQuestion()}
             />
           </Box>

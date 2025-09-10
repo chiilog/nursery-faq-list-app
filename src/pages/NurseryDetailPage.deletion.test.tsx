@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test/test-utils';
 import { NurseryDetailPage } from './NurseryDetailPage';
@@ -145,7 +145,11 @@ describe('NurseryDetailPage - 削除機能', () => {
       expect(screen.getByText('保育園の削除')).toBeInTheDocument();
     });
 
-    const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+    // 削除ダイアログ内のキャンセルボタンを取得
+    const dialog = screen.getByRole('dialog', { name: '保育園の削除' });
+    const cancelButton = within(dialog).getByRole('button', {
+      name: 'キャンセル',
+    });
     await user.click(cancelButton);
 
     await waitFor(() => {

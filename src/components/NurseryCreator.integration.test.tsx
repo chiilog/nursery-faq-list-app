@@ -58,7 +58,7 @@ describe('NurseryCreator 統合テスト', () => {
     expect(nameInput).toHaveValue('テストデータ');
 
     // キャンセルボタンでフォームをリセット
-    const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+    const cancelButton = screen.getByText('キャンセル');
     await user.click(cancelButton);
 
     // onCancelが呼ばれることを確認（実際のアプリではフォームがクローズされる）
@@ -167,7 +167,7 @@ describe('NurseryCreator 統合テスト', () => {
 
     // ボタンのrole属性を確認
     const saveButton = screen.getByRole('button', { name: '保存' });
-    const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+    const cancelButton = screen.getByText('キャンセル');
 
     expect(saveButton).toBeInTheDocument();
     expect(cancelButton).toBeInTheDocument();

@@ -68,9 +68,7 @@ describe('NurseryCreator コンポーネント', () => {
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
       expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: 'キャンセル' })
-      ).toBeInTheDocument();
+      expect(screen.getByText('キャンセル')).toBeInTheDocument();
     });
   });
 
@@ -267,7 +265,7 @@ describe('NurseryCreator コンポーネント', () => {
       const mockOnCancel = vi.fn();
       renderWithProviders(<NurseryCreator onCancel={mockOnCancel} />);
 
-      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      const cancelButton = screen.getByText('キャンセル');
       await user.click(cancelButton);
 
       expect(mockOnCancel).toHaveBeenCalled();
@@ -282,7 +280,7 @@ describe('NurseryCreator コンポーネント', () => {
       const nameInput = screen.getByLabelText('保育園名');
       await user.type(nameInput, '途中入力');
 
-      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      const cancelButton = screen.getByText('キャンセル');
       await user.click(cancelButton);
 
       expect(mockOnCancel).toHaveBeenCalled();
@@ -316,7 +314,7 @@ describe('NurseryCreator コンポーネント', () => {
 
       renderWithProviders(<NurseryCreator onCancel={vi.fn()} />);
 
-      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      const cancelButton = screen.getByText('キャンセル');
       expect(cancelButton).toBeEnabled();
     });
 
@@ -388,7 +386,7 @@ describe('NurseryCreator コンポーネント', () => {
       const nameInput = screen.getByLabelText('保育園名');
       const visitDateInput =
         screen.getByPlaceholderText('見学日を選択してください');
-      const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
+      const cancelButton = screen.getByText('キャンセル');
 
       // 最初の要素にフォーカス
       nameInput.focus();
@@ -612,7 +610,7 @@ describe('NurseryCreator コンポーネント', () => {
       expect(screen.getByLabelText('見学日')).toBeDisabled();
 
       // キャンセルボタンは有効のまま（UX改善）
-      expect(screen.getByRole('button', { name: 'キャンセル' })).toBeEnabled();
+      expect(screen.getByText('キャンセル')).toBeEnabled();
 
       // ローディングメッセージが表示される
       expect(screen.getByText('保育園を作成中...')).toBeInTheDocument();

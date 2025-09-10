@@ -52,7 +52,7 @@ describe('FormActionsコンポーネント群', () => {
         <PrimaryFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(screen.getByText('キャンセル'));
+      await user.click(screen.getByRole('button', { name: 'キャンセル' }));
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -68,7 +68,9 @@ describe('FormActionsコンポーネント群', () => {
       const saveButton = screen.getByText('保存');
       expect(saveButton).toBeDisabled();
 
-      const cancelButton = screen.getByText('キャンセル');
+      const cancelButton = screen.getByRole('button', {
+        name: 'キャンセル',
+      });
       expect(cancelButton).not.toBeDisabled();
     });
 
@@ -111,6 +113,36 @@ describe('FormActionsコンポーネント群', () => {
       expect(saveButton).toHaveAttribute('data-size', 'lg');
       expect(cancelButton).toHaveAttribute('data-size', 'lg');
     });
+
+    it('cancelContextが指定されていない場合はcancelLabelのみがaria-labelに設定される', () => {
+      renderWithProviders(
+        <PrimaryFormActions
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+          cancelLabel="戻る"
+        />
+      );
+
+      const cancelButton = screen.getByRole('button', { name: '戻る' });
+      expect(cancelButton).toBeInTheDocument();
+    });
+
+    it('cancelContextが指定されている場合は組み合わせたaria-labelが設定される', () => {
+      renderWithProviders(
+        <PrimaryFormActions
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+          cancelLabel="戻る"
+          cancelContext="保育園編集をキャンセル"
+        />
+      );
+
+      const cancelButton = screen.getByRole('button', {
+        name: '戻る（保育園編集をキャンセル）',
+      });
+      expect(cancelButton).toBeInTheDocument();
+      expect(cancelButton).toHaveTextContent('戻る');
+    });
   });
 
   describe('InlineFormActions', () => {
@@ -144,7 +176,7 @@ describe('FormActionsコンポーネント群', () => {
         <InlineFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(screen.getByText('キャンセル'));
+      await user.click(screen.getByRole('button', { name: 'キャンセル' }));
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -160,7 +192,9 @@ describe('FormActionsコンポーネント群', () => {
       const saveButton = screen.getByText('保存');
       expect(saveButton).toBeDisabled();
 
-      const cancelButton = screen.getByText('キャンセル');
+      const cancelButton = screen.getByRole('button', {
+        name: 'キャンセル',
+      });
       expect(cancelButton).not.toBeDisabled();
     });
 
@@ -173,6 +207,23 @@ describe('FormActionsコンポーネント群', () => {
       const cancelButton = screen.getByText('キャンセル');
       expect(saveButton).toHaveAttribute('data-size', 'sm');
       expect(cancelButton).toHaveAttribute('data-size', 'sm');
+    });
+
+    it('cancelContextが指定されている場合は組み合わせたaria-labelが設定される', () => {
+      renderWithProviders(
+        <InlineFormActions
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+          cancelLabel="戻る"
+          cancelContext="保育園編集をキャンセル"
+        />
+      );
+
+      const cancelButton = screen.getByRole('button', {
+        name: '戻る（保育園編集をキャンセル）',
+      });
+      expect(cancelButton).toBeInTheDocument();
+      expect(cancelButton).toHaveTextContent('戻る');
     });
   });
 
@@ -207,7 +258,7 @@ describe('FormActionsコンポーネント群', () => {
         <VerticalFormActions onSave={mockOnSave} onCancel={mockOnCancel} />
       );
 
-      await user.click(screen.getByText('キャンセル'));
+      await user.click(screen.getByRole('button', { name: 'キャンセル' }));
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
@@ -223,7 +274,9 @@ describe('FormActionsコンポーネント群', () => {
       const saveButton = screen.getByText('保存');
       expect(saveButton).toBeDisabled();
 
-      const cancelButton = screen.getByText('キャンセル');
+      const cancelButton = screen.getByRole('button', {
+        name: 'キャンセル',
+      });
       expect(cancelButton).not.toBeDisabled();
     });
 
@@ -236,6 +289,23 @@ describe('FormActionsコンポーネント群', () => {
       const cancelButton = screen.getByText('キャンセル');
       expect(saveButton).toHaveAttribute('data-size', 'lg');
       expect(cancelButton).toHaveAttribute('data-size', 'lg');
+    });
+
+    it('cancelContextが指定されている場合は組み合わせたaria-labelが設定される', () => {
+      renderWithProviders(
+        <VerticalFormActions
+          onSave={mockOnSave}
+          onCancel={mockOnCancel}
+          cancelLabel="戻る"
+          cancelContext="保育園編集をキャンセル"
+        />
+      );
+
+      const cancelButton = screen.getByRole('button', {
+        name: '戻る（保育園編集をキャンセル）',
+      });
+      expect(cancelButton).toBeInTheDocument();
+      expect(cancelButton).toHaveTextContent('戻る');
     });
   });
 });
