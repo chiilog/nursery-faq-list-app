@@ -1,8 +1,8 @@
 import { screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { renderWithProviders } from './test/test-utils';
-import { AppRouter } from './components/Router';
-import { CookieConsentBanner } from './components/CookieConsentBanner';
+import { AppRouter } from './components/routing/Router';
+import { CookieConsentBanner } from './components/features/cookie-consent/CookieConsentBanner';
 
 // react-router-dom をモック
 const mockNavigate = vi.fn();
