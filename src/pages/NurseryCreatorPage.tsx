@@ -4,8 +4,8 @@
  */
 
 import { IoClose } from 'react-icons/io5';
-import { Layout } from '../components/Layout';
-import { NurseryCreator } from '../components/NurseryCreator/NurseryCreator';
+import { Layout } from '../components/layout/Layout';
+import { NurseryCreator } from '../components/features/nursery-creator/NurseryCreator';
 
 interface NurseryCreatorPageProps {
   onCancel: () => void;

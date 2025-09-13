@@ -1,9 +1,9 @@
 import { BrowserRouter } from 'react-router-dom';
-import { AppRouter } from './components/Router';
-import { CookieConsentBanner } from './components/CookieConsentBanner';
-import { ScrollToTop } from './components/ScrollToTop';
+import { AppRouter } from './components/routing/Router';
+import { CookieConsentBanner } from './components/features/cookie-consent/CookieConsentBanner';
+import { ScrollToTop } from './components/layout/ScrollToTop';
 import { AnalyticsProvider } from './providers/AnalyticsProvider';
-import { AnalyticsRouter } from './components/AnalyticsRouter';
+import { AnalyticsRouter } from './components/routing/AnalyticsRouter';
 import { Toaster } from './components/ui/toaster';
 
 function App() {

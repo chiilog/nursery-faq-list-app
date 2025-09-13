@@ -16,18 +16,18 @@ import { IoArrowBack } from 'react-icons/io5';
 import { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNurseryStore } from '../stores/nurseryStore';
-import { Layout } from '../components/Layout';
-import { NurseryInfoCard } from '../components/NurseryInfoCard';
-import { QuestionAddForm } from '../components/QuestionAddForm';
-import { QuestionsSection } from '../components/QuestionsSection';
-import { InsightsSection } from '../components/InsightsSection';
-import { InlineFormActions } from '../components/NurseryCreator/FormActions';
-import { DeleteNurseryDialog } from '../components/nursery/DeleteNurseryDialog';
+import { Layout } from '../components/layout/Layout';
+import { NurseryInfoCard } from '../components/features/nursery/NurseryInfoCard';
+import { QuestionAddForm } from '../components/features/questions/QuestionAddForm';
+import { QuestionsSection } from '../components/features/questions/QuestionsSection';
+import { InsightsSection } from '../components/features/insights/InsightsSection';
+import { InlineFormActions } from '../components/features/nursery-creator/FormActions';
+import { DeleteNurseryDialog } from '../components/features/nursery/DeleteNurseryDialog';
 import { showToast } from '../utils/toaster';
 import { useNurseryEdit } from '../hooks/useNurseryEdit';
 import { useQuestionEditor } from '../hooks/useQuestionEditor';
 import { useQuestionForm } from '../hooks/useQuestionForm';
-import { TemplateSelector } from '../components/TemplateSelector/TemplateSelector';
+import { TemplateSelector } from '../components/features/questions/TemplateSelector';
 
 /**
  * 保育園詳細画面コンポーネント

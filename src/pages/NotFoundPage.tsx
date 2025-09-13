@@ -1,5 +1,5 @@
 import { Box, Heading, Text } from '@chakra-ui/react';
-import { Layout } from '../components/Layout';
+import { Layout } from '../components/layout/Layout';
 
 export const NotFoundPage = () => (
   <Layout>
