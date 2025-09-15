@@ -1,10 +1,10 @@
 import { Box, Button, Text, VStack, Spinner } from '@chakra-ui/react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NurseryCard } from '../components/NurseryCard';
-import { ErrorDisplay } from '../components/ErrorDisplay';
-import { EmptyState } from '../components/EmptyState';
-import { Layout } from '../components/Layout';
+import { NurseryCard } from '../components/features/nursery/NurseryCard';
+import { ErrorDisplay } from '../components/shared/ErrorDisplay';
+import { EmptyState } from '../components/shared/EmptyState';
+import { Layout } from '../components/layout/Layout';
 import { useNurseryStore } from '../stores/nurseryStore';
 import { showToast } from '../utils/toaster';
 import type { Nursery } from '../types/entities';

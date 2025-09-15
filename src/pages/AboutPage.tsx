@@ -1,5 +1,5 @@
 import { Box, Heading, Text, VStack, Button, HStack } from '@chakra-ui/react';
-import { Layout } from '../components/Layout';
+import { Layout } from '../components/layout/Layout';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
 import { ROUTES } from '../constants/routes';

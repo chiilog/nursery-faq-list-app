@@ -20,7 +20,7 @@ import {
   Switch,
   Link,
 } from '@chakra-ui/react';
-import { Layout } from '../components/Layout';
+import { Layout } from '../components/layout/Layout';
 import { useNavigate } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
 import { useCookieConsent } from '../hooks/useCookieConsent';
